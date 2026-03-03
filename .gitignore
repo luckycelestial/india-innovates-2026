@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+.venv/
+venv/
+.env
+*.egg-info/
+dist/
+build/
+
+# Node
+node_modules/
+
+# Frontend build
+praja/frontend/dist/
+praja/frontend/.vercel/
+
+# Vite
+*.local
+
+# Logs
+*.log
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Misc
+cloudflared.exe
+*.exe
+tunnel-url.txt
