@@ -2,12 +2,20 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from app.config import settings
 from app.routes import auth, grievances, officers, nayakai, sentinel, whatsapp
+import re
 
 app = FastAPI(title="PRAJA API", description="AI-powered Citizen Grievance Platform", version="1.0.0")
 
+allow_origins = [
+    settings.FRONTEND_URL,
+    "http://localhost:5173",
+    "https://localhost:5173",
+]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[settings.FRONTEND_URL, "http://localhost:5173", "https://*.vercel.app"],
+    allow_origins=allow_origins,
+    allow_origin_regex=r"https://.*\.vercel\.app",
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
