@@ -14,13 +14,13 @@ export function AuthProvider({ children }) {
   })
 
   const login = useCallback(async (email, password) => {
-    const { data } = await api.post('/auth/login', { email, password })
-    const userData = {
-      id:    data.user.id,
-      name:  data.user.full_name,
-      role:  data.user.role,
-      token: data.access_token,
-    }
+    const formData = new FormData()
+    formData.append('username', email)
+    formData.append('password', password)
+    const { data } = await api.post('/auth/login', formData, {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+    })
+    const userData = { id: data.user_id, name: data.name, role: data.role, token: data.access_token }
     localStorage.setItem('praja_user', JSON.stringify(userData))
     localStorage.setItem('praja_token', data.access_token)
     setUser(userData)
@@ -28,18 +28,8 @@ export function AuthProvider({ children }) {
   }, [])
 
   const register = useCallback(async (payload) => {
-    const { data } = await api.post('/auth/register', {
-      full_name: payload.name,
-      email:     payload.email,
-      password:  payload.password,
-      role:      payload.role || 'citizen',
-    })
-    const userData = {
-      id:    data.user.id,
-      name:  data.user.full_name,
-      role:  data.user.role,
-      token: data.access_token,
-    }
+    const { data } = await api.post('/auth/register', payload)
+    const userData = { id: data.user_id, name: data.name, role: data.role, token: data.access_token }
     localStorage.setItem('praja_user', JSON.stringify(userData))
     localStorage.setItem('praja_token', data.access_token)
     setUser(userData)
