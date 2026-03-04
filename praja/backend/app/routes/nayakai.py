@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Optional
 from groq import AsyncGroq
-from supabase._sync.client import Client
+from supabase import Client
 
 from app.config import settings
 from app.db.database import get_supabase

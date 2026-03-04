@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from typing import Optional
-from supabase._sync.client import Client
+from supabase import Client
 from deep_translator import GoogleTranslator
 from groq import Groq
 from app.config import settings
