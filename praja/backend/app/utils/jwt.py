@@ -1,19 +1,28 @@
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
-import bcrypt
+import hashlib, os, base64, hmac
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from app.config import settings
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
 
-
-def verify_password(plain: str, hashed: str) -> bool:
-    return bcrypt.checkpw(plain.encode("utf-8"), hashed.encode("utf-8"))
+_ITERATIONS = 260_000
+_ALGO = "sha256"
 
 
 def get_password_hash(plain: str) -> str:
-    return bcrypt.hashpw(plain.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+    """PBKDF2-SHA256, 260k iterations — stdlib only, no C-extension deps."""
+    salt = os.urandom(16)
+    dk = hashlib.pbkdf2_hmac(_ALGO, plain.encode(), salt, _ITERATIONS)
+    return base64.b64encode(salt + dk).decode()
+
+
+def verify_password(plain: str, hashed: str) -> bool:
+    decoded = base64.b64decode(hashed.encode())
+    salt, dk = decoded[:16], decoded[16:]
+    new_dk = hashlib.pbkdf2_hmac(_ALGO, plain.encode(), salt, _ITERATIONS)
+    return hmac.compare_digest(new_dk, dk)
 
 
 hash_password = get_password_hash

@@ -1,8 +1,9 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from app.config import settings
 from app.routes import auth, grievances, officers, nayakai, sentinel, whatsapp
-import re
+import re, traceback
 
 app = FastAPI(title="PRAJA API", description="AI-powered Citizen Grievance Platform", version="1.0.0")
 
@@ -20,6 +21,13 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    return JSONResponse(
+        status_code=500,
+        content={"error": str(exc), "type": type(exc).__name__, "traceback": traceback.format_exc()},
+    )
 
 app.include_router(auth.router,        prefix="/api/auth",       tags=["Auth"])
 app.include_router(grievances.router,  prefix="/api/grievances", tags=["Grievances"])
