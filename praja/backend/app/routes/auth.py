@@ -34,20 +34,23 @@ def register(body: UserRegister, sb: Client = Depends(get_supabase)):
     if existing.data:
         raise HTTPException(status_code=400, detail="Email already registered")
 
-    dept_row = sb.table("departments").select("id").eq("name", "General").execute()
-    dept_id = dept_row.data[0]["id"] if dept_row.data else None
-
     hashed = get_password_hash(body.password)
-    row = sb.table("users").insert({
-        "full_name":     body.full_name,
+    insert_data: dict = {
+        "name":          body.full_name,
         "email":         body.email,
-        "phone":         body.phone,
-        "constituency":  body.constituency,
-        "role":          body.role,
         "password_hash": hashed,
-        "department_id": dept_id,
-    }).execute()
+    }
+    if body.phone:
+        insert_data["phone"] = body.phone
+    if body.constituency:
+        insert_data["constituency"] = body.constituency
+    if body.role:
+        insert_data["role"] = body.role
+
+    row = sb.table("users").insert(insert_data).execute()
     user = row.data[0]
+    # Alias 'name' → 'full_name' for frontend compatibility
+    user["full_name"] = user.get("name", "")
     token = create_access_token({"sub": str(user["id"]), "role": user["role"]})
     return {"access_token": token, "token_type": "bearer", "user": user}
 
@@ -60,6 +63,7 @@ def login(body: UserLogin, sb: Client = Depends(get_supabase)):
     user = rows.data[0]
     if not verify_password(body.password, user["password_hash"]):
         raise HTTPException(status_code=401, detail="Invalid credentials")
+    user["full_name"] = user.get("name", "")
     token = create_access_token({"sub": str(user["id"]), "role": user["role"]})
     return {"access_token": token, "token_type": "bearer", "user": user}
 
@@ -69,4 +73,6 @@ def me(current: dict = Depends(get_current_user), sb: Client = Depends(get_supab
     rows = sb.table("users").select("*").eq("id", current["sub"]).execute()
     if not rows.data:
         raise HTTPException(status_code=404, detail="User not found")
-    return rows.data[0]
+    user = rows.data[0]
+    user["full_name"] = user.get("name", "")
+    return user
