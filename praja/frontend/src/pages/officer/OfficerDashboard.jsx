@@ -16,6 +16,29 @@ const PRIORITY_META = {
   critical: { label: 'Critical', color: '#C0392B' },
 }
 
+function hoursOpen(createdAt) {
+  if (!createdAt) return null
+  const ms = Date.now() - new Date(createdAt).getTime()
+  return Math.round(ms / 3600000)
+}
+
+function SLABadge({ createdAt, status }) {
+  if (status === 'resolved') return null
+  const h = hoursOpen(createdAt)
+  if (h === null) return null
+  const breached = h > 72
+  const warning  = h > 48
+  const color  = breached ? '#dc2626' : warning ? '#f97316' : '#6b7280'
+  const bg     = breached ? '#FEF2F2' : warning ? '#FFF7ED' : 'transparent'
+  const label  = h < 24 ? `${h}h` : `${Math.floor(h / 24)}d ${h % 24}h`
+  return (
+    <span title={`Open for ${h} hours${breached ? ' — SLA BREACHED' : ''}`}
+      style={{ fontSize: '0.72rem', fontWeight: 700, padding: '2px 7px', borderRadius: '20px', background: bg, color, border: breached ? '1px solid #FECACA' : 'none' }}>
+      {label}{breached ? ' !' : ''}
+    </span>
+  )
+}
+
 export default function OfficerDashboard() {
   const { user, logout } = useAuth()
   const [tickets, setTickets] = useState([])
@@ -48,6 +71,7 @@ export default function OfficerDashboard() {
     open: tickets.filter(t => t.status === 'open').length,
     in_progress: tickets.filter(t => t.status === 'in_progress').length,
     critical: tickets.filter(t => t.priority === 'critical').length,
+    sla_breached: tickets.filter(t => t.status !== 'resolved' && hoursOpen(t.created_at) > 72).length,
   }
 
   return (
@@ -76,7 +100,7 @@ export default function OfficerDashboard() {
           {[
             ['Total', stats.total, 'var(--navy)'],
             ['Open', stats.open, 'var(--saffron)'],
-            ['In Progress', stats.in_progress, '#9E5A00'],
+            ['SLA Breached', stats.sla_breached, '#dc2626'],
             ['Critical', stats.critical, 'var(--danger)'],
           ].map(([lbl, val, color]) => (
             <div key={lbl} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px 18px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
@@ -114,7 +138,7 @@ export default function OfficerDashboard() {
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.84rem' }}>
               <thead>
                 <tr style={{ background: 'var(--bg)' }}>
-                  {['Tracking ID', 'Title', 'Category', 'Priority', 'Status', 'Actions'].map(h => (
+                  {['Tracking ID', 'Title', 'Category', 'Priority', 'SLA', 'Status', 'Actions'].map(h => (
                     <th key={h} style={{ padding: '11px 14px', textAlign: 'left', borderBottom: '2px solid var(--border)', fontSize: '0.65rem', letterSpacing: '1.2px', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 700 }}>{h}</th>
                   ))}
                 </tr>
@@ -123,12 +147,14 @@ export default function OfficerDashboard() {
                 {tickets.map(t => {
                   const sm = STATUS_META[t.status] || { label: t.status, color: '#555', bg: '#eee' }
                   const pm = PRIORITY_META[t.priority] || { label: t.priority, color: '#555' }
+                  const slaBreached = t.status !== 'resolved' && hoursOpen(t.created_at) > 72
                   return (
-                    <tr key={t.id} style={{ borderBottom: '1px solid #F0F4FA' }}>
+                    <tr key={t.id} style={{ borderBottom: '1px solid #F0F4FA', background: slaBreached ? '#FFF5F5' : 'transparent' }}>
                       <td style={{ padding: '12px 14px' }}><code style={{ fontSize: '0.75rem', background: 'var(--bg)', padding: '2px 7px', borderRadius: '4px' }}>{t.tracking_id}</code></td>
                       <td style={{ padding: '12px 14px', maxWidth: '200px' }}><div style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</div></td>
                       <td style={{ padding: '12px 14px', color: 'var(--muted)' }}>{t.ai_category || '-'}</td>
                       <td style={{ padding: '12px 14px' }}><span style={{ fontWeight: 700, fontSize: '0.8rem', color: pm.color }}>{pm.label}</span></td>
+                      <td style={{ padding: '12px 14px' }}><SLABadge createdAt={t.created_at} status={t.status} /></td>
                       <td style={{ padding: '12px 14px' }}><span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '0.7rem', fontWeight: 700, background: sm.bg, color: sm.color }}>{sm.label}</span></td>
                       <td style={{ padding: '12px 14px' }}>
                         {t.status === 'open' && <button onClick={() => updateStatus(t.id, 'assigned')} style={{ marginRight: '6px', padding: '4px 10px', background: 'var(--navy-light)', border: '1px solid #C5D5F0', borderRadius: '5px', color: 'var(--navy)', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600 }}>Start</button>}

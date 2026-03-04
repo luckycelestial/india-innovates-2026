@@ -1,5 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
-from typing import Any
+from fastapi import APIRouter, Depends, HTTPException, Query
+from typing import Any, Optional
 from app.db.database import get_supabase
 from app.utils.jwt import get_current_user
 
@@ -25,6 +25,24 @@ def officer_dashboard(
         "in_progress": len(active_g.data),
         "resolved":    len(closed_g.data),
     }
+
+
+@router.get("/tickets")
+def list_tickets(
+    status:   Optional[str] = Query(None),
+    priority: Optional[str] = Query(None),
+    skip:     int = 0,
+    limit:    int = 50,
+    current:  dict = Depends(require_officer),
+    sb:       Any  = Depends(get_supabase),
+):
+    q = sb.table("grievances").select("*").order("created_at", desc=True)
+    if status:
+        q = q.eq("status", status)
+    if priority:
+        q = q.eq("priority", priority)
+    result = q.range(skip, skip + limit - 1).execute()
+    return result.data
 
 
 @router.post("/grievances/{grievance_id}/assign")
