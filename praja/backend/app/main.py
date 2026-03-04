@@ -43,3 +43,16 @@ def root():
 @app.get("/health")
 def health():
     return {"status": "healthy"}
+
+@app.get("/debug-env")
+def debug_env():
+    import os
+    svc = settings.SUPABASE_SERVICE_KEY
+    env_svc = os.environ.get("SUPABASE_SERVICE_KEY", "NOT_IN_OS_ENV")
+    return {
+        "settings_key_prefix": svc[:20] if svc else "EMPTY",
+        "settings_key_suffix": svc[-10:] if svc else "EMPTY",
+        "os_env_key_prefix": env_svc[:20],
+        "os_env_key_suffix": env_svc[-10:],
+        "supabase_url": settings.SUPABASE_URL,
+    }
