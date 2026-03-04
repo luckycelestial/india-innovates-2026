@@ -1,6 +1,6 @@
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends
-from supabase._sync.client import SyncClient as Client
+from typing import Any
 from app.db.database import get_supabase
 from app.utils.jwt import get_current_user
 
@@ -10,7 +10,7 @@ router = APIRouter()
 @router.get("/summary")
 def sentinel_summary(
     current: dict = Depends(get_current_user),
-    sb: Client = Depends(get_supabase),
+    sb: Any = Depends(get_supabase),
 ):
     scores = sb.table("ward_sentiment_scores").select("*").order("score", desc=True).limit(10).execute()
     grievances = sb.table("grievances").select("category").eq("status", "open").execute()
@@ -27,7 +27,7 @@ def sentinel_summary(
 
 @router.get("/wards")
 def ward_scores(
-    sb: Client = Depends(get_supabase),
+    sb: Any = Depends(get_supabase),
     current: dict = Depends(get_current_user),
 ):
     result = sb.table("ward_sentiment_scores").select("*, wards(name, constituency)").execute()
@@ -36,7 +36,7 @@ def ward_scores(
 
 @router.get("/heatmap")
 def heatmap_data(
-    sb: Client = Depends(get_supabase),
+    sb: Any = Depends(get_supabase),
     current: dict = Depends(get_current_user),
 ):
     result = sb.table("grievances").select("location, status, category, created_at").execute()
@@ -45,7 +45,7 @@ def heatmap_data(
 
 @router.get("/alerts")
 def get_alerts(
-    sb: Client = Depends(get_supabase),
+    sb: Any = Depends(get_supabase),
     current: dict = Depends(get_current_user),
 ):
     now = datetime.now(timezone.utc)

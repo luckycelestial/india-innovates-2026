@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException
-from supabase._sync.client import SyncClient as Client
+from typing import Any
 from app.db.database import get_supabase
 from app.utils.jwt import get_current_user
 
@@ -15,7 +15,7 @@ def require_officer(current: dict = Depends(get_current_user)):
 @router.get("/dashboard")
 def officer_dashboard(
     current: dict = Depends(require_officer),
-    sb: Client = Depends(get_supabase),
+    sb: Any = Depends(get_supabase),
 ):
     open_g   = sb.table("grievances").select("id").eq("status", "open").execute()
     active_g = sb.table("grievances").select("id").eq("status", "in_progress").execute()
@@ -32,7 +32,7 @@ def assign_grievance(
     grievance_id: str,
     officer_id: str,
     current: dict = Depends(require_officer),
-    sb: Client = Depends(get_supabase),
+    sb: Any = Depends(get_supabase),
 ):
     sb.table("grievances").update({
         "assigned_officer_id": officer_id,
@@ -52,7 +52,7 @@ def resolve_grievance(
     grievance_id: str,
     resolution_notes: str = "",
     current: dict = Depends(require_officer),
-    sb: Client = Depends(get_supabase),
+    sb: Any = Depends(get_supabase),
 ):
     sb.table("grievances").update({
         "status": "resolved",
@@ -72,7 +72,7 @@ def escalate_grievance(
     grievance_id: str,
     reason: str = "",
     current: dict = Depends(require_officer),
-    sb: Client = Depends(get_supabase),
+    sb: Any = Depends(get_supabase),
 ):
     sb.table("grievances").update({"status": "escalated", "priority": "high"}).eq("id", grievance_id).execute()
     sb.table("ticket_logs").insert({

@@ -4,9 +4,12 @@ import secrets
 from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from typing import Optional
-from supabase._sync.client import SyncClient as Client
-from deep_translator import GoogleTranslator
+from typing import Optional, Any
+try:
+    from deep_translator import GoogleTranslator
+    _translate = lambda text: GoogleTranslator(source='auto', target='en').translate(text[:500])
+except ImportError:
+    _translate = lambda text: text
 from groq import Groq
 from app.config import settings
 from app.db.database import get_supabase
@@ -64,7 +67,7 @@ class GrievanceCreate(BaseModel):
 def create_grievance(
     body: GrievanceCreate,
     current: dict = Depends(get_current_user),
-    sb: Client = Depends(get_supabase),
+    sb: Any = Depends(get_supabase),
 ):
     cls = _classify(body.title, body.description)
     row = sb.table("grievances").insert({
@@ -88,7 +91,7 @@ def list_grievances(
     limit: int = 20,
     status: Optional[str] = None,
     current: dict = Depends(get_current_user),
-    sb: Client = Depends(get_supabase),
+    sb: Any = Depends(get_supabase),
 ):
     q = sb.table("grievances").select("*").order("created_at", desc=True)
     if current["role"] == "citizen":
@@ -103,7 +106,7 @@ def list_grievances(
 def get_grievance(
     grievance_id: str,
     current: dict = Depends(get_current_user),
-    sb: Client = Depends(get_supabase),
+    sb: Any = Depends(get_supabase),
 ):
     row = sb.table("grievances").select("*").eq("id", grievance_id).execute()
     if not row.data:
@@ -117,7 +120,7 @@ def update_status(
     status: str,
     notes: str = "",
     current: dict = Depends(get_current_user),
-    sb: Client = Depends(get_supabase),
+    sb: Any = Depends(get_supabase),
 ):
     if current["role"] == "citizen":
         raise HTTPException(status_code=403, detail="Forbidden")

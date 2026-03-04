@@ -2,9 +2,8 @@ import re
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from typing import Optional
+from typing import Optional, Any
 from groq import AsyncGroq
-from supabase._sync.client import SyncClient as Client
 
 from app.config import settings
 from app.db.database import get_supabase
@@ -52,7 +51,7 @@ def _count_categories(rows: list) -> list:
 @router.post("/morning-brief")
 async def morning_brief(
     data: MorningBriefRequest = None,
-    sb: Client = Depends(get_supabase),
+    sb: Any = Depends(get_supabase),
     current: dict = Depends(get_current_user),
 ):
     if data is None:

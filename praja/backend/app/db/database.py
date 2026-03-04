@@ -1,11 +1,11 @@
 from supabase import create_client
-from supabase._sync.client import SyncClient as Client
+from typing import Any
 from app.config import settings
 
-_client: Client | None = None
+_client: Any = None
 
 
-def get_supabase() -> Client:
+def get_supabase() -> Any:
     global _client
     if _client is None:
         _client = create_client(settings.SUPABASE_URL, settings.SUPABASE_SERVICE_KEY)

@@ -1,7 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, EmailStr
-from typing import Optional
-from supabase._sync.client import SyncClient as Client
+from typing import Optional, Any
 from app.db.database import get_supabase
 from app.utils.jwt import create_access_token, get_password_hash, verify_password, get_current_user
 
@@ -29,7 +28,7 @@ class Token(BaseModel):
 
 
 @router.post("/register", response_model=Token, status_code=201)
-def register(body: UserRegister, sb: Client = Depends(get_supabase)):
+def register(body: UserRegister, sb: Any = Depends(get_supabase)):
     existing = sb.table("users").select("id").eq("email", body.email).execute()
     if existing.data:
         raise HTTPException(status_code=400, detail="Email already registered")
@@ -56,7 +55,7 @@ def register(body: UserRegister, sb: Client = Depends(get_supabase)):
 
 
 @router.post("/login", response_model=Token)
-def login(body: UserLogin, sb: Client = Depends(get_supabase)):
+def login(body: UserLogin, sb: Any = Depends(get_supabase)):
     rows = sb.table("users").select("*").eq("email", body.email).execute()
     if not rows.data:
         raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -69,7 +68,7 @@ def login(body: UserLogin, sb: Client = Depends(get_supabase)):
 
 
 @router.get("/me")
-def me(current: dict = Depends(get_current_user), sb: Client = Depends(get_supabase)):
+def me(current: dict = Depends(get_current_user), sb: Any = Depends(get_supabase)):
     rows = sb.table("users").select("*").eq("id", current["sub"]).execute()
     if not rows.data:
         raise HTTPException(status_code=404, detail="User not found")
