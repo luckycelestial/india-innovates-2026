@@ -3,9 +3,9 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
 const ROLES = [
-  { id: 'citizen', emoji: 'ðŸ§‘â€ðŸ’¼', label: 'Citizen', hindi: 'à¤¨à¤¾à¤—à¤°à¤¿à¤•' },
-  { id: 'officer', emoji: 'ðŸ‘®', label: 'Officer', hindi: 'à¤…à¤§à¤¿à¤•à¤¾à¤°à¥€' },
-  { id: 'leader', emoji: 'ðŸ›ï¸', label: 'MLA / Leader', hindi: 'à¤¨à¥‡à¤¤à¤¾' },
+  { id: 'citizen', label: 'Citizen',    sub: 'Submit & track complaints' },
+  { id: 'officer', label: 'Officer',    sub: 'Manage and resolve tickets' },
+  { id: 'leader',  label: 'MLA / Leader', sub: 'Constituency dashboard' },
 ]
 
 export default function Login() {
@@ -28,133 +28,130 @@ export default function Login() {
       if (mode === 'login') {
         userData = await login(email, password)
       } else {
-        userData = await register({ full_name: name, email, password, role })
+        userData = await register({ name, email, password, role })
       }
-      const paths = { citizen: '/citizen', officer: '/officer', leader: '/leader' }
-      navigate(paths[userData.role] || '/login')
+      const r = userData?.role || role
+      if (r === 'officer') navigate('/officer')
+      else if (r === 'leader') navigate('/leader')
+      else navigate('/citizen')
     } catch (err) {
-      setError(err.response?.data?.detail || 'Something went wrong. Please try again.')
+      setError(err.response?.data?.detail || err.message || 'Something went wrong')
     } finally {
       setLoading(false)
     }
   }
 
+  const inp = {
+    width: '100%', padding: '11px 14px',
+    border: '1.5px solid var(--border)', borderRadius: '8px',
+    fontSize: '0.92rem', background: '#FAFBFF', color: 'var(--text)', outline: 'none',
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
-      {/* India tricolor header strip */}
-      <div style={{ height: '6px', background: 'linear-gradient(to right, var(--saffron) 33.3%, white 33.3%, white 66.6%, var(--green) 66.6%)' }} />
+      {/* Tricolor strip */}
+      <div style={{ height: '4px', background: 'linear-gradient(to right, var(--saffron) 33.3%, white 33.3%, white 66.6%, var(--green) 66.6%)' }} />
 
-      {/* Top bar */}
-      <div style={{ background: 'var(--navy)', padding: '14px 24px', display: 'flex', alignItems: 'center', gap: '12px' }}>
-        <div style={{ width: '36px', height: '36px', background: 'var(--saffron)', borderRadius: '8px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#fff', fontSize: '1rem' }}>P</div>
+      {/* Top nav bar */}
+      <div style={{ background: 'var(--navy)', padding: '12px 28px', display: 'flex', alignItems: 'center', gap: '10px' }}>
+        <div style={{ width: '32px', height: '32px', background: 'var(--saffron)', borderRadius: '7px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#fff', fontSize: '0.9rem' }}>P</div>
         <div>
-          <div style={{ color: 'white', fontWeight: 800, fontSize: '1.1rem', letterSpacing: '1px' }}>PRAJA</div>
-          <div style={{ color: 'rgba(255,255,255,0.55)', fontSize: '0.65rem', letterSpacing: '2px' }}>CITIZEN GRIEVANCE PLATFORM</div>
+          <div style={{ color: 'white', fontWeight: 800, fontSize: '0.95rem', letterSpacing: '1px' }}>PRAJA</div>
+          <div style={{ color: 'rgba(255,255,255,0.4)', fontSize: '0.6rem', letterSpacing: '2px', textTransform: 'uppercase' }}>Citizen Grievance Platform</div>
         </div>
       </div>
 
-      {/* Main content */}
-      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '24px 16px' }}>
-        <div style={{ width: '100%', maxWidth: '420px' }}>
-          {/* Welcome card */}
-          <div style={{ background: 'var(--card)', borderRadius: '16px', boxShadow: '0 4px 24px rgba(0,0,0,0.08)', overflow: 'hidden' }}>
-            {/* Card header */}
-            <div style={{ background: 'var(--saffron-light)', padding: '24px 28px 20px', borderBottom: '1px solid var(--saffron-mid)' }}>
-              <div style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--saffron-dark)' }}>
-                {mode === 'login' ? 'ðŸ™ Welcome back' : 'ðŸ“‹ Create account'}
-              </div>
-              <div style={{ fontSize: '0.82rem', color: 'var(--muted)', marginTop: '4px', fontFamily: "'Noto Sans Devanagari', sans-serif" }}>
-                {mode === 'login' ? 'à¤…à¤ªà¤¨à¥‡ à¤–à¤¾à¤¤à¥‡ à¤®à¥‡à¤‚ à¤²à¥‰à¤— à¤‡à¤¨ à¤•à¤°à¥‡à¤‚' : 'à¤¨à¤¯à¤¾ à¤–à¤¾à¤¤à¤¾ à¤¬à¤¨à¤¾à¤à¤‚'}
+      {/* Form */}
+      <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 16px' }}>
+        <div style={{ background: 'var(--card)', borderRadius: '16px', padding: '0', width: '100%', maxWidth: '420px', boxShadow: '0 8px 32px rgba(0,53,128,0.10)', overflow: 'hidden' }}>
+
+          {/* Card header */}
+          <div style={{ background: 'var(--saffron-light)', borderBottom: '1px solid var(--saffron-mid)', padding: '22px 28px' }}>
+            <div style={{ fontSize: '1.3rem', fontWeight: 900, color: 'var(--saffron-dark)' }}>
+              {mode === 'login' ? 'Welcome back' : 'Create account'}
+            </div>
+            <div style={{ color: 'var(--muted)', fontSize: '0.82rem', marginTop: '3px' }}>
+              {mode === 'login' ? 'Sign in to your PRAJA account' : 'Join PRAJA — your voice, your city'}
+            </div>
+          </div>
+
+          <div style={{ padding: '24px 28px' }}>
+            {/* Mode toggle */}
+            <div style={{ display: 'flex', background: 'var(--bg)', borderRadius: '8px', padding: '3px', marginBottom: '20px' }}>
+              {['login', 'register'].map(m => (
+                <button key={m} onClick={() => { setMode(m); setError('') }} style={{
+                  flex: 1, padding: '8px', border: 'none', borderRadius: '6px', cursor: 'pointer',
+                  background: mode === m ? 'var(--card)' : 'transparent',
+                  fontWeight: mode === m ? 700 : 400,
+                  color: mode === m ? 'var(--navy)' : 'var(--muted)',
+                  boxShadow: mode === m ? '0 1px 4px rgba(0,0,0,0.1)' : 'none',
+                  fontSize: '0.88rem',
+                }}>
+                  {m === 'login' ? 'Sign In' : 'Register'}
+                </button>
+              ))}
+            </div>
+
+            {/* Role selector */}
+            <div style={{ marginBottom: '18px' }}>
+              <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--muted)', marginBottom: '8px' }}>I am a...</div>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '8px' }}>
+                {ROLES.map(r => (
+                  <div key={r.id} onClick={() => setRole(r.id)} style={{
+                    padding: '10px 6px', textAlign: 'center', borderRadius: '8px', cursor: 'pointer',
+                    border: `2px solid ${role === r.id ? 'var(--navy)' : 'var(--border)'}`,
+                    background: role === r.id ? 'var(--navy-light)' : 'var(--bg)',
+                  }}>
+                    <div style={{ fontWeight: 700, fontSize: '0.82rem', color: role === r.id ? 'var(--navy)' : 'var(--text)' }}>{r.label}</div>
+                    <div style={{ fontSize: '0.62rem', color: 'var(--muted)', marginTop: '2px' }}>{r.sub}</div>
+                  </div>
+                ))}
               </div>
             </div>
 
-            <div style={{ padding: '24px 28px' }}>
-              {/* Role selector (register only) */}
+            <form onSubmit={handleSubmit}>
               {mode === 'register' && (
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{ fontSize: '0.75rem', fontWeight: 700, color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '1px', display: 'block', marginBottom: '10px' }}>
-                    I am a / à¤®à¥ˆà¤‚ à¤¹à¥‚à¤
-                  </label>
-                  <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '8px' }}>
-                    {ROLES.map(r => (
-                      <button key={r.id} type="button" onClick={() => setRole(r.id)} style={{
-                        padding: '12px 6px', borderRadius: '10px', border: `2px solid ${role === r.id ? 'var(--saffron)' : 'var(--border)'}`,
-                        background: role === r.id ? 'var(--saffron-light)' : 'var(--bg)', cursor: 'pointer', textAlign: 'center', transition: 'all 0.15s'
-                      }}>
-                        <div style={{ fontSize: '1.4rem', marginBottom: '4px' }}>{r.emoji}</div>
-                        <div style={{ fontSize: '0.72rem', fontWeight: 700, color: role === r.id ? 'var(--saffron-dark)' : 'var(--text)' }}>{r.label}</div>
-                        <div style={{ fontSize: '0.62rem', color: 'var(--muted)', fontFamily: "'Noto Sans Devanagari', sans-serif" }}>{r.hindi}</div>
-                      </button>
-                    ))}
-                  </div>
+                <div style={{ marginBottom: '14px' }}>
+                  <label style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--muted)', display: 'block', marginBottom: '5px' }}>Full Name</label>
+                  <input style={inp} placeholder="Enter your full name" value={name} onChange={e => setName(e.target.value)} required
+                    onFocus={e => e.target.style.borderColor = 'var(--navy)'}
+                    onBlur={e => e.target.style.borderColor = 'var(--border)'} />
                 </div>
               )}
-
-              <form onSubmit={handleSubmit}>
-                {mode === 'register' && (
-                  <div style={{ marginBottom: '14px' }}>
-                    <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--light)', marginBottom: '6px' }}>Full Name / à¤ªà¥‚à¤°à¤¾ à¤¨à¤¾à¤®</label>
-                    <input
-                      style={{ width: '100%', padding: '11px 14px', border: '1.5px solid var(--border)', borderRadius: '8px', fontSize: '0.95rem', background: 'var(--bg)', color: 'var(--text)', outline: 'none', transition: 'border 0.15s' }}
-                      value={name} onChange={e => setName(e.target.value)}
-                      placeholder="e.g. Rajesh Kumar" required
-                      onFocus={e => e.target.style.borderColor = 'var(--saffron)'}
-                      onBlur={e => e.target.style.borderColor = 'var(--border)'}
-                    />
-                  </div>
-                )}
-
-                <div style={{ marginBottom: '14px' }}>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--light)', marginBottom: '6px' }}>Email / à¤ˆà¤®à¥‡à¤²</label>
-                  <input
-                    style={{ width: '100%', padding: '11px 14px', border: '1.5px solid var(--border)', borderRadius: '8px', fontSize: '0.95rem', background: 'var(--bg)', color: 'var(--text)', outline: 'none' }}
-                    type="email" value={email} onChange={e => setEmail(e.target.value)}
-                    placeholder="you@example.com" required
-                    onFocus={e => e.target.style.borderColor = 'var(--saffron)'}
-                    onBlur={e => e.target.style.borderColor = 'var(--border)'}
-                  />
-                </div>
-
-                <div style={{ marginBottom: '20px' }}>
-                  <label style={{ display: 'block', fontSize: '0.78rem', fontWeight: 600, color: 'var(--light)', marginBottom: '6px' }}>Password / à¤ªà¤¾à¤¸à¤µà¤°à¥à¤¡</label>
-                  <input
-                    style={{ width: '100%', padding: '11px 14px', border: '1.5px solid var(--border)', borderRadius: '8px', fontSize: '0.95rem', background: 'var(--bg)', color: 'var(--text)', outline: 'none' }}
-                    type="password" value={password} onChange={e => setPassword(e.target.value)}
-                    placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢" required
-                    onFocus={e => e.target.style.borderColor = 'var(--saffron)'}
-                    onBlur={e => e.target.style.borderColor = 'var(--border)'}
-                  />
-                </div>
-
-                {error && (
-                  <div style={{ background: 'var(--danger-bg)', border: '1px solid #F5C6CB', borderRadius: '8px', padding: '10px 14px', color: 'var(--danger)', fontSize: '0.85rem', marginBottom: '14px' }}>
-                    âš ï¸ {error}
-                  </div>
-                )}
-
-                <button type="submit" disabled={loading} style={{
-                  width: '100%', padding: '13px', background: loading ? '#ccc' : 'var(--saffron)', border: 'none',
-                  borderRadius: '10px', color: '#fff', fontWeight: 800, fontSize: '1rem', cursor: loading ? 'not-allowed' : 'pointer',
-                  letterSpacing: '0.3px', transition: 'background 0.15s'
-                }}>
-                  {loading ? 'Please wait...' : mode === 'login' ? 'ðŸ”“ Sign In' : 'âœ… Create Account'}
-                </button>
-              </form>
-
-              <div style={{ textAlign: 'center', marginTop: '18px', fontSize: '0.85rem', color: 'var(--muted)' }}>
-                {mode === 'login'
-                  ? <>New to PRAJA? <span style={{ color: 'var(--navy)', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setMode('register')}>Create account</span></>
-                  : <>Already registered? <span style={{ color: 'var(--navy)', fontWeight: 700, cursor: 'pointer', textDecoration: 'underline' }} onClick={() => setMode('login')}>Sign in</span></>
-                }
+              <div style={{ marginBottom: '14px' }}>
+                <label style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--muted)', display: 'block', marginBottom: '5px' }}>Email</label>
+                <input style={inp} type="email" placeholder="you@example.com" value={email} onChange={e => setEmail(e.target.value)} required
+                  onFocus={e => e.target.style.borderColor = 'var(--navy)'}
+                  onBlur={e => e.target.style.borderColor = 'var(--border)'} />
               </div>
+              <div style={{ marginBottom: '20px' }}>
+                <label style={{ fontSize: '0.72rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.8px', color: 'var(--muted)', display: 'block', marginBottom: '5px' }}>Password</label>
+                <input style={inp} type="password" placeholder="••••••••" value={password} onChange={e => setPassword(e.target.value)} required
+                  onFocus={e => e.target.style.borderColor = 'var(--navy)'}
+                  onBlur={e => e.target.style.borderColor = 'var(--border)'} />
+              </div>
+              {error && <div style={{ background: '#FDF3F3', border: '1px solid #F5C6CB', borderRadius: '7px', padding: '10px 13px', color: 'var(--danger)', fontSize: '0.83rem', marginBottom: '14px' }}>{error}</div>}
+              <button type="submit" disabled={loading} style={{
+                width: '100%', padding: '13px', background: loading ? '#ccc' : 'var(--saffron)',
+                border: 'none', borderRadius: '9px', color: '#fff', fontWeight: 800, fontSize: '1rem', cursor: loading ? 'not-allowed' : 'pointer',
+              }}>
+                {loading ? 'Please wait...' : mode === 'login' ? 'Sign In' : 'Create Account'}
+              </button>
+            </form>
+
+            <div style={{ textAlign: 'center', marginTop: '16px', fontSize: '0.82rem', color: 'var(--muted)' }}>
+              {mode === 'login' ? "New to PRAJA? " : "Already have an account? "}
+              <span onClick={() => { setMode(mode === 'login' ? 'register' : 'login'); setError('') }}
+                style={{ color: 'var(--saffron)', cursor: 'pointer', fontWeight: 700 }}>
+                {mode === 'login' ? 'Create account' : 'Sign in'}
+              </span>
             </div>
           </div>
-
-          {/* Help text */}
-          <div style={{ textAlign: 'center', marginTop: '20px', fontSize: '0.78rem', color: 'var(--muted)' }}>
-            ðŸ”’ Your data is secure &nbsp;|&nbsp; WhatsApp: +1 415 523 8886 (sandbox)
-          </div>
         </div>
+      </div>
+
+      <div style={{ textAlign: 'center', padding: '12px', color: 'var(--muted)', fontSize: '0.75rem' }}>
+        Your data is secure &nbsp;|&nbsp; WhatsApp: +1 415 523 8886 (sandbox)
       </div>
     </div>
   )
