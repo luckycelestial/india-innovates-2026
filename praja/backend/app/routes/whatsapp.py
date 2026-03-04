@@ -1,4 +1,4 @@
-"""
+﻿"""
 WhatsApp Bot via Twilio Sandbox
 """
 import re
@@ -49,7 +49,7 @@ Complaint: {text[:500]}"""
             max_tokens=150,
             temperature=0.1,
         )
-        raw = response.choices[0].message.content.strip()
+        raw = (response.choices[0].message.content or "").strip()
         raw = re.sub(r"^```json\s*|^```\s*|```$", "", raw, flags=re.MULTILINE).strip()
         data = json.loads(raw)
         if data.get("category") not in CATEGORIES:
