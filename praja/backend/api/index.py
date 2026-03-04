@@ -1,11 +1,32 @@
-from fastapi import FastAPI
+import sys
+import os
+import traceback
 
-app = FastAPI()
+# Ensure project root is in sys.path for imports
+sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-@app.get("/health")
-async def health():
-    return {"status": "healthy", "message": "PRAJA minimal test"}
+try:
+    from app.main import app
+except BaseException as e:
+    # Catch EVERYTHING so we can see the error
+    from fastapi import FastAPI
+    from fastapi.responses import JSONResponse
 
-@app.get("/")
-async def root():
-    return {"status": "ok"}
+    app = FastAPI()
+    _error = traceback.format_exc()
+    _etype = type(e).__name__
+
+    @app.get("/health")
+    @app.get("/")
+    async def error_health():
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e), "type": _etype, "traceback": _error},
+        )
+
+    @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
+    async def error_catch_all(path: str = ""):
+        return JSONResponse(
+            status_code=500,
+            content={"error": str(e), "type": _etype, "traceback": _error, "path": path},
+        )
