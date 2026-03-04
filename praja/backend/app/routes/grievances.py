@@ -19,9 +19,19 @@ CATEGORIES = ["Water Supply", "Roads", "Electricity", "Sanitation",
 
 
 def _classify(title: str, desc: str) -> dict:
-    prompt = f"""Classify this Indian citizen complaint. Respond with ONLY valid JSON:
+    prompt = f"""You are a classifier for Indian citizen grievances. Inputs may be in English, Tamil, Telugu, Hindi, Marathi, or Tanglish (Indian language written in English letters). Understand the ACTUAL meaning before classifying.
+
+CRITICAL RULES:
+- Any mention of suicide, self-harm, or killing oneself → priority=critical, category=Health
+- Any death threat or threat to a public figure → priority=critical, category=General
+- Any sexual assault or abduction → priority=critical, category=General
+- Otherwise: water/drainage issues=Water Supply, road/pothole=Roads, power cut=Electricity, garbage/sewage=Sanitation, hospital/disease=Health, school=Education
+
+Respond with ONLY valid JSON, no explanation:
 {{"category":"<Water Supply|Roads|Electricity|Sanitation|Drainage|Parks|Health|Education|General>","priority":"<low|medium|high|critical>","sentiment":"<negative|neutral|positive>"}}
-Complaint: {title}. {desc[:300]}"""
+
+Complaint title: {title}
+Complaint description: {desc[:400]}"""
     try:
         r = _groq.chat.completions.create(
             model="llama-3.3-70b-versatile",

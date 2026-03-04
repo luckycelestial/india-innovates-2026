@@ -32,14 +32,22 @@ HELP_MSG = (
 
 
 def classify_with_groq(text: str) -> dict:
-    prompt = f"""You are a smart classifier for Indian citizen complaints.
-Classify the following complaint and respond with ONLY valid JSON (no markdown):
+    prompt = f"""You are a classifier for Indian citizen grievances sent via WhatsApp. Inputs may be in English, Tamil, Telugu, Hindi, Marathi, or Tanglish (Indian language written in English letters like "thanni problem" = water problem, "road la kuzhi" = pothole on road). Translate and understand the ACTUAL meaning first, then classify.
 
+CRITICAL RULES:
+- Any mention of suicide, self-harm, or killing oneself → priority=critical, category=Health
+- Any death threat or threat to a public figure → priority=critical, category=General
+- Sexual assault, abduction, or violence → priority=critical, category=General
+- Otherwise: water/thanni=Water Supply, road/pothole/kuzhi=Roads, current/power=Electricity, garbage/sewage/kuppai=Sanitation, hospital/health=Health, school=Education
+
+Generate a concise English title that ACCURATELY reflects the actual complaint meaning.
+
+Respond with ONLY valid JSON (no markdown):
 {{
-  \"category\": \"<one of: Water Supply, Roads, Electricity, Sanitation, Drainage, Parks, Health, Education, General>\",
-  \"priority\": \"<one of: low, medium, high, critical>\",
-  \"title\": \"<short 5-10 word title>\",
-  \"sentiment\": \"<negative|neutral|positive>\"
+  "category": "<Water Supply|Roads|Electricity|Sanitation|Drainage|Parks|Health|Education|General>",
+  "priority": "<low|medium|high|critical>",
+  "title": "<accurate 5-8 word English title reflecting the real complaint>",
+  "sentiment": "<negative|neutral|positive>"
 }}
 
 Complaint: {text[:500]}"""
