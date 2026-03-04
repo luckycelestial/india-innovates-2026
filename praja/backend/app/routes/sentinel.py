@@ -1,6 +1,6 @@
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends
-from supabase import Client
+from supabase._sync.client import SyncClient as Client
 from app.db.database import get_supabase
 from app.utils.jwt import get_current_user
 
