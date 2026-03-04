@@ -1,0 +1,24 @@
+================================
+HOW TO TEST: NayakAI > Speech
+================================
+Paste the text below into the NayakAI text box, select mode "speech", click Generate.
+Expected output: Full 5-minute inauguration speech with salutation and Jai Hind closing.
+API call: POST /api/nayakai/assist  { "text": "...", "mode": "speech" }
+================================
+
+Event: Inauguration of new water treatment plant in Ward 14, Coimbatore North constituency
+Language: English
+Duration: 5 minutes
+Audience: Residents of Ward 14, local media, district collector, municipal commissioner, ward councillors
+
+Key points to cover in the speech:
+- This water treatment plant was promised 3 years ago during election campaign - promise fulfilled
+- The plant will serve 12,000 households in Ward 14 and the adjoining Ward 15
+- Total project cost: Rs. 4.8 crore, completed under budget (original estimate Rs. 5.5 crore)
+- Water supply will increase from 45 minutes per day to 4 hours per day for all residents
+- The plant uses reverse osmosis technology - water quality will meet BIS standards
+- 24 months of fighting bureaucratic delays and funding issues before this moment
+- Special thanks to: the municipal water engineers team, the women's action group from Gandhipuram who kept pressure on the administration, and the state government for releasing funds
+- Next priority: similar plant promised for Ward 18 and Ward 22 in 2026-27 budget
+- Water conservation message: the plant alone is not enough - every family must harvest rainwater
+- Call to action: register complaints about water quality or supply issues on PRAJA app

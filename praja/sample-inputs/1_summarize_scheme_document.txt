@@ -1,0 +1,71 @@
+================================
+HOW TO TEST: NayakAI > Summarize
+================================
+Paste the text below into the NayakAI text box, select mode "summarize", click Generate.
+Expected output: 5 KEY POINTS + 3 RECOMMENDED ACTIONS
+API call: POST /api/nayakai/assist  { "text": "...", "mode": "summarize" }
+================================
+
+GOVERNMENT OF INDIA
+MINISTRY OF JAL SHAKTI
+DEPARTMENT OF DRINKING WATER AND SANITATION
+
+SCHEME DOCUMENT: JAL JEEVAN MISSION (JJM)
+Functional Household Tap Connections (FHTC) for Rural India
+Reference No: JJM/2025-26/GUIDELINES/001
+Date: January 2026
+
+1. INTRODUCTION AND OBJECTIVE
+Jal Jeevan Mission (JJM) was launched on 15th August 2019 by the Hon'ble Prime Minister with the vision of providing safe and adequate drinking water through individual household tap connections by 2024 to all households in rural India. The Mission is based on a community approach to water and includes extensive Information, Education and Communication (IEC) activities.
+
+2. CURRENT PROGRESS (as of December 2025)
+- Total rural households in India: 19.35 crore
+- Households with tap water connections before JJM (2019): 3.23 crore (16.7%)
+- Households provided tap connections under JJM: 12.84 crore
+- Total households now with tap connections: 16.07 crore (83.1%)
+- States achieving 100% coverage: Goa, Telangana, Andaman & Nicobar, Dadra & Nagar Haveli
+- States lagging below 60%: Rajasthan (54%), Uttar Pradesh (51%), Jharkhand (48%)
+
+3. FUND ALLOCATION AND EXPENDITURE
+Total outlay for FY 2025-26: Rs. 70,163 crore
+- Central share: Rs. 45,605 crore
+- State share: Rs. 24,558 crore
+Cumulative expenditure since 2019: Rs. 1,94,012 crore
+Funds utilization rate: 87.4% (target: 95%)
+
+4. KEY CHALLENGES IDENTIFIED
+a) Water Source Sustainability: In 1,247 blocks across 12 states, groundwater levels have declined by more than 50% in the last 5 years. Without source strengthening, tap connections will run dry within 2 years.
+b) Infrastructure Quality: Third-party audit reports from 8 states indicate that 23% of installed pipelines use sub-standard materials below BIS specifications.
+c) Women Participation: Village Water Sanitation Committees (VWSCs) are mandated to have 50% women membership, but only 34% of VWSCs currently meet this requirement.
+d) O&M Funding: Post-construction operation and maintenance is critically underfunded. Average O&M cost is Rs. 150 per household per month, but user contributions collected average only Rs. 32 per month.
+e) Urban-Rural Linkage: 340 gram panchayats adjacent to urban areas are receiving contaminated groundwater due to industrial discharge, requiring urgent remediation.
+
+5. CONVERGENCE WITH OTHER SCHEMES
+JJM is being converged with:
+- MGNREGS for water conservation works
+- SBM (Grameen) Phase II for wastewater management
+- 15th Finance Commission grants for O&M funding
+- PMKSY (Pradhan Mantri Krishi Sinchayee Yojana) for watershed development
+
+6. MONITORING AND EVALUATION
+The Integrated Management Information System (IMIS) tracks all connections in real time. District-level Water Quality Testing Laboratories have been established in 659 districts. Every gram panchayat must conduct water quality testing at least 5 times per year using Field Test Kits (FTKs).
+
+7. RECOMMENDED ACTION ITEMS FOR ELECTED REPRESENTATIVES
+MPs and MLAs are requested to:
+a) Conduct monthly review meetings with district JJM coordinators
+b) Ensure that VWSC elections happen in all gram panchayats in their constituency
+c) Flag water source sustainability issues to the State Water Nodal Department
+d) Mobilize communities for user fee collection to sustain O&M
+e) Monitor implementation through the JJM dashboard at jaljeevanmission.gov.in
+
+8. GRIEVANCE REDRESSAL MECHANISM
+Citizens can register complaints at:
+- Toll-free helpline: 1800-11-4455 (JJM helpdesk)
+- State-level JJM portals
+- CPGRAMS (Centralized Public Grievance Redress and Monitoring System)
+Average ticket resolution time: 18 working days (target: 10 working days)
+
+9. UPCOMING MILESTONES (2026)
+- Achieve 100% functional tap connections: March 2026
+- Complete source sustainability projects in 1,247 critical blocks: June 2026
+- Achieve 50% women participation in all VWSCs: September 2026
