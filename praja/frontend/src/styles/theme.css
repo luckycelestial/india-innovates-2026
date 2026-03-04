@@ -1,0 +1,170 @@
+/* ═══════════════════════════════════════════════════
+   PRAJA Design System — Complete Token Set
+   Official Civic Theme · India Innovates 2026
+   ═══════════════════════════════════════════════════ */
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
+
+:root {
+  /* ── 1. Brand Tokens (India Official Palette Refactored) ── */
+  /* Primary: Saffron (Energetic but tuned for UI) */
+  --color-primary:        #f97316; /* Tailwind Orange-500 */
+  --color-primary-dark:   #ea580c; /* Tailwind Orange-600 */
+  --color-primary-light:  #fdba74; /* Tailwind Orange-300 */
+  --color-primary-glow:   rgba(249, 115, 22, 0.2);
+
+  /* Accent: India Green */
+  --color-accent:         #16a34a; /* Tailwind Green-600 */
+  --color-accent-dark:    #15803d; /* Tailwind Green-700 */
+  --color-accent-light:   #86efac; /* Tailwind Green-300 */
+  
+  /* Secondary: Chakra Navy (Moved to secondary to reduce blue dominance) */
+  --color-secondary:      #1e3a8a; /* Tailwind Blue-900 */
+  --color-secondary-dark: #172554; /* Tailwind Blue-950 */
+  
+  --tricolor-gradient: linear-gradient(90deg, #f97316 0%, #ffffff 50%, #16a34a 100%);   /* True India Green */
+
+  /* ── Status Colors ────────────────────────────── */
+  --color-success:        #138808;   /* Using India Green for positive/success */
+  --color-success-dark:   #0f6d06;
+  --color-success-bg:     rgba(19, 136, 8, 0.08);
+  --color-success-text:   #0f6d06;
+  --color-success-border: rgba(19, 136, 8, 0.25);
+
+  --color-danger:         #DC2626;   /* Standard readable red */
+  --color-danger-dark:    #B91C1C;
+  --color-danger-bg:      rgba(220, 38, 38, 0.08);
+  --color-danger-text:    #B91C1C;
+  --color-danger-border:  rgba(220, 38, 38, 0.25);
+
+  --color-warning:        #D97706;   /* Standard readable orange/gold */
+  --color-warning-dark:   #B45309;
+  --color-warning-bg:     rgba(217, 119, 6, 0.08);
+  --color-warning-text:   #B45309;
+  --color-warning-border: rgba(217, 119, 6, 0.25);
+
+  --color-info:           #0284C7;   /* Standard readable blue */
+  --color-info-bg:        rgba(2, 132, 199, 0.08);
+  --color-info-text:      #0369A1;
+
+  /* ── Neutral Grays (Tailwind Slate) ───────────── */
+  --color-gray-50:  #f8fafc;
+  --color-gray-100: #f1f5f9;
+  --color-gray-200: #e2e8f0;
+  --color-gray-300: #cbd5e1;
+  --color-gray-400: #94a3b8;
+  --color-gray-500: #64748b;
+  --color-gray-600: #475569;
+  --color-gray-700: #334155;
+  --color-gray-800: #1e293b;
+  --color-gray-900: #0f172a;
+
+  /* ── Solid Theme Backgrounds (Light official) ───── */
+  --bg-body:          #F8FAFC;  /* Very light gray/blue tint */
+  --bg-surface:       #FFFFFF;  /* Pure white cards */
+  --bg-surface-2:     #F1F5F9;  /* Slightly darker surface for secondary areas */
+  --bg-surface-hover: #F8FAFC;
+  --bg-surface-sunken:#E2E8F0;  
+  --bg-glass:         rgba(255, 255, 255, 0.95);
+  --bg-glass-light:   rgba(0, 0, 0, 0.02);
+
+  /* ── Borders (Subtle, flat design) ──────────────── */
+  --border-color:       #E2E8F0;
+  --border-color-hover: #CBD5E1;
+  --border-color-focus: var(--color-primary);
+  /* ── Typography ───────────────────────────────── */
+  --font-primary: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-sans:    'Inter', system-ui, -apple-system, sans-serif;
+  --font-serif:   Georgia, 'Times New Roman', serif;
+  --font-mono:    ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+
+  /* ── Spacing (px → rem, 4px base) ────────────── */
+  --spacing-xs:  0.25rem;   /* 4px */
+  --spacing-sm:  0.5rem;    /* 8px */
+  --spacing-md:  0.75rem;   /* 12px */
+  --spacing-lg:  1rem;      /* 16px */
+  --spacing-xl:  1.25rem;   /* 20px */
+  --spacing-2xl: 1.5rem;    /* 24px */
+  --spacing-3xl: 2rem;      /* 32px */
+  --spacing-4xl: 2.5rem;    /* 40px */
+  --spacing-5xl: 3rem;      /* 48px */
+
+  /* Tailwind-style numeric aliases */
+  --spacing-1:  0.25rem;
+  --spacing-2:  0.5rem;
+  --spacing-3:  0.75rem;
+  --spacing-4:  1rem;
+  --spacing-5:  1.25rem;
+  --spacing-6:  1.5rem;
+  --spacing-8:  2rem;
+  --spacing-10: 2.5rem;
+  --spacing-12: 3rem;
+  --spacing-16: 4rem;
+
+  /* ── Border Radius ────────────────────────────── */
+  --radius-xs:   2px;
+  --radius-sm:   4px;
+  --radius-md:   6px;
+  --radius-lg:   8px;
+  --radius-xl:   12px;
+  --radius-2xl:  16px;
+  --radius-full: 9999px;
+
+  /* ── Shadows (Flat, clean design) ─────────────── */
+  --shadow-xs:   0 1px 2px rgba(0,0,0,0.05);
+  --shadow-sm:   0 1px 3px rgba(0,0,0,0.08), 0 1px 2px rgba(0,0,0,0.04);
+  --shadow-md:   0 4px 6px -1px rgba(0,0,0,0.08), 0 2px 4px -1px rgba(0,0,0,0.04);
+  --shadow-lg:   0 10px 15px -3px rgba(0,0,0,0.08), 0 4px 6px -2px rgba(0,0,0,0.04);
+  --shadow-xl:   0 20px 25px -5px rgba(0,0,0,0.08), 0 10px 10px -5px rgba(0,0,0,0.04);
+  --shadow-glow: none;
+  --shadow-glow-lg: none;
+
+  /* Card-specific */
+  --card-shadow: 0 1px 3px rgba(0,0,0,0.05), 0 0 0 1px var(--border-color-card);
+
+  /* ── Transitions ──────────────────────────────── */
+  --transition-base:   200ms ease;
+  --transition-fast:   150ms ease;
+  --transition-normal: 250ms ease;
+  --transition-slow:   400ms ease;
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* ── Global Base ──────────────────────────────────── */
+*, *::before, *::after {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  font-family: var(--font-primary);
+  font-size: 0.9375rem;
+  line-height: 1.6;
+  background-color: var(--bg-body);
+  color: var(--text-primary);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ── Focus Ring ───────────────────────────────────── */
+*:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
+/* ── Scrollbar ────────────────────────────────────── */
+::-webkit-scrollbar        { width: 8px; height: 8px; }
+::-webkit-scrollbar-track  { background: transparent; }
+::-webkit-scrollbar-thumb  { background: var(--color-gray-300); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--color-gray-400); }
+
+/* ── Selection ────────────────────────────────────── */
+::selection {
+  background: var(--color-primary-glow);
+  color: var(--color-primary-dark);
+}
