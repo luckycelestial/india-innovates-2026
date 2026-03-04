@@ -5,6 +5,20 @@ It is the single source of truth for project constraints and context.
 
 ---
 
+## Agent Verification Protocol (MANDATORY)
+
+After EVERY code change that is pushed to GitHub:
+1. Use Chrome DevTools (activate browser tools) to open the live Vercel URL
+2. Check the Console tab for errors
+3. Check the Network tab for failed requests (red rows)
+4. Visually verify the changed UI element looks correct
+5. If anything is broken, FIX IT and push again before reporting success to the user
+6. Only report "Done" / success to the user AFTER the deployed site is verified working in Chrome
+
+**Never report success before verifying in Chrome.**
+
+---
+
 ## Hard Constraints
 
 - **$0 budget — no paid services, ever.** Every dependency, API, and platform must have a free tier that covers the entire hackathon (March 3–28, 2026). Before suggesting any service, confirm it has a free tier that fits.

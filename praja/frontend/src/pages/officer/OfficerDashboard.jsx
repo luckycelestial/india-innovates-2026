@@ -105,47 +105,46 @@ export default function OfficerDashboard() {
   const PRIO_COLORS = { Low: '#6B7A99', Medium: '#9E5A00', High: '#E8590C', Critical: '#C0392B' }
   const STATUS_COLORS = ['#E8590C', '#1A56DB', '#9E5A00', '#1A7340', '#C0392B']
 
+  const NAVY="#080f1e",CARD="#111d35",BORDER="#1e2d4d",MUTED="#64748b",LIGHT="#94a3b8",TEXT="#e2e8f0",SAFFRON="#FF6B00",RED="#ef4444",GREEN="#22c55e",BLUE="#3b82f6",GOLD="#f59e0b"
+
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ height: '4px', background: 'linear-gradient(to right, var(--saffron) 33.3%, white 33.3%, white 66.6%, var(--green) 66.6%)' }} />
-      <div style={{ background: 'var(--navy)', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: '32px', height: '32px', background: 'var(--saffron)', borderRadius: '7px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#fff', fontSize: '0.9rem' }}>P</div>
-          <div>
-            <div style={{ color: 'white', fontWeight: 800, fontSize: '0.95rem' }}>PRAJA</div>
-            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '1px' }}>Officer Portal</div>
-          </div>
+    <div style={{ minHeight: '100vh', background: NAVY, display: 'flex', flexDirection: 'column', fontFamily: "'Segoe UI', system-ui, sans-serif", color: TEXT }}>
+      {/* TOP BAR */}
+      <div style={{ background: '#0d1526', padding: '14px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: `1px solid ${BORDER}`, position: 'sticky', top: 0, zIndex: 100 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <div style={{ fontSize: '1.4rem', fontWeight: 900, color: SAFFRON, letterSpacing: -1 }}>PRAJA</div>
+          <div style={{ fontSize: '0.62rem', color: MUTED, letterSpacing: 2, textTransform: 'uppercase', marginTop: 2 }}>Officer Portal</div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>{user?.full_name || user?.name}</span>
-          <button onClick={logout} style={{ padding: '6px 14px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', color: 'rgba(255,255,255,0.8)', cursor: 'pointer', fontSize: '0.78rem' }}>Sign Out</button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 14 }}>
+          <span style={{ color: LIGHT, fontSize: '0.8rem' }}>{user?.full_name || user?.name}</span>
+          <button onClick={logout} style={{ padding: '6px 14px', background: 'rgba(255,255,255,0.06)', border: `1px solid ${BORDER}`, borderRadius: 6, color: LIGHT, cursor: 'pointer', fontSize: '0.78rem' }}>Sign Out</button>
         </div>
       </div>
 
-      <div style={{ padding: '24px', maxWidth: '1100px', margin: '0 auto', width: '100%' }}>
+      <div style={{ padding: 24, maxWidth: 1100, margin: '0 auto', width: '100%' }}>
         {/* View Toggle */}
-        <div style={{ display: 'flex', gap: '0', marginBottom: '20px', background: 'var(--card)', padding: '5px', borderRadius: '10px', border: '1px solid var(--border)', width: 'fit-content' }}>
+        <div style={{ display: 'flex', gap: 0, marginBottom: 20, background: CARD, padding: 5, borderRadius: 10, border: `1px solid ${BORDER}`, width: 'fit-content' }}>
           {['queue', 'analytics'].map(v => (
             <button key={v} onClick={() => setView(v)} style={{
-              padding: '7px 20px', borderRadius: '7px', border: 'none',
-              background: view === v ? 'var(--navy)' : 'transparent',
-              color: view === v ? 'white' : 'var(--muted)',
-              fontWeight: view === v ? 700 : 400, cursor: 'pointer', fontSize: '0.84rem', textTransform: 'capitalize'
-            }}>{v === 'queue' ? 'Grievance Queue' : 'Analytics'}</button>
+              padding: '7px 20px', borderRadius: 7, border: 'none',
+              background: view === v ? '#1e3a5f' : 'transparent',
+              color: view === v ? 'white' : MUTED,
+              fontWeight: view === v ? 700 : 400, cursor: 'pointer', fontSize: '0.84rem',
+            }}>{v === 'queue' ? '📋 Grievance Queue' : '📊 Analytics'}</button>
           ))}
         </div>
 
         {/* Stats */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '14px', marginBottom: '22px' }}>
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: 14, marginBottom: 22 }}>
           {[
-            ['Total', stats.total, 'var(--navy)'],
-            ['Open', stats.open, 'var(--saffron)'],
-            ['SLA Breached', stats.sla_breached, '#dc2626'],
-            ['Critical', stats.critical, 'var(--danger)'],
+            ['📋 Total', stats.total, SAFFRON],
+            ['🔓 Open', stats.open, BLUE],
+            ['⏰ SLA Breached', stats.sla_breached, RED],
+            ['🚨 Critical', stats.critical, RED],
           ].map(([lbl, val, color]) => (
-            <div key={lbl} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px 18px', boxShadow: '0 1px 4px rgba(0,0,0,0.04)' }}>
+            <div key={lbl} style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 12, padding: '16px 18px', borderTop: `3px solid ${color}` }}>
               <div style={{ fontSize: '1.8rem', fontWeight: 900, color }}>{val}</div>
-              <div style={{ fontSize: '0.72rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.8px', marginTop: '2px' }}>{lbl}</div>
+              <div style={{ fontSize: '0.72rem', color: MUTED, textTransform: 'uppercase', letterSpacing: '0.8px', marginTop: 2 }}>{lbl}</div>
             </div>
           ))}
         </div>
@@ -154,55 +153,53 @@ export default function OfficerDashboard() {
         {view === 'queue' && (
           <>
             {/* Filters */}
-            <div style={{ display: 'flex', gap: '8px', marginBottom: '18px', flexWrap: 'wrap' }}>
+            <div style={{ display: 'flex', gap: 8, marginBottom: 18, flexWrap: 'wrap', alignItems: 'center' }}>
               {['', 'open', 'assigned', 'in_progress', 'resolved', 'escalated'].map(s => (
                 <button key={s} onClick={() => setFilter(f => ({ ...f, status: s }))} style={{
-                  padding: '7px 16px', borderRadius: '20px', border: `1.5px solid ${filter.status === s ? 'var(--navy)' : 'var(--border)'}`,
-                  background: filter.status === s ? 'var(--navy-light)' : 'var(--card)',
-                  color: filter.status === s ? 'var(--navy)' : 'var(--muted)',
+                  padding: '6px 14px', borderRadius: 20, border: `1.5px solid ${filter.status === s ? SAFFRON : BORDER}`,
+                  background: filter.status === s ? `${SAFFRON}22` : CARD,
+                  color: filter.status === s ? SAFFRON : MUTED,
                   fontWeight: filter.status === s ? 700 : 400, cursor: 'pointer', fontSize: '0.82rem',
                 }}>{s === '' ? 'All' : STATUS_META[s]?.label || s}</button>
               ))}
-              <div style={{ marginLeft: 'auto' }}>
-                <select value={filter.priority} onChange={e => setFilter(f => ({ ...f, priority: e.target.value }))} style={{ padding: '7px 12px', border: '1.5px solid var(--border)', borderRadius: '8px', background: 'var(--card)', color: 'var(--text)', fontSize: '0.83rem', cursor: 'pointer' }}>
-                  <option value="">All Priorities</option>
-                  {['low','medium','high','critical'].map(p => <option key={p} value={p}>{PRIORITY_META[p].label}</option>)}
-                </select>
-              </div>
+              <select value={filter.priority} onChange={e => setFilter(f => ({ ...f, priority: e.target.value }))} style={{ marginLeft: 'auto', padding: '6px 12px', border: `1.5px solid ${BORDER}`, borderRadius: 8, background: CARD, color: TEXT, fontSize: '0.83rem', cursor: 'pointer' }}>
+                <option value="">All Priorities</option>
+                {['low','medium','high','critical'].map(p => <option key={p} value={p}>{PRIORITY_META[p].label}</option>)}
+              </select>
             </div>
 
             {/* Table */}
-            <div style={{ background: 'var(--card)', borderRadius: '14px', border: '1px solid var(--border)', overflow: 'hidden', boxShadow: '0 2px 8px rgba(0,0,0,0.05)' }}>
+            <div style={{ background: CARD, borderRadius: 14, border: `1px solid ${BORDER}`, overflow: 'hidden' }}>
               {loading ? (
-                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--muted)' }}>Loading tickets...</div>
+                <div style={{ padding: 40, textAlign: 'center', color: MUTED }}>Loading tickets...</div>
               ) : tickets.length === 0 ? (
-                <div style={{ padding: '40px', textAlign: 'center', color: 'var(--muted)' }}>No tickets match the current filters.</div>
+                <div style={{ padding: 40, textAlign: 'center', color: MUTED }}>No tickets match the current filters.</div>
               ) : (
                 <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.84rem' }}>
                   <thead>
-                    <tr style={{ background: 'var(--bg)' }}>
+                    <tr style={{ background: '#0d1526' }}>
                       {['Tracking ID', 'Title', 'Category', 'Priority', 'SLA', 'Status', 'Actions'].map(h => (
-                        <th key={h} style={{ padding: '11px 14px', textAlign: 'left', borderBottom: '2px solid var(--border)', fontSize: '0.65rem', letterSpacing: '1.2px', textTransform: 'uppercase', color: 'var(--muted)', fontWeight: 700 }}>{h}</th>
+                        <th key={h} style={{ padding: '11px 14px', textAlign: 'left', borderBottom: `2px solid ${BORDER}`, fontSize: '0.65rem', letterSpacing: '1.2px', textTransform: 'uppercase', color: MUTED, fontWeight: 700 }}>{h}</th>
                       ))}
                     </tr>
                   </thead>
                   <tbody>
                     {tickets.map(t => {
-                      const sm = STATUS_META[t.status] || { label: t.status, color: '#555', bg: '#eee' }
-                      const pm = PRIORITY_META[t.priority] || { label: t.priority, color: '#555' }
+                      const sm = STATUS_META[t.status] || { label: t.status, color: LIGHT, bg: CARD }
+                      const pm = PRIORITY_META[t.priority] || { label: t.priority, color: LIGHT }
                       const slaBreached = t.status !== 'resolved' && hoursOpen(t.created_at) > 72
                       return (
-                        <tr key={t.id} style={{ borderBottom: '1px solid #F0F4FA', background: slaBreached ? '#FFF5F5' : 'transparent' }}>
-                          <td style={{ padding: '12px 14px' }}><code style={{ fontSize: '0.75rem', background: 'var(--bg)', padding: '2px 7px', borderRadius: '4px' }}>{t.tracking_id}</code></td>
-                          <td style={{ padding: '12px 14px', maxWidth: '200px' }}><div style={{ fontWeight: 600, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</div></td>
-                          <td style={{ padding: '12px 14px', color: 'var(--muted)' }}>{t.ai_category || '-'}</td>
+                        <tr key={t.id} style={{ borderBottom: `1px solid ${BORDER}44`, background: slaBreached ? `${RED}08` : 'transparent' }}>
+                          <td style={{ padding: '12px 14px' }}><code style={{ fontSize: '0.75rem', background: '#0d1526', padding: '2px 7px', borderRadius: 4, color: SAFFRON }}>{t.tracking_id}</code></td>
+                          <td style={{ padding: '12px 14px', maxWidth: 200 }}><div style={{ fontWeight: 600, color: TEXT, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{t.title}</div></td>
+                          <td style={{ padding: '12px 14px', color: MUTED }}>{t.ai_category || '-'}</td>
                           <td style={{ padding: '12px 14px' }}><span style={{ fontWeight: 700, fontSize: '0.8rem', color: pm.color }}>{pm.label}</span></td>
                           <td style={{ padding: '12px 14px' }}><SLABadge createdAt={t.created_at} status={t.status} /></td>
-                          <td style={{ padding: '12px 14px' }}><span style={{ padding: '3px 10px', borderRadius: '20px', fontSize: '0.7rem', fontWeight: 700, background: sm.bg, color: sm.color }}>{sm.label}</span></td>
+                          <td style={{ padding: '12px 14px' }}><span style={{ padding: '3px 10px', borderRadius: 20, fontSize: '0.7rem', fontWeight: 700, background: sm.bg, color: sm.color }}>{sm.label}</span></td>
                           <td style={{ padding: '12px 14px' }}>
-                            {t.status === 'open' && <button onClick={() => updateStatus(t.id, 'assigned')} style={{ marginRight: '6px', padding: '4px 10px', background: 'var(--navy-light)', border: '1px solid #C5D5F0', borderRadius: '5px', color: 'var(--navy)', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600 }}>Start</button>}
-                            {['assigned','in_progress'].includes(t.status) && <button onClick={() => updateStatus(t.id, 'resolved')} style={{ marginRight: '6px', padding: '4px 10px', background: 'var(--green-light)', border: '1px solid #A3D9B8', borderRadius: '5px', color: 'var(--green)', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600 }}>Resolve</button>}
-                            {!['resolved','escalated'].includes(t.status) && <button onClick={() => updateStatus(t.id, 'escalated')} style={{ padding: '4px 10px', background: '#FDF3F3', border: '1px solid #F5C6CB', borderRadius: '5px', color: 'var(--danger)', cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600 }}>Escalate</button>}
+                            {t.status === 'open' && <button onClick={() => updateStatus(t.id, 'assigned')} style={{ marginRight: 6, padding: '4px 10px', background: `${BLUE}22`, border: `1px solid ${BLUE}44`, borderRadius: 5, color: BLUE, cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600 }}>Start</button>}
+                            {['assigned','in_progress'].includes(t.status) && <button onClick={() => updateStatus(t.id, 'resolved')} style={{ marginRight: 6, padding: '4px 10px', background: `${GREEN}22`, border: `1px solid ${GREEN}44`, borderRadius: 5, color: GREEN, cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600 }}>Resolve</button>}
+                            {!['resolved','escalated'].includes(t.status) && <button onClick={() => updateStatus(t.id, 'escalated')} style={{ padding: '4px 10px', background: `${RED}22`, border: `1px solid ${RED}44`, borderRadius: 5, color: RED, cursor: 'pointer', fontSize: '0.75rem', fontWeight: 600 }}>Escalate</button>}
                           </td>
                         </tr>
                       )
@@ -216,10 +213,10 @@ export default function OfficerDashboard() {
 
         {/* ANALYTICS VIEW */}
         {view === 'analytics' && (
-          <div style={{ display: 'grid', gap: '18px' }}>
+          <div style={{ display: 'grid', gap: 18 }}>
             {/* Category bar chart */}
-            <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '20px' }}>
-              <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '16px' }}>Grievances by Department</div>
+            <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: 20 }}>
+              <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: 16, color: TEXT }}>Grievances by Department</div>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={analytics.catData} margin={{ top: 0, right: 10, left: -10, bottom: 40 }}>
                   <XAxis dataKey="name" tick={{ fontSize: 11 }} angle={-25} textAnchor="end" interval={0} />
@@ -234,10 +231,10 @@ export default function OfficerDashboard() {
               </ResponsiveContainer>
             </div>
 
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '18px' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 18 }}>
               {/* Priority pie */}
-              <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '20px' }}>
-                <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '16px' }}>Priority Distribution</div>
+              <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: 20 }}>
+                <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: 16, color: TEXT }}>Priority Distribution</div>
                 <ResponsiveContainer width="100%" height={200}>
                   <PieChart>
                     <Pie data={analytics.prioData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={70} label={({ name, value }) => value > 0 ? `${name}: ${value}` : ''} labelLine={false}>
@@ -251,8 +248,8 @@ export default function OfficerDashboard() {
               </div>
 
               {/* Status breakdown */}
-              <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '20px' }}>
-                <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: '16px' }}>Status Breakdown</div>
+              <div style={{ background: CARD, border: `1px solid ${BORDER}`, borderRadius: 14, padding: 20 }}>
+                <div style={{ fontWeight: 700, fontSize: '0.9rem', marginBottom: 16, color: TEXT }}>Status Breakdown</div>
                 <ResponsiveContainer width="100%" height={200}>
                   <BarChart data={analytics.statusData} layout="vertical" margin={{ left: 10, right: 20 }}>
                     <XAxis type="number" tick={{ fontSize: 11 }} />

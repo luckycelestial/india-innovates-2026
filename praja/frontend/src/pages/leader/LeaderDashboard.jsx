@@ -3,187 +3,236 @@ import { useAuth } from '../../context/AuthContext'
 import api from '../../services/api'
 import SentinelHeatmap from '../../components/SentinelHeatmap'
 
-const NAV = [
-  { id: 'brief',   label: 'Morning Brief' },
-  { id: 'alerts',  label: 'Alerts' },
-  { id: 'nayakai', label: 'NayakAI' },
-  { id: 'heatmap', label: 'Heatmap' },
+// ─── DESIGN TOKENS ──────────────────────────────────────────────
+const SAFFRON = "#FF6B00"
+const GOLD    = "#f59e0b"
+const GREEN   = "#22c55e"
+const NAVY    = "#080f1e"
+const CARD    = "#111d35"
+const BORDER  = "#1e2d4d"
+const MUTED   = "#64748b"
+const LIGHT   = "#94a3b8"
+const TEXT    = "#e2e8f0"
+const RED     = "#ef4444"
+const BLUE    = "#3b82f6"
+
+const WARD_DATA = [
+  { id:1,  name:"Ward 1 — Connaught Place", score:72, issues:["Road maintenance","Parking"],                 trending:"+5%"  },
+  { id:3,  name:"Ward 3 — Karol Bagh",      score:38, issues:["Garbage collection","Water shortage"],        trending:"-12%" },
+  { id:7,  name:"Ward 7 — Rohini",           score:21, issues:["Water supply","Power cuts","Drainage"],      trending:"-23%" },
+  { id:11, name:"Ward 11 — Dwarka",          score:61, issues:["Traffic lights","Park maintenance"],         trending:"+8%"  },
+  { id:14, name:"Ward 14 — Saket",           score:45, issues:["Street lights","Potholes"],                  trending:"-6%"  },
+  { id:19, name:"Ward 19 — Okhla",           score:18, issues:["Sewage","Flooding","Healthcare access"],     trending:"-31%" },
+  { id:22, name:"Ward 22 — Lajpat Nagar",    score:54, issues:["Road conditions","Noise"],                  trending:"-4%"  },
+  { id:28, name:"Ward 28 — Janakpuri",       score:83, issues:["Minor road issues"],                        trending:"+11%" },
 ]
+
+function scoreColor(s){if(s>=70)return GREEN;if(s>=45)return GOLD;if(s>=25)return SAFFRON;return RED}
+function Tag({children,color=SAFFRON}){return<span style={{display:"inline-block",padding:"2px 10px",borderRadius:20,fontSize:"0.7rem",fontWeight:700,background:`${color}22`,border:`1px solid ${color}55`,color}}>{children}</span>}
+function MiniBar({value,color,label}){return(<div style={{marginBottom:10}}><div style={{display:"flex",justifyContent:"space-between",fontSize:"0.75rem",marginBottom:4}}><span style={{color:TEXT}}>{label}</span><span style={{color:MUTED}}>{value}%</span></div><div style={{height:5,background:"rgba(255,255,255,0.06)",borderRadius:3}}><div style={{width:`${value}%`,height:"100%",borderRadius:3,background:`linear-gradient(90deg,${color},${color}99)`,transition:"width 1s ease"}} /></div></div>)}
+
+function HeatMapGrid({selectedWard,onSelect}){return(<div><div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:16}}>{WARD_DATA.map(w=>(<div key={w.id} onClick={()=>onSelect(w)} style={{background:`${scoreColor(w.score)}22`,border:`2px solid ${selectedWard?.id===w.id?scoreColor(w.score):scoreColor(w.score)+"55"}`,borderRadius:10,padding:"10px 8px",cursor:"pointer",transition:"all 0.2s",transform:selectedWard?.id===w.id?"scale(1.04)":"scale(1)"}}><div style={{fontSize:"0.65rem",color:MUTED,marginBottom:2}}>Ward {w.id}</div><div style={{fontSize:"1.4rem",fontWeight:900,color:scoreColor(w.score)}}>{w.score}</div><div style={{fontSize:"0.62rem",color:scoreColor(w.score),fontWeight:700}}>{w.trending}</div></div>))}</div><div style={{display:"flex",gap:12,flexWrap:"wrap",fontSize:"0.72rem"}}>{[{label:"Satisfied 70+",c:GREEN},{label:"Moderate 45–70",c:GOLD},{label:"Tense 25–45",c:SAFFRON},{label:"Crisis <25",c:RED}].map(l=>(<div key={l.label} style={{display:"flex",alignItems:"center",gap:5}}><div style={{width:10,height:10,borderRadius:2,background:l.c}}/><span style={{color:LIGHT}}>{l.label}</span></div>))}</div></div>)}
+
+function NayakAIPanel(){const[activeTab,setActiveTab]=useState("brief");const[brief,setBrief]=useState(null);const[briefLoading,setBL]=useState(false);const[prompt,setPrompt]=useState("");const[speechTopic,setST]=useState("");const[speechLang,setSL]=useState("English");const[loading,setLoading]=useState(false);const[aiOutput,setAiOutput]=useState("");const tabs=[{id:"brief",label:"☀️ Morning Brief"},{id:"doc",label:"📄 Doc Summarizer"},{id:"speech",label:"✍️ Speech Drafter"}];useEffect(()=>{if(activeTab==="brief"&&!brief)loadBrief()},[activeTab]);async function loadBrief(){setBL(true);try{const{data}=await api.post('/nayakai/morning-brief',{});setBrief(data)}catch(e){console.error(e)}finally{setBL(false)}}async function callBackend(text,mode){setLoading(true);setAiOutput("");try{const{data}=await api.post('/nayakai/assist',{text,mode});setAiOutput(data.result||"No response received.")}catch(e){setAiOutput("⚠️ Connection error. Please try again.")}finally{setLoading(false)}}return(<div><div style={{display:"flex",gap:8,marginBottom:20}}>{tabs.map(t=>(<button key={t.id} onClick={()=>{setActiveTab(t.id);setAiOutput("")}} style={{padding:"7px 14px",borderRadius:8,border:`1px solid ${activeTab===t.id?SAFFRON:BORDER}`,background:activeTab===t.id?`${SAFFRON}22`:"transparent",color:activeTab===t.id?SAFFRON:LIGHT,fontSize:"0.8rem",fontWeight:600,cursor:"pointer"}}>{t.label}</button>))}</div>{activeTab==="brief"&&(<div>{briefLoading?<div style={{textAlign:"center",color:MUTED,padding:40}}>Generating brief...</div>:brief?(<div><div style={{background:`${SAFFRON}11`,border:`1px solid ${SAFFRON}44`,borderRadius:12,padding:18,marginBottom:16}}><div style={{fontSize:"0.65rem",color:SAFFRON,letterSpacing:2,fontWeight:700,marginBottom:4}}>MORNING BRIEF</div><div style={{fontWeight:800,fontSize:"1rem",marginBottom:2}}>Good morning, Leader</div><div style={{fontSize:"0.75rem",color:MUTED}}>{brief.date}</div></div><div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:16}}>{[["Open",brief.total_open,SAFFRON],["Critical",brief.critical_open,RED],["SLA Violations",brief.sla_violations,GOLD]].map(([lbl,val,c])=>(<div key={lbl} style={{background:`${c}11`,border:`1px solid ${c}44`,borderRadius:10,padding:"12px 14px"}}><div style={{fontSize:"1.6rem",fontWeight:900,color:c}}>{val??"—"}</div><div style={{fontSize:"0.7rem",color:MUTED}}>{lbl}</div></div>))}</div>{brief.top_issues?.length>0&&(<div style={{marginBottom:14}}><div style={{fontSize:"0.65rem",color:MUTED,letterSpacing:2,fontWeight:700,marginBottom:8}}>TOP ISSUES</div>{brief.top_issues.map((issue,i)=>(<div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 12px",marginBottom:6,background:"rgba(255,255,255,0.03)",borderRadius:8,border:`1px solid ${BORDER}`}}><div style={{fontSize:"0.83rem",color:TEXT}}>{typeof issue==="string"?issue:issue.topic}</div>{issue.count&&<span style={{fontSize:"0.75rem",color:RED,fontWeight:700}}>{issue.count}</span>}</div>))}</div>)}{brief.summary&&(<div style={{background:"rgba(255,255,255,0.03)",border:`1px solid ${BORDER}`,borderRadius:10,padding:14,fontSize:"0.83rem",color:LIGHT,lineHeight:1.65}}>{brief.summary}</div>)}<button onClick={loadBrief} style={{marginTop:14,padding:"7px 18px",borderRadius:8,border:`1px solid ${SAFFRON}55`,background:`${SAFFRON}11`,color:SAFFRON,fontSize:"0.8rem",fontWeight:600,cursor:"pointer"}}>↻ Refresh</button></div>):(<button onClick={loadBrief} style={{padding:"10px 22px",borderRadius:8,border:"none",background:`linear-gradient(90deg,${SAFFRON},${GOLD})`,color:"#000",fontWeight:700,cursor:"pointer"}}>☀️ Generate Morning Brief</button>)}</div>)}{activeTab==="doc"&&(<div><div style={{fontSize:"0.78rem",color:LIGHT,marginBottom:8}}>Paste a document or describe a scheme:</div><textarea value={prompt} onChange={e=>setPrompt(e.target.value)} placeholder="e.g. PM Awas Yojana guidelines..." rows={4} style={{width:"100%",padding:12,borderRadius:8,border:`1px solid ${BORDER}`,background:"#0d1526",color:TEXT,fontSize:"0.83rem",resize:"vertical",fontFamily:"inherit",lineHeight:1.5}}/><button onClick={()=>callBackend(prompt,"summarize")} disabled={loading||!prompt.trim()} style={{marginTop:10,padding:"9px 20px",borderRadius:8,border:"none",background:loading?MUTED:`linear-gradient(90deg,${SAFFRON},${GOLD})`,color:"#000",fontWeight:700,fontSize:"0.83rem",cursor:loading?"not-allowed":"pointer",marginBottom:16}}>{loading?"⏳ Summarizing...":"🧠 Summarize with NayakAI"}</button>{aiOutput&&<div style={{background:"#0d1526",border:`1px solid ${GREEN}44`,borderRadius:10,padding:14,whiteSpace:"pre-wrap",fontSize:"0.83rem",color:TEXT,lineHeight:1.7}}>{aiOutput}</div>}</div>)}{activeTab==="speech"&&(<div><div style={{display:"flex",gap:10,marginBottom:12}}><input value={speechTopic} onChange={e=>setST(e.target.value)} placeholder="Event: e.g. Inauguration of Community Park" style={{flex:1,padding:"10px 14px",borderRadius:8,border:`1px solid ${BORDER}`,background:"#0d1526",color:TEXT,fontSize:"0.83rem",fontFamily:"inherit"}}/><select value={speechLang} onChange={e=>setSL(e.target.value)} style={{padding:"10px 12px",borderRadius:8,border:`1px solid ${BORDER}`,background:"#0d1526",color:TEXT,fontSize:"0.83rem"}}>{["English","Hindi","Tamil","Telugu","Bengali","Marathi"].map(l=><option key={l}>{l}</option>)}</select></div><button onClick={()=>callBackend(`Event: ${speechTopic}. Language: ${speechLang}. Constituency: Delhi North.`,"speech")} disabled={loading||!speechTopic.trim()} style={{padding:"9px 20px",borderRadius:8,border:"none",background:loading?MUTED:`linear-gradient(90deg,${SAFFRON},${GOLD})`,color:"#000",fontWeight:700,fontSize:"0.83rem",cursor:loading?"not-allowed":"pointer",marginBottom:16}}>{loading?"⏳ Drafting...":"✍️ Draft Speech with NayakAI"}</button>{aiOutput&&<div style={{background:"#0d1526",border:`1px solid ${GOLD}44`,borderRadius:10,padding:16,whiteSpace:"pre-wrap",fontSize:"0.84rem",color:TEXT,lineHeight:1.8}}>{aiOutput}</div>}</div>)}</div>)}
+
+
 
 export default function LeaderDashboard() {
   const { user, logout } = useAuth()
-  const [tab, setTab] = useState('brief')
-  const [brief, setBrief] = useState(null)
-  const [alerts, setAlerts] = useState([])
-  const [aiInput, setAiInput] = useState('')
-  const [aiMode, setAiMode] = useState('summarize')
-  const [aiOut, setAiOut] = useState('')
-  const [loading, setLoading] = useState(false)
-  const [briefLoading, setBriefLoading] = useState(false)
-  const [alertsLoading, setAlertsLoading] = useState(false)
+  const [activeModule, setActiveModule] = useState("grievance")
+  const [selectedWard, setSelectedWard] = useState(null)
+  const [liveAlerts, setLiveAlerts] = useState([])
+  const [tickets, setTickets] = useState([])
+  const [ticketLoading, setTL] = useState(false)
 
   useEffect(() => {
-    if (tab === 'brief' && !brief) loadBrief()
-    if (tab === 'alerts' && alerts.length === 0) loadAlerts()
-  }, [tab])
+    if (activeModule === "grievance" && tickets.length === 0) loadTickets()
+    if (activeModule === "sentinel") loadAlerts()
+  }, [activeModule])
 
-  const loadBrief = async () => {
-    setBriefLoading(true)
-    try {
-      const { data } = await api.post('/nayakai/morning-brief', {})
-      setBrief(data)
-    } catch (e) { console.error(e) }
-    finally { setBriefLoading(false) }
+  async function loadTickets() {
+    setTL(true)
+    try { const { data } = await api.get('/officers/tickets', { params: { limit: 50 } }); setTickets(Array.isArray(data) ? data : (data.items || [])) }
+    catch (e) { console.error(e) } finally { setTL(false) }
+  }
+  async function loadAlerts() {
+    try { const { data } = await api.get('/sentinel/alerts'); setLiveAlerts(Array.isArray(data) ? data : (data.alerts || [])) }
+    catch (e) { console.error(e) }
   }
 
-  const loadAlerts = async () => {
-    setAlertsLoading(true)
-    try {
-      const { data } = await api.get('/sentinel/alerts')
-      setAlerts(Array.isArray(data) ? data : (data.alerts || []))
-    } catch (e) { console.error(e) }
-    finally { setAlertsLoading(false) }
-  }
+  const open = tickets.filter(t => t.status === 'open').length
+  const escalated = tickets.filter(t => t.status === 'escalated').length
+  const inProgress = tickets.filter(t => t.status === 'in_progress').length
+  const resolved = tickets.filter(t => t.status === 'resolved').length
 
-  const runAI = async () => {
-    if (!aiInput.trim()) return
-    setLoading(true); setAiOut('')
-    try {
-      const { data } = await api.post('/nayakai/assist', { text: aiInput, mode: aiMode })
-      setAiOut(data.result || data.output || '')
-    } catch (e) { setAiOut('Error: ' + (e.response?.data?.detail || 'Request failed')) }
-    finally { setLoading(false) }
-  }
+  const navItems = [
+    { id: "grievance", label: "GrievanceOS",   icon: "📋", sub: "Ticket Overview" },
+    { id: "sentinel",  label: "SentinelPulse", icon: "🗺️", sub: "Heatmap" },
+    { id: "nayak",     label: "NayakAI",       icon: "🤖", sub: "Co-Pilot" },
+  ]
+
+  function pColor(p){return p==="critical"?RED:p==="high"?SAFFRON:p==="medium"?GOLD:LIGHT}
+  function sColor(s){return s==="resolved"?GREEN:s==="escalated"?RED:s==="in_progress"?BLUE:LIGHT}
+  function sBg(s){return s==="resolved"?"rgba(34,197,94,0.15)":s==="escalated"?"rgba(239,68,68,0.15)":s==="in_progress"?"rgba(59,130,246,0.15)":"rgba(255,255,255,0.06)"}
 
   return (
-    <div style={{ minHeight: '100vh', background: 'var(--bg)', display: 'flex', flexDirection: 'column' }}>
-      <div style={{ height: '4px', background: 'linear-gradient(to right, var(--saffron) 33.3%, white 33.3%, white 66.6%, var(--green) 66.6%)' }} />
-      <div style={{ background: 'var(--navy)', padding: '12px 24px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', position: 'sticky', top: 0, zIndex: 100 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: '32px', height: '32px', background: 'var(--saffron)', borderRadius: '7px', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 900, color: '#fff', fontSize: '0.9rem' }}>P</div>
-          <div>
-            <div style={{ color: 'white', fontWeight: 800, fontSize: '0.95rem' }}>PRAJA</div>
-            <div style={{ color: 'rgba(255,255,255,0.5)', fontSize: '0.62rem', textTransform: 'uppercase', letterSpacing: '1px' }}>NayakAI Leader Portal</div>
-          </div>
+    <div style={{ display:"flex", height:"100vh", background:NAVY, fontFamily:"'Segoe UI', system-ui, sans-serif", color:TEXT, fontSize:"14px" }}>
+      {/* SIDEBAR */}
+      <div style={{ width:200, background:"#0d1526", borderRight:`1px solid ${BORDER}`, display:"flex", flexDirection:"column", flexShrink:0 }}>
+        <div style={{ padding:"20px 18px", borderBottom:`1px solid ${BORDER}` }}>
+          <div style={{ fontSize:"1.4rem", fontWeight:900, color:SAFFRON, letterSpacing:-1 }}>PRAJA</div>
+          <div style={{ fontSize:"0.62rem", color:MUTED, letterSpacing:2, textTransform:"uppercase" }}>Governance AI</div>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <span style={{ color: 'rgba(255,255,255,0.6)', fontSize: '0.8rem' }}>{user?.full_name || user?.name}</span>
-          <button onClick={logout} style={{ padding: '6px 14px', background: 'rgba(255,255,255,0.1)', border: '1px solid rgba(255,255,255,0.2)', borderRadius: '6px', color: 'rgba(255,255,255,0.8)', cursor: 'pointer', fontSize: '0.78rem' }}>Sign Out</button>
+        <div style={{ padding:"12px 0", flex:1 }}>
+          <div style={{ fontSize:"0.58rem", letterSpacing:2, color:MUTED, padding:"8px 18px 4px", fontWeight:700, textTransform:"uppercase" }}>Modules</div>
+          {navItems.map(n => (
+            <div key={n.id} onClick={() => setActiveModule(n.id)} style={{ padding:"10px 18px", cursor:"pointer", borderLeft:`3px solid ${activeModule===n.id?SAFFRON:"transparent"}`, background:activeModule===n.id?`${SAFFRON}11`:"transparent", transition:"all 0.15s" }}>
+              <div style={{ display:"flex", alignItems:"center", gap:8 }}>
+                <span style={{ fontSize:"1rem" }}>{n.icon}</span>
+                <div>
+                  <div style={{ fontSize:"0.82rem", fontWeight:700, color:activeModule===n.id?"#fff":LIGHT }}>{n.label}</div>
+                  <div style={{ fontSize:"0.65rem", color:MUTED }}>{n.sub}</div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
+        <div style={{ padding:"14px 18px", borderTop:`1px solid ${BORDER}`, fontSize:"0.72rem", color:MUTED }}>
+          <div style={{ fontWeight:700, color:TEXT, marginBottom:2 }}>{user?.full_name || user?.name || "Leader"}</div>
+          <div>Delhi North</div>
+          <div style={{ marginTop:6, display:"flex", gap:4, alignItems:"center" }}><div style={{ width:6, height:6, borderRadius:"50%", background:GREEN }} /><span style={{ color:GREEN, fontSize:"0.65rem" }}>Live</span></div>
+          <button onClick={logout} style={{ marginTop:10, width:"100%", padding:"6px 0", borderRadius:6, border:`1px solid ${BORDER}`, background:"transparent", color:MUTED, fontSize:"0.72rem", cursor:"pointer" }}>Sign Out</button>
         </div>
       </div>
 
-      <div style={{ padding: '24px', maxWidth: '1000px', margin: '0 auto', width: '100%' }}>
-        {/* Nav Tabs */}
-        <div style={{ display: 'flex', gap: '6px', marginBottom: '24px', background: 'var(--card)', padding: '6px', borderRadius: '12px', border: '1px solid var(--border)', width: 'fit-content' }}>
-          {NAV.map(n => (
-            <button key={n.id} onClick={() => setTab(n.id)} style={{
-              padding: '8px 20px', borderRadius: '8px', border: 'none',
-              background: tab === n.id ? 'var(--navy)' : 'transparent',
-              color: tab === n.id ? 'white' : 'var(--muted)',
-              fontWeight: tab === n.id ? 700 : 400, cursor: 'pointer', fontSize: '0.85rem', transition: 'all 0.15s'
-            }}>{n.label}</button>
-          ))}
+      {/* MAIN */}
+      <div style={{ flex:1, overflow:"auto" }}>
+        <div style={{ padding:"14px 28px", borderBottom:`1px solid ${BORDER}`, display:"flex", justifyContent:"space-between", alignItems:"center", background:"#0d1526", position:"sticky", top:0, zIndex:10 }}>
+          <div>
+            <div style={{ fontWeight:800, fontSize:"1rem" }}>
+              {activeModule==="grievance"&&"GrievanceOS — Ticket Overview"}
+              {activeModule==="sentinel"&&"SentinelPulse — Constituency Heatmap"}
+              {activeModule==="nayak"&&"NayakAI — Co-Pilot Dashboard"}
+            </div>
+            <div style={{ fontSize:"0.72rem", color:MUTED }}>India Innovates 2026 · Delhi North Constituency</div>
+          </div>
+          {escalated>0&&<div style={{ padding:"6px 14px", borderRadius:20, background:`${RED}22`, border:`1px solid ${RED}55`, color:RED, fontSize:"0.75rem", fontWeight:700 }}>🚨 {escalated} Escalated</div>}
         </div>
 
-        {/* Morning Brief */}
-        {tab === 'brief' && (
-          <div>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '18px' }}>
-              <h2 style={{ fontSize: '1.15rem', fontWeight: 900 }}>Morning Brief</h2>
-              <button onClick={loadBrief} style={{ padding: '8px 18px', background: 'var(--saffron)', border: 'none', borderRadius: '8px', color: 'white', cursor: 'pointer', fontWeight: 700, fontSize: '0.82rem' }}>Refresh</button>
-            </div>
-            {briefLoading ? (
-              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--muted)' }}>Generating brief...</div>
-            ) : brief ? (
-              <div style={{ display: 'grid', gap: '14px' }}>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4,1fr)', gap: '12px' }}>
-                  {[
-                    ['SLA Violations', brief.sla_violations ?? '-', 'var(--danger)'],
-                    ['Resolved Yesterday', brief.resolved_yesterday ?? '-', 'var(--green)'],
-                    ['Sentiment', brief.sentiment_score != null ? (brief.sentiment_score * 100).toFixed(0) + '%' : '-', 'var(--navy)'],
-                    ['Critical Open', brief.critical_open ?? '-', 'var(--saffron)'],
-                  ].map(([lbl, val, color]) => (
-                    <div key={lbl} style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '16px 18px' }}>
-                      <div style={{ fontSize: '1.8rem', fontWeight: 900, color }}>{val}</div>
-                      <div style={{ fontSize: '0.7rem', color: 'var(--muted)', textTransform: 'uppercase', letterSpacing: '0.8px', marginTop: '2px' }}>{lbl}</div>
+        <div style={{ padding:24 }}>
+          {/* GRIEVANCE */}
+          {activeModule==="grievance"&&(
+            <>
+              <div style={{ display:"grid", gridTemplateColumns:"repeat(4,1fr)", gap:14, marginBottom:24 }}>
+                {[["Open",open,SAFFRON,"📋"],["Escalated",escalated,RED,"🚨"],["In Progress",inProgress,BLUE,"⚙️"],["Resolved",resolved,GREEN,"✅"]].map(([lbl,val,color,icon])=>(
+                  <div key={lbl} style={{ background:CARD, border:`1px solid ${BORDER}`, borderRadius:12, padding:"16px 18px", borderTop:`3px solid ${color}` }}>
+                    <div style={{ fontSize:"1.5rem", marginBottom:4 }}>{icon}</div>
+                    <div style={{ fontSize:"1.8rem", fontWeight:900, color }}>{val}</div>
+                    <div style={{ fontSize:"0.75rem", color:MUTED }}>{lbl}</div>
+                  </div>
+                ))}
+              </div>
+              <div style={{ background:CARD, border:`1px solid ${BORDER}`, borderRadius:14 }}>
+                <div style={{ padding:"16px 20px", borderBottom:`1px solid ${BORDER}`, fontWeight:800 }}>Live Ticket Queue</div>
+                <div style={{ overflow:"auto" }}>
+                  {ticketLoading?<div style={{ padding:40, textAlign:"center", color:MUTED }}>Loading...</div>:tickets.length===0?<div style={{ padding:40, textAlign:"center", color:MUTED }}>No tickets.</div>:tickets.slice(0,30).map((t,i)=>(
+                    <div key={t.id||i} style={{ padding:"14px 20px", borderBottom:`1px solid ${BORDER}44`, display:"grid", gridTemplateColumns:"160px 1fr 90px 120px 80px", gap:12, alignItems:"center" }}>
+                      <div><div style={{ fontWeight:700, fontSize:"0.78rem", color:SAFFRON }}>{t.tracking_id||t.id?.slice(0,8)}</div><div style={{ fontSize:"0.68rem", color:MUTED }}>{t.created_at?new Date(t.created_at).toLocaleDateString():"—"}</div></div>
+                      <div><div style={{ fontSize:"0.83rem", color:TEXT, marginBottom:2 }}>{t.title||t.description?.slice(0,60)}</div><Tag color={BLUE}>{t.ai_category||"General"}</Tag></div>
+                      <div><Tag color={pColor(t.priority)}>{t.priority?.toUpperCase()}</Tag></div>
+                      <div><span style={{ padding:"3px 8px", borderRadius:6, fontSize:"0.72rem", background:sBg(t.status), color:sColor(t.status), fontWeight:600 }}>{t.status?.replace("_"," ").replace(/\b\w/g,c=>c.toUpperCase())}</span></div>
+                      <div style={{ fontSize:"0.75rem", color:LIGHT }}>{t.channel==="whatsapp"?"📱 WA":"🌐 Web"}</div>
                     </div>
                   ))}
                 </div>
-                {brief.top_issues && brief.top_issues.length > 0 && (
-                  <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '18px' }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.85rem', marginBottom: '10px' }}>Top Issues</div>
-                    {brief.top_issues.map((issue, i) => (
-                      <div key={i} style={{ padding: '8px 12px', borderRadius: '8px', background: 'var(--bg)', marginBottom: '6px', fontSize: '0.84rem' }}>{issue}</div>
+              </div>
+            </>
+          )}
+
+          {/* SENTINEL */}
+          {activeModule==="sentinel"&&(
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 320px", gap:20 }}>
+              <div>
+                <div style={{ background:CARD, border:`1px solid ${BORDER}`, borderRadius:14, padding:20, marginBottom:16 }}>
+                  <div style={{ fontWeight:800, marginBottom:4 }}>Constituency Sentiment Heatmap</div>
+                  <div style={{ fontSize:"0.78rem", color:MUTED, marginBottom:18 }}>Delhi North · Ward scores · Click a ward for details</div>
+                  <HeatMapGrid selectedWard={selectedWard} onSelect={setSelectedWard} />
+                </div>
+                {selectedWard&&(
+                  <div style={{ background:CARD, border:`2px solid ${scoreColor(selectedWard.score)}55`, borderRadius:14, padding:20, marginBottom:16 }}>
+                    <div style={{ display:"flex", justifyContent:"space-between", alignItems:"flex-start", marginBottom:14 }}>
+                      <div><div style={{ fontWeight:800, fontSize:"1rem" }}>{selectedWard.name}</div><div style={{ fontSize:"0.75rem", color:MUTED }}>Drilldown View</div></div>
+                      <div style={{ textAlign:"right" }}><div style={{ fontSize:"2rem", fontWeight:900, color:scoreColor(selectedWard.score) }}>{selectedWard.score}</div><div style={{ fontSize:"0.75rem", color:scoreColor(selectedWard.score), fontWeight:700 }}>Sentiment Score {selectedWard.trending}</div></div>
+                    </div>
+                    {selectedWard.issues.map((issue,i)=>(<div key={i} style={{ display:"flex", alignItems:"center", gap:10, padding:"8px 12px", marginBottom:6, background:"rgba(255,255,255,0.03)", borderRadius:8, border:`1px solid ${BORDER}` }}><div style={{ width:6, height:6, borderRadius:"50%", background:scoreColor(selectedWard.score), flexShrink:0 }}/><div style={{ fontSize:"0.84rem", color:TEXT }}>{issue}</div><div style={{ marginLeft:"auto", fontSize:"0.72rem", color:RED, fontWeight:700 }}>↑ trending</div></div>))}
+                    <div style={{ background:`${SAFFRON}11`, border:`1px solid ${SAFFRON}44`, borderRadius:8, padding:12, fontSize:"0.8rem", color:TEXT, marginTop:12 }}><strong style={{ color:SAFFRON }}>AI Recommendation:</strong> Schedule a public grievance camp within 48 hours. Prioritize {selectedWard.issues[0].toLowerCase()} resolution.</div>
+                  </div>
+                )}
+                <div style={{ background:CARD, border:`1px solid ${BORDER}`, borderRadius:14, padding:20 }}>
+                  <div style={{ fontWeight:800, marginBottom:4 }}>Leaflet Map View</div>
+                  <div style={{ fontSize:"0.78rem", color:MUTED, marginBottom:14 }}>Live grievance density on OpenStreetMap</div>
+                  <SentinelHeatmap />
+                </div>
+              </div>
+              <div>
+                <div style={{ background:CARD, border:`1px solid ${BORDER}`, borderRadius:14, padding:16, marginBottom:14 }}>
+                  <div style={{ fontWeight:700, marginBottom:12 }}>🔥 Alert Feed</div>
+                  {(liveAlerts.length>0?liveAlerts:[
+                    {title:"Ward 19: Sewage overflow — 234 posts",type:"critical_grievance",severity:"critical"},
+                    {title:"Ward 7: Water shortage spike +62%",type:"sla_breach",severity:"high"},
+                    {title:"Ward 3: Garbage collection flagged",type:"escalated",severity:"medium"},
+                  ]).map((a,i)=>(
+                    <div key={i} style={{ padding:"10px 0", borderBottom:`1px solid ${BORDER}44`, display:"flex", gap:10 }}>
+                      <div style={{ width:8, height:8, borderRadius:"50%", background:a.severity==="critical"?RED:SAFFRON, marginTop:4, flexShrink:0 }}/>
+                      <div>
+                        <div style={{ fontSize:"0.7rem", color:a.severity==="critical"?RED:SAFFRON, fontWeight:700 }}>{a.type?.replace(/_/g," ").toUpperCase()}</div>
+                        <div style={{ fontSize:"0.78rem", color:TEXT }}>{a.title}</div>
+                        {a.description&&<div style={{ fontSize:"0.72rem", color:MUTED }}>{a.description?.slice(0,80)}</div>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                <div style={{ background:CARD, border:`1px solid ${BORDER}`, borderRadius:14, padding:16 }}>
+                  <div style={{ fontWeight:700, marginBottom:12 }}>📈 Issue Trends</div>
+                  {[{issue:"Water Shortage",pct:78,color:BLUE},{issue:"Power Cuts",pct:54,color:GOLD},{issue:"Road Potholes",pct:42,color:SAFFRON},{issue:"Sewage Issues",pct:81,color:RED},{issue:"Garbage",pct:35,color:"#a855f7"}].map(t=><MiniBar key={t.issue} value={t.pct} color={t.color} label={t.issue}/>)}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* NAYAK */}
+          {activeModule==="nayak"&&(
+            <div style={{ display:"grid", gridTemplateColumns:"1fr 300px", gap:20 }}>
+              <div style={{ background:CARD, border:`1px solid ${BORDER}`, borderRadius:14, padding:22 }}>
+                <div style={{ fontWeight:800, fontSize:"1rem", marginBottom:4 }}>🤖 NayakAI Co-Pilot</div>
+                <div style={{ fontSize:"0.78rem", color:MUTED, marginBottom:20 }}>AI-powered intelligence for elected representatives — Groq LLaMA</div>
+                <NayakAIPanel />
+              </div>
+              <div>
+                <div style={{ background:CARD, border:`1px solid ${BORDER}`, borderRadius:14, padding:16, marginBottom:14 }}>
+                  <div style={{ fontWeight:700, marginBottom:12 }}>📊 Constituency Report</div>
+                  <div style={{ display:"grid", gridTemplateColumns:"1fr 1fr", gap:8 }}>
+                    {[["Total Filed",tickets.length||"—","All time"],["Open",open,"Need attention"],["Escalated",escalated,"Urgent"],["Resolved",resolved,"Closed"]].map(([lbl,val,sub])=>(
+                      <div key={lbl} style={{ background:"rgba(255,255,255,0.03)", border:`1px solid ${BORDER}`, borderRadius:8, padding:"10px 12px" }}>
+                        <div style={{ fontSize:"1.2rem", fontWeight:800, color:SAFFRON }}>{val}</div>
+                        <div style={{ fontSize:"0.72rem", fontWeight:700, color:TEXT }}>{lbl}</div>
+                        <div style={{ fontSize:"0.65rem", color:MUTED }}>{sub}</div>
+                      </div>
                     ))}
                   </div>
-                )}
-                {brief.summary && (
-                  <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '12px', padding: '18px' }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.85rem', marginBottom: '10px' }}>Summary</div>
-                    <p style={{ color: 'var(--light)', lineHeight: '1.6', fontSize: '0.85rem', margin: 0 }}>{brief.summary}</p>
-                  </div>
-                )}
-              </div>
-            ) : (
-              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--muted)' }}>Click Refresh to load today's brief.</div>
-            )}
-          </div>
-        )}
-
-        {/* Alerts */}
-        {tab === 'alerts' && (
-          <div>
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 900, marginBottom: '18px' }}>Constituency Alerts</h2>
-            {alertsLoading ? (
-              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--muted)' }}>Loading alerts...</div>
-            ) : alerts.length === 0 ? (
-              <div style={{ padding: '40px', textAlign: 'center', color: 'var(--muted)', background: 'var(--card)', borderRadius: '12px', border: '1px solid var(--border)' }}>No active alerts. All quiet!</div>
-            ) : alerts.map((a, i) => (
-              <div key={i} style={{ background: a.severity === 'critical' ? '#FDF3F3' : 'var(--card)', border: `1px solid ${a.severity === 'critical' ? '#F5C6CB' : 'var(--border)'}`, borderRadius: '12px', padding: '16px 18px', marginBottom: '10px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '6px' }}>
-                  <span style={{ fontWeight: 700, fontSize: '0.9rem' }}>{a.title || a.message}</span>
-                  <span style={{ fontSize: '0.7rem', fontWeight: 700, padding: '2px 8px', borderRadius: '20px', background: a.severity === 'critical' ? '#F5C6CB' : '#FFFBEB', color: a.severity === 'critical' ? 'var(--danger)' : '#9E5A00' }}>{a.severity || 'info'}</span>
                 </div>
-                {a.description && <p style={{ color: 'var(--muted)', fontSize: '0.82rem', margin: 0 }}>{a.description}</p>}
+                <div style={{ background:CARD, border:`1px solid ${BORDER}`, borderRadius:14, padding:16 }}>
+                  <div style={{ fontWeight:700, marginBottom:12 }}>⚡ Quick Actions</div>
+                  {[{label:"Escalate Water Dept",icon:"💧",color:BLUE},{label:"Generate RTI Reply",icon:"📄",color:SAFFRON},{label:"Share Ward Report",icon:"📊",color:GREEN},{label:"Alert Field Workers",icon:"📢",color:RED}].map(a=>(
+                    <button key={a.label} style={{ width:"100%", marginBottom:8, padding:"9px 14px", borderRadius:8, border:`1px solid ${a.color}44`, background:`${a.color}11`, color:a.color, fontSize:"0.82rem", fontWeight:600, cursor:"pointer", display:"flex", alignItems:"center", gap:8, textAlign:"left" }}><span>{a.icon}</span>{a.label}</button>
+                  ))}
+                </div>
               </div>
-            ))}
-          </div>
-        )}
-
-        {/* NayakAI */}
-        {tab === 'nayakai' && (
-          <div>
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 900, marginBottom: '6px' }}>NayakAI Assistant</h2>
-            <p style={{ color: 'var(--muted)', fontSize: '0.85rem', marginBottom: '18px' }}>Summarize documents, draft speeches, compose letters.</p>
-            <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '20px' }}>
-              <div style={{ display: 'flex', gap: '8px', marginBottom: '14px' }}>
-                {['summarize', 'speech', 'letter'].map(m => (
-                  <button key={m} onClick={() => setAiMode(m)} style={{
-                    padding: '7px 16px', borderRadius: '20px', border: `1.5px solid ${aiMode === m ? 'var(--navy)' : 'var(--border)'}`,
-                    background: aiMode === m ? 'var(--navy-light)' : 'transparent',
-                    color: aiMode === m ? 'var(--navy)' : 'var(--muted)',
-                    fontWeight: aiMode === m ? 700 : 400, cursor: 'pointer', fontSize: '0.82rem', textTransform: 'capitalize'
-                  }}>{m}</button>
-                ))}
-              </div>
-              <textarea value={aiInput} onChange={e => setAiInput(e.target.value)} placeholder={aiMode === 'summarize' ? 'Paste document or text to summarize...' : aiMode === 'speech' ? 'Describe the event and key points...' : 'Describe the purpose and recipient...'} rows={5} style={{ width: '100%', padding: '12px', border: '1.5px solid var(--border)', borderRadius: '8px', resize: 'vertical', fontSize: '0.85rem', fontFamily: 'inherit', outline: 'none', boxSizing: 'border-box' }} />
-              <button onClick={runAI} disabled={loading || !aiInput.trim()} style={{ marginTop: '12px', padding: '10px 24px', background: loading ? 'var(--muted)' : 'var(--navy)', border: 'none', borderRadius: '8px', color: 'white', cursor: loading ? 'default' : 'pointer', fontWeight: 700, fontSize: '0.85rem' }}>{loading ? 'Processing...' : 'Generate'}</button>
-              {aiOut && (
-                <div style={{ marginTop: '16px', padding: '14px', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: '8px', whiteSpace: 'pre-wrap', fontSize: '0.85rem', lineHeight: '1.65', color: 'var(--text)' }}>{aiOut}</div>
-              )}
             </div>
-          </div>
-        )}
-
-        {/* Heatmap */}
-        {tab === 'heatmap' && (
-          <div>
-            <h2 style={{ fontSize: '1.15rem', fontWeight: 900, marginBottom: '6px' }}>SentinelPulse Heatmap</h2>
-            <p style={{ color: 'var(--muted)', fontSize: '0.85rem', marginBottom: '18px' }}>Ward-level grievance density — New Delhi constituency. Click a circle to inspect.</p>
-            <SentinelHeatmap />
-          </div>
-        )}
+          )}
+        </div>
       </div>
+      <style>{`@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.6}}::-webkit-scrollbar{width:4px;height:4px}::-webkit-scrollbar-track{background:${NAVY}}::-webkit-scrollbar-thumb{background:${BORDER};border-radius:2px}*{box-sizing:border-box}button:hover{opacity:0.85}textarea:focus,input:focus,select:focus{outline:1px solid ${SAFFRON}}`}</style>
     </div>
   )
 }
