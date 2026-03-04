@@ -1,6 +1,7 @@
 ﻿import { useState, useEffect } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import api from '../../services/api'
+import SentinelHeatmap from '../../components/SentinelHeatmap'
 
 const NAV = [
   { id: 'brief',   label: 'Morning Brief' },
@@ -178,12 +179,8 @@ export default function LeaderDashboard() {
         {tab === 'heatmap' && (
           <div>
             <h2 style={{ fontSize: '1.15rem', fontWeight: 900, marginBottom: '6px' }}>SentinelPulse Heatmap</h2>
-            <p style={{ color: 'var(--muted)', fontSize: '0.85rem', marginBottom: '18px' }}>Ward-level sentiment analysis from social media and grievances.</p>
-            <div style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: '14px', padding: '40px', textAlign: 'center', color: 'var(--muted)' }}>
-              <div style={{ fontSize: '2.5rem', marginBottom: '12px', color: 'var(--border)' }}>[ Map ]</div>
-              <div style={{ fontWeight: 700, marginBottom: '6px' }}>Heatmap Coming Soon</div>
-              <div style={{ fontSize: '0.85rem' }}>Real-time ward sentiment visualization will be available here.</div>
-            </div>
+            <p style={{ color: 'var(--muted)', fontSize: '0.85rem', marginBottom: '18px' }}>Ward-level grievance density — New Delhi constituency. Click a circle to inspect.</p>
+            <SentinelHeatmap />
           </div>
         )}
       </div>
