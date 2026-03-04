@@ -150,13 +150,12 @@ async def whatsapp_webhook(
             return xml_response(resp)
         g = rows.data[0]
         s_emoji = {"open": "\U0001f4ec", "in_progress": "\U0001f527", "resolved": "\u2705", "escalated": "\U0001f6a8", "closed": "\U0001f512"}.get(g["status"], "\U0001f4cb")
-        from datetime import datetime, timezone as tz
         created_at = g.get("created_at", "")
         sla_hours_left = ""
         if created_at:
             try:
                 filed_time = datetime.fromisoformat(created_at.replace("Z", "+00:00"))
-                hours_elapsed = (datetime.now(tz.utc) - filed_time).total_seconds() / 3600
+                hours_elapsed = (datetime.now(timezone.utc) - filed_time).total_seconds() / 3600
                 hours_left = max(0, 72 - hours_elapsed)
                 if g.get("status") == "resolved":
                     sla_hours_left = "\n\u2705 *SLA:* Resolved within deadline"
@@ -183,7 +182,7 @@ async def whatsapp_webhook(
         user_id = get_or_create_user(sender, sb)
         rows = (
             sb.table("grievances")
-            .select("id,title,status,priority,category")
+            .select("id,tracking_id,title,status,priority,ai_category")
             .eq("citizen_id", user_id)
             .order("created_at", desc=True)
             .limit(3)
@@ -195,7 +194,7 @@ async def whatsapp_webhook(
         lines = ["\U0001f4cb *Your Recent Complaints:*\n"]
         for g in rows.data:
             st = g["status"].replace("_", " ").title()
-            lines.append(f"\u2022 {g['tracking_id']} | {g.get('ai_category','General')} | {st}")
+            lines.append(f"\u2022 {g.get('tracking_id', g['id'][:8])} | {g.get('ai_category','General')} | {st}")
         lines.append("\nSend *track <full_id>* to see full details.")
         resp.message("\n".join(lines))
         return xml_response(resp)
