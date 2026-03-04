@@ -31,26 +31,33 @@ HELP_MSG = (
 )
 
 
+def _translate(text: str) -> str:
+    """Translate any Indic language / Tanglish text to English via Google Translate."""
+    try:
+        from deep_translator import GoogleTranslator
+        result = GoogleTranslator(source='auto', target='en').translate(text[:500])
+        return result or text
+    except Exception:
+        return text
+
+
 def classify_with_groq(text: str) -> dict:
-    prompt = f"""You are a classifier for Indian citizen grievances sent via WhatsApp. Inputs may be in English, Tamil, Telugu, Hindi, Marathi, or Tanglish (Indian language written in English letters like "thanni problem" = water problem, "road la kuzhi" = pothole on road). Translate and understand the ACTUAL meaning first, then classify.
-
-CRITICAL RULES:
-- Any mention of suicide, self-harm, or killing oneself → priority=critical, category=Health
-- Any death threat or threat to a public figure → priority=critical, category=General
-- Sexual assault, abduction, or violence → priority=critical, category=General
-- Otherwise: water/thanni=Water Supply, road/pothole/kuzhi=Roads, current/power=Electricity, garbage/sewage/kuppai=Sanitation, hospital/health=Health, school=Education
-
-Generate a concise English title that ACCURATELY reflects the actual complaint meaning.
-
-Respond with ONLY valid JSON (no markdown):
+    # Translate to English first so classification is language-agnostic
+    text_en = _translate(text)
+    prompt = f"""Classify this Indian citizen grievance. Respond with ONLY valid JSON (no markdown):
 {{
   "category": "<Water Supply|Roads|Electricity|Sanitation|Drainage|Parks|Health|Education|General>",
   "priority": "<low|medium|high|critical>",
-  "title": "<accurate 5-8 word English title reflecting the real complaint>",
+  "title": "<accurate 5-8 word English title>",
   "sentiment": "<negative|neutral|positive>"
 }}
 
-Complaint: {text[:500]}"""
+Rules:
+- Suicide/self-harm → critical, Health
+- Death threat or threat to public figure → critical, General
+- Sexual assault / abduction → critical, General
+
+Complaint (translated to English): {text_en[:500]}"""
     try:
         response = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",

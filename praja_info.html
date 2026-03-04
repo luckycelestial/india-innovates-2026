@@ -1,0 +1,1427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>PRAJA — Project Blueprint | India Innovates 2026</title>
+  <style>
+    :root {
+      --saffron: #FF6B00;
+      --gold: #f59e0b;
+      --gold-light: #fde68a;
+      --green: #22c55e;
+      --deep-green: #16a34a;
+      --navy: #080f1e;
+      --dark: #0d1526;
+      --card: #111d35;
+      --card2: #162040;
+      --border: #1e2d4d;
+      --border2: #253660;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --purple: #a855f7;
+      --cyan: #06b6d4;
+      --text: #e2e8f0;
+      --muted: #64748b;
+      --light: #94a3b8;
+      --white: #ffffff;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--navy);
+      color: var(--text);
+      line-height: 1.65;
+    }
+
+    /* ── SIDEBAR NAV ── */
+    .sidenav {
+      position: fixed;
+      left: 0; top: 0;
+      width: 220px;
+      height: 100vh;
+      background: var(--dark);
+      border-right: 1px solid var(--border);
+      overflow-y: auto;
+      z-index: 100;
+      padding: 24px 0 24px;
+    }
+    .sidenav-logo {
+      padding: 0 20px 20px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 16px;
+    }
+    .sidenav-logo .name { font-size: 1.1rem; font-weight: 900; color: var(--saffron); }
+    .sidenav-logo .sub { font-size: 0.68rem; color: var(--muted); letter-spacing: 1px; text-transform: uppercase; }
+    .nav-group-label {
+      font-size: 0.6rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      padding: 12px 20px 4px;
+      font-weight: 700;
+    }
+    .sidenav a {
+      display: block;
+      padding: 8px 20px;
+      font-size: 0.82rem;
+      color: var(--light);
+      text-decoration: none;
+      border-left: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .sidenav a:hover, .sidenav a.active {
+      color: var(--white);
+      background: rgba(255,107,0,0.08);
+      border-left-color: var(--saffron);
+    }
+
+    /* ── MAIN ── */
+    .main { margin-left: 220px; }
+
+    /* ── TOP HERO ── */
+    .hero {
+      background: linear-gradient(135deg, #0d1526 0%, #0f1e3a 60%, #0d1526 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 60px 60px 50px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::after {
+      content: 'PRAJA';
+      position: absolute;
+      right: -20px; top: 50%;
+      transform: translateY(-50%);
+      font-size: 11rem;
+      font-weight: 900;
+      color: rgba(255,107,0,0.04);
+      letter-spacing: -8px;
+      pointer-events: none;
+      user-select: none;
+    }
+    .hero-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      background: rgba(255,107,0,0.12);
+      border: 1px solid rgba(255,107,0,0.3);
+      color: var(--saffron);
+      font-size: 0.72rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-weight: 700;
+      padding: 5px 14px;
+      border-radius: 50px;
+      margin-bottom: 18px;
+    }
+    .hero h1 { font-size: clamp(2rem, 4vw, 3.2rem); font-weight: 900; line-height: 1.1; margin-bottom: 6px; }
+    .hero h1 span { color: var(--saffron); }
+    .hero-pitch {
+      font-size: 1rem;
+      color: var(--light);
+      max-width: 680px;
+      margin-bottom: 30px;
+    }
+    .hero-tags { display: flex; flex-wrap: wrap; gap: 10px; }
+    .htag {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid rgba(255,255,255,0.1);
+      padding: 7px 14px;
+      border-radius: 8px;
+      font-size: 0.82rem;
+      font-weight: 600;
+    }
+    .htag.green { border-color: rgba(34,197,94,0.3); color: var(--green); background: rgba(34,197,94,0.07); }
+    .htag.orange { border-color: rgba(255,107,0,0.3); color: var(--saffron); background: rgba(255,107,0,0.07); }
+    .htag.blue { border-color: rgba(59,130,246,0.3); color: #60a5fa; background: rgba(59,130,246,0.07); }
+
+    /* ── SECTION ── */
+    .section { padding: 52px 60px; border-bottom: 1px solid var(--border); }
+    .section:last-child { border-bottom: none; }
+    .sec-label {
+      font-size: 0.65rem;
+      letter-spacing: 3px;
+      text-transform: uppercase;
+      color: var(--saffron);
+      font-weight: 700;
+      margin-bottom: 6px;
+    }
+    .sec-title { font-size: clamp(1.3rem, 2.5vw, 1.8rem); font-weight: 800; margin-bottom: 8px; }
+    .sec-desc { color: var(--light); font-size: 0.9rem; max-width: 760px; margin-bottom: 32px; }
+
+    /* ── CARDS ── */
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 18px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+    @media(max-width:900px) {
+      .sidenav { display: none; }
+      .main { margin-left: 0; }
+      .hero, .section { padding: 30px 20px; }
+      .grid-2, .grid-3, .grid-4 { grid-template-columns: 1fr; }
+    }
+
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 22px;
+    }
+    .card-icon { font-size: 1.8rem; margin-bottom: 12px; }
+    .card h4 { font-size: 0.95rem; font-weight: 700; margin-bottom: 8px; }
+    .card p { font-size: 0.83rem; color: var(--light); }
+
+    /* ── MODULE CARDS ── */
+    .module-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      overflow: hidden;
+      margin-bottom: 24px;
+    }
+    .module-header {
+      padding: 20px 24px;
+      border-bottom: 1px solid var(--border);
+      display: flex;
+      align-items: center;
+      gap: 16px;
+    }
+    .module-num {
+      width: 38px; height: 38px;
+      border-radius: 10px;
+      display: flex; align-items: center; justify-content: center;
+      font-weight: 900;
+      font-size: 1rem;
+      flex-shrink: 0;
+    }
+    .mod-g { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+    .mod-o { background: rgba(255,107,0,0.15); color: var(--saffron); border: 1px solid rgba(255,107,0,0.3); }
+    .mod-b { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+    .module-header h3 { font-size: 1.05rem; font-weight: 800; }
+    .module-header .module-subtitle { font-size: 0.78rem; color: var(--muted); }
+    .module-body { padding: 24px; display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+    @media(max-width:700px) { .module-body { grid-template-columns: 1fr; } }
+    .feature-list { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .feature-list li {
+      display: flex;
+      gap: 10px;
+      font-size: 0.85rem;
+      color: var(--text);
+      align-items: flex-start;
+    }
+    .feature-list li .fi { font-size: 0.8rem; margin-top: 2px; flex-shrink: 0; }
+    .feature-list li strong { color: var(--white); display: block; }
+    .feature-list li span { color: var(--light); font-size: 0.8rem; }
+    .col-title {
+      font-size: 0.65rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 12px;
+      font-weight: 700;
+    }
+
+    /* ── TECH STACK ── */
+    .stack-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .stack-table th {
+      text-align: left;
+      padding: 10px 14px;
+      border-bottom: 2px solid var(--saffron);
+      font-size: 0.68rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      color: var(--saffron);
+      background: rgba(255,107,0,0.05);
+    }
+    .stack-table td {
+      padding: 11px 14px;
+      border-bottom: 1px solid rgba(255,255,255,0.05);
+      color: var(--light);
+    }
+    .stack-table tr:hover td { background: rgba(255,255,255,0.02); }
+    .stack-table td:first-child { color: var(--white); font-weight: 600; }
+    .tech-tag {
+      display: inline-block;
+      background: rgba(255,255,255,0.06);
+      border: 1px solid var(--border2);
+      padding: 3px 9px;
+      border-radius: 5px;
+      font-size: 0.75rem;
+      margin: 2px;
+      color: var(--text);
+    }
+
+    /* ── TIMELINE ── */
+    .timeline { position: relative; }
+    .timeline::before {
+      content: '';
+      position: absolute;
+      left: 26px;
+      top: 0; bottom: 0;
+      width: 2px;
+      background: linear-gradient(to bottom, var(--saffron), var(--gold), var(--green));
+    }
+    .tl-item { display: flex; gap: 24px; margin-bottom: 8px; }
+    .tl-dot-wrap {
+      flex-shrink: 0;
+      width: 54px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 16px;
+      z-index: 1;
+    }
+    .tl-dot {
+      width: 16px; height: 16px;
+      border-radius: 50%;
+      border: 2px solid;
+      background: var(--navy);
+      flex-shrink: 0;
+    }
+    .tl-dot.w1 { border-color: var(--saffron); background: var(--saffron); }
+    .tl-dot.w2 { border-color: var(--gold); background: var(--gold); }
+    .tl-dot.w3 { border-color: var(--blue); background: var(--blue); }
+    .tl-dot.w4 { border-color: var(--green); background: var(--green); }
+    .tl-content {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px 22px;
+      flex: 1;
+      margin-bottom: 16px;
+    }
+    .tl-week-label {
+      display: inline-block;
+      font-size: 0.65rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      font-weight: 700;
+      padding: 3px 10px;
+      border-radius: 20px;
+      margin-bottom: 10px;
+    }
+    .lbl-w1 { background: rgba(255,107,0,0.15); color: var(--saffron); border: 1px solid rgba(255,107,0,0.3); }
+    .lbl-w2 { background: rgba(245,158,11,0.15); color: var(--gold); border: 1px solid rgba(245,158,11,0.3); }
+    .lbl-w3 { background: rgba(59,130,246,0.15); color: #60a5fa; border: 1px solid rgba(59,130,246,0.3); }
+    .lbl-w4 { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+    .tl-title { font-size: 1rem; font-weight: 800; margin-bottom: 6px; }
+    .tl-dates { font-size: 0.75rem; color: var(--muted); margin-bottom: 14px; }
+    .tl-tasks { list-style: none; display: flex; flex-direction: column; gap: 8px; }
+    .tl-tasks li {
+      display: flex;
+      gap: 10px;
+      font-size: 0.84rem;
+      color: var(--text);
+      align-items: flex-start;
+    }
+    .tl-tasks li .chk {
+      width: 16px; height: 16px;
+      border: 1.5px solid var(--border2);
+      border-radius: 4px;
+      flex-shrink: 0;
+      margin-top: 2px;
+    }
+    .tl-tasks li strong { color: var(--white); }
+    .tl-tasks li span { color: var(--light); font-size: 0.79rem; display: block; margin-top: 1px; }
+    .tl-deliverable {
+      margin-top: 16px;
+      background: rgba(34,197,94,0.06);
+      border: 1px solid rgba(34,197,94,0.2);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.82rem;
+      color: #86efac;
+    }
+    .tl-deliverable::before { content: '✓ Deliverable: '; font-weight: 700; }
+    .tl-warning {
+      margin-top: 12px;
+      background: rgba(245,158,11,0.06);
+      border: 1px solid rgba(245,158,11,0.2);
+      border-radius: 8px;
+      padding: 10px 14px;
+      font-size: 0.82rem;
+      color: var(--gold-light);
+    }
+    .tl-warning::before { content: '⚠ Risk: '; font-weight: 700; }
+
+    /* ── DAILY SPRINT ── */
+    .daily-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; }
+    @media(max-width:900px) { .daily-grid { grid-template-columns: repeat(4, 1fr); } }
+    .day-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 10px 8px;
+      font-size: 0.72rem;
+      min-height: 110px;
+    }
+    .day-box .day-label { font-weight: 700; color: var(--muted); font-size: 0.6rem; letter-spacing: 1px; text-transform: uppercase; }
+    .day-box .day-date { font-weight: 800; font-size: 1rem; margin-bottom: 6px; }
+    .day-box .day-task { color: var(--light); line-height: 1.4; }
+    .day-box.week1 { border-top: 2px solid var(--saffron); }
+    .day-box.week1 .day-date { color: var(--saffron); }
+    .day-box.week2 { border-top: 2px solid var(--gold); }
+    .day-box.week2 .day-date { color: var(--gold); }
+    .day-box.week3 { border-top: 2px solid var(--blue); }
+    .day-box.week3 .day-date { color: #60a5fa; }
+    .day-box.week4 { border-top: 2px solid var(--green); }
+    .day-box.week4 .day-date { color: var(--green); }
+    .day-box.deadline { border: 2px solid var(--green); background: rgba(34,197,94,0.08); }
+    .day-box.deadline .day-date { color: var(--green); }
+
+    /* ── FIRST ROUND ── */
+    .round1-box {
+      background: linear-gradient(135deg, rgba(255,107,0,0.08), rgba(245,158,11,0.05));
+      border: 2px solid rgba(255,107,0,0.35);
+      border-radius: 16px;
+      padding: 30px;
+      margin-bottom: 28px;
+    }
+    .round1-box h3 { font-size: 1.2rem; font-weight: 800; margin-bottom: 14px; }
+
+    /* ── CHECKLIST ── */
+    .checklist { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .checklist li {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      font-size: 0.87rem;
+      color: var(--text);
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      padding: 12px 14px;
+    }
+    .checklist li .cb {
+      width: 18px; height: 18px;
+      border: 2px solid var(--border2);
+      border-radius: 4px;
+      flex-shrink: 0;
+      margin-top: 1px;
+    }
+    .checklist li strong { color: var(--white); display: block; margin-bottom: 2px; }
+    .checklist li span { color: var(--light); font-size: 0.79rem; }
+    .checklist li.critical { border-left: 3px solid var(--red); }
+    .checklist li.important { border-left: 3px solid var(--saffron); }
+    .checklist li.normal { border-left: 3px solid var(--blue); }
+
+    /* ── ARCH DIAGRAM ── */
+    .arch-box {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      padding: 28px;
+      font-family: 'Segoe UI', monospace;
+    }
+    .arch-layer {
+      background: rgba(255,255,255,0.03);
+      border: 1px solid var(--border2);
+      border-radius: 8px;
+      padding: 16px 18px;
+      margin-bottom: 12px;
+      position: relative;
+    }
+    .arch-layer::after {
+      content: '↕';
+      position: absolute;
+      bottom: -18px;
+      left: 50%;
+      transform: translateX(-50%);
+      color: var(--muted);
+      font-size: 1.1rem;
+      z-index: 2;
+    }
+    .arch-layer:last-child::after { display: none; }
+    .arch-layer-title {
+      font-size: 0.65rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      color: var(--muted);
+      margin-bottom: 10px;
+      font-weight: 700;
+    }
+    .arch-components { display: flex; flex-wrap: wrap; gap: 8px; }
+    .arch-comp {
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 0.8rem;
+      font-weight: 600;
+    }
+    .ac-frontend { background: rgba(59,130,246,0.15); color: #93c5fd; border: 1px solid rgba(59,130,246,0.3); }
+    .ac-backend { background: rgba(168,85,247,0.15); color: #c4b5fd; border: 1px solid rgba(168,85,247,0.3); }
+    .ac-ai { background: rgba(255,107,0,0.15); color: #fca974; border: 1px solid rgba(255,107,0,0.3); }
+    .ac-db { background: rgba(6,182,212,0.15); color: #67e8f9; border: 1px solid rgba(6,182,212,0.3); }
+    .ac-infra { background: rgba(34,197,94,0.15); color: #86efac; border: 1px solid rgba(34,197,94,0.3); }
+
+    /* ── ROLES ── */
+    .role-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    .role-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 20px;
+    }
+    .role-icon { font-size: 1.6rem; margin-bottom: 10px; }
+    .role-title { font-weight: 700; font-size: 0.9rem; margin-bottom: 6px; }
+    .role-tasks { font-size: 0.8rem; color: var(--light); list-style: none; display: flex; flex-direction: column; gap: 4px; }
+    .role-tasks li::before { content: '• '; color: var(--saffron); }
+
+    /* ── MVP vs FULL ── */
+    .mvp-table { width: 100%; border-collapse: collapse; font-size: 0.85rem; }
+    .mvp-table th {
+      padding: 12px 16px;
+      text-align: left;
+      font-size: 0.7rem;
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      background: rgba(255,255,255,0.04);
+      border-bottom: 1px solid var(--border2);
+    }
+    .mvp-table th:nth-child(2) { color: var(--saffron); }
+    .mvp-table th:nth-child(3) { color: var(--green); }
+    .mvp-table td {
+      padding: 11px 16px;
+      border-bottom: 1px solid rgba(255,255,255,0.04);
+      color: var(--light);
+      vertical-align: top;
+    }
+    .mvp-table td:first-child { color: var(--white); font-weight: 600; }
+    .mvp-table tr:hover td { background: rgba(255,255,255,0.02); }
+    .badge-mvp { background: rgba(255,107,0,0.15); color: var(--saffron); border: 1px solid rgba(255,107,0,0.3); padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; }
+    .badge-full { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; font-weight: 700; }
+    .badge-skip { background: rgba(100,116,139,0.15); color: var(--muted); border: 1px solid var(--border); padding: 2px 8px; border-radius: 4px; font-size: 0.72rem; }
+
+    /* ── RISK TABLE ── */
+    .risk-list { display: flex; flex-direction: column; gap: 12px; }
+    .risk-item {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 18px;
+      display: grid;
+      grid-template-columns: 120px 1fr 1fr 1fr;
+      gap: 16px;
+      align-items: start;
+      font-size: 0.84rem;
+    }
+    @media(max-width:800px) { .risk-item { grid-template-columns: 1fr; } }
+    .risk-label { font-size: 0.6rem; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; font-weight: 700; }
+    .risk-name { color: var(--white); font-weight: 700; }
+    .risk-sev { padding: 3px 10px; border-radius: 20px; font-size: 0.72rem; font-weight: 700; display: inline-block; margin-top: 4px; }
+    .sev-high { background: rgba(239,68,68,0.15); color: #f87171; border: 1px solid rgba(239,68,68,0.3); }
+    .sev-med { background: rgba(245,158,11,0.15); color: var(--gold); border: 1px solid rgba(245,158,11,0.3); }
+    .sev-low { background: rgba(34,197,94,0.15); color: var(--green); border: 1px solid rgba(34,197,94,0.3); }
+
+    /* ── PITCH GUIDE ── */
+    .pitch-steps { counter-reset: pitch; display: flex; flex-direction: column; gap: 14px; }
+    .pitch-step {
+      counter-increment: pitch;
+      display: flex;
+      gap: 16px;
+      align-items: flex-start;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 18px;
+    }
+    .pitch-step::before {
+      content: counter(pitch);
+      width: 28px; height: 28px;
+      background: linear-gradient(135deg, var(--saffron), var(--gold));
+      color: var(--navy);
+      border-radius: 50%;
+      font-weight: 900;
+      font-size: 0.85rem;
+      display: flex; align-items: center; justify-content: center;
+      flex-shrink: 0;
+    }
+    .pitch-step strong { color: var(--white); display: block; margin-bottom: 3px; font-size: 0.9rem; }
+    .pitch-step span { font-size: 0.82rem; color: var(--light); }
+
+    /* ── PROGRESS ── */
+    .progress-bar-wrap { margin-bottom: 14px; }
+    .pb-header { display: flex; justify-content: space-between; margin-bottom: 5px; font-size: 0.82rem; }
+    .pb-title { color: var(--text); font-weight: 600; }
+    .pb-pct { color: var(--muted); }
+    .pb { height: 6px; background: rgba(255,255,255,0.06); border-radius: 3px; overflow: hidden; }
+    .pb-fill { height: 100%; border-radius: 3px; }
+    .pb-saffron { background: linear-gradient(90deg, var(--saffron), var(--gold)); }
+    .pb-blue { background: linear-gradient(90deg, var(--blue), var(--cyan)); }
+    .pb-green { background: linear-gradient(90deg, var(--deep-green), var(--green)); }
+    .pb-purple { background: linear-gradient(90deg, var(--purple), #c084fc); }
+
+    /* ── CALLOUT ── */
+    .callout-green {
+      background: rgba(34,197,94,0.07);
+      border: 1px solid rgba(34,197,94,0.25);
+      border-left: 4px solid var(--green);
+      border-radius: 8px;
+      padding: 16px 18px;
+      font-size: 0.87rem;
+      color: #86efac;
+      margin: 20px 0;
+    }
+    .callout-orange {
+      background: rgba(255,107,0,0.07);
+      border: 1px solid rgba(255,107,0,0.25);
+      border-left: 4px solid var(--saffron);
+      border-radius: 8px;
+      padding: 16px 18px;
+      font-size: 0.87rem;
+      color: #fcd9bb;
+      margin: 20px 0;
+    }
+    .callout-red {
+      background: rgba(239,68,68,0.07);
+      border: 1px solid rgba(239,68,68,0.25);
+      border-left: 4px solid var(--red);
+      border-radius: 8px;
+      padding: 16px 18px;
+      font-size: 0.87rem;
+      color: #fca5a5;
+      margin: 20px 0;
+    }
+
+    /* ── FOOTER ── */
+    .footer {
+      background: #060c18;
+      border-top: 1px solid var(--border);
+      padding: 24px 60px;
+      font-size: 0.78rem;
+      color: var(--muted);
+      display: flex;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 10px;
+    }
+
+    ::-webkit-scrollbar { width: 5px; height: 5px; }
+    ::-webkit-scrollbar-track { background: var(--navy); }
+    ::-webkit-scrollbar-thumb { background: var(--border2); border-radius: 3px; }
+  </style>
+</head>
+<body>
+
+<!-- ══ SIDEBAR ══ -->
+<nav class="sidenav">
+  <div class="sidenav-logo">
+    <div class="name">PRAJA</div>
+    <div class="sub">Project Blueprint</div>
+  </div>
+  <div class="nav-group-label">Overview</div>
+  <a href="#overview">Project Overview</a>
+  <a href="#problem">Problem We Solve</a>
+  <a href="#modules">3 Modules</a>
+  <div class="nav-group-label">Architecture</div>
+  <a href="#arch">System Architecture</a>
+  <a href="#techstack">Tech Stack</a>
+  <a href="#mvp">MVP vs Full Build</a>
+  <div class="nav-group-label">Execution</div>
+  <a href="#round1">First Round (Unstop)</a>
+  <a href="#timeline">25-Day Timeline</a>
+  <a href="#daily">Daily Sprint Plan</a>
+  <a href="#roles">Team Roles</a>
+  <div class="nav-group-label">Strategy</div>
+  <a href="#targets">Milestone Targets</a>
+  <a href="#risks">Risks & Mitigations</a>
+  <a href="#demo">Demo Day Strategy</a>
+  <a href="#pitch">Pitch Script</a>
+</nav>
+
+<!-- ══ MAIN ══ -->
+<div class="main">
+
+<!-- ── HERO ── -->
+<div class="hero" id="overview">
+  <div class="hero-badge">🏆 India Innovates 2026 — Digital Democracy</div>
+  <h1><span>PRAJA</span> — Unified Citizen<br/>Governance Intelligence Platform</h1>
+  <p class="hero-pitch">A national-grade, AI-powered public service CRM that predicts citizen dissatisfaction before it erupts, auto-routes and resolves grievances, performs multilingual sentiment analysis across 10+ Indian languages, and gives elected leaders a real-time AI co-pilot to govern smarter — built as a direct intelligent upgrade to CPGRAMS.</p>
+  <div class="hero-tags">
+    <div class="htag orange">📅 Deadline: 28 March 2026</div>
+    <div class="htag">⏱ 25 Days to Build</div>
+    <div class="htag blue">🗳 Domain: Digital Democracy</div>
+    <div class="htag green">✓ Top Recommended Idea</div>
+    <div class="htag">👥 3–5 Member Team</div>
+  </div>
+</div>
+
+<!-- ── PROBLEM ── -->
+<div class="section" id="problem">
+  <div class="sec-label">Why This Matters</div>
+  <h2 class="sec-title">The Problem We Are Solving</h2>
+  <p class="sec-desc">India has 35 crore+ active internet users and 95 crore+ mobile connections — yet citizen grievance redressal remains broken, manual, and opaque. Elected representatives have zero real-time intelligence about their constituency's mood. Political decisions are made on gut feel, not data.</p>
+
+  <div class="grid-3">
+    <div class="card">
+      <div class="card-icon">📋</div>
+      <h4>CPGRAMS Is Failing</h4>
+      <p>India's primary grievance system has an average resolution time of <strong style="color:var(--red)">45–90 days</strong>. Over 60% of complaints are "closed" without actual resolution. Zero predictive intelligence — purely reactive.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">📊</div>
+      <h4>Zero Constituency Intelligence</h4>
+      <p>MPs and MLAs have <strong style="color:var(--saffron)">no real-time data</strong> on what their constituents are experiencing. Decisions are based on surveys done months ago. By the time a problem becomes news, it is already a crisis.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🌐</div>
+      <h4>Multilingual Barrier</h4>
+      <p>India has 22 official languages and hundreds of dialects. Existing systems are primarily <strong style="color:var(--red)">English and Hindi only</strong>, excluding the majority of rural and semi-urban citizens from effective participation.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">⚡</div>
+      <h4>Fragmented Communication</h4>
+      <p>Citizens are forced to use <strong style="color:var(--saffron)">7+ different portals</strong> (CPGRAMS, PG Portal, CM Helpline, UMANG, state-specific portals) with zero integration or unified status tracking.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">😤</div>
+      <h4>Sentiment Blind Spots</h4>
+      <p>Public sentiment shifts fast on social media but <strong style="color:var(--red)">political teams lack real-time tools</strong> to monitor it at ward and booth level in regional languages. Issues go viral before authorities even know they exist.</p>
+    </div>
+    <div class="card">
+      <div class="card-icon">🏛️</div>
+      <h4>Market Size</h4>
+      <p>India's e-governance services market is projected at <strong style="color:var(--green)">₹3.2 lakh crore by 2027</strong>. Every state government, 4,000+ municipal corporations, and 543 parliamentary constituencies are potential clients.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ── MODULES ── -->
+<div class="section" id="modules">
+  <div class="sec-label">What We Are Building</div>
+  <h2 class="sec-title">3 Tightly Integrated Modules</h2>
+  <p class="sec-desc">PRAJA is not a single feature — it is three production-grade modules that work together to create a complete governance intelligence platform.</p>
+
+  <!-- Module 1 -->
+  <div class="module-card">
+    <div class="module-header">
+      <div class="module-num mod-g">01</div>
+      <div>
+        <h3>GrievanceOS — Omnichannel Citizen Complaint Engine</h3>
+        <div class="module-subtitle">WhatsApp · Web Portal · Voice Call · SMS · Mobile App</div>
+      </div>
+    </div>
+    <div class="module-body">
+      <div>
+        <div class="col-title">Core Features</div>
+        <ul class="feature-list">
+          <li><span class="fi">📱</span><div><strong>Omnichannel Intake</strong><span>Citizens submit grievances via WhatsApp, web form, voice (IVR), SMS, or app in any Indian language. Each submission gets a unique tracking ID instantly.</span></div></li>
+          <li><span class="fi">🤖</span><div><strong>AI Auto-Classification</strong><span>NLP model auto-tags: Department (Roads, Water, Sanitation, Electricity, Health), Priority (P0–P3), Location (ward/block/city), and Sentiment (Angry/Urgent/Routine).</span></div></li>
+          <li><span class="fi">📡</span><div><strong>Smart Routing Engine</strong><span>Auto-assigns to correct officer with SLA timer based on department + priority. High-priority (P0/P1) complaints are SMS-notified to senior officers immediately.</span></div></li>
+          <li><span class="fi">⏰</span><div><strong>Automated Escalation</strong><span>If unresolved within 72 hours → escalates to senior officer. At 120 hours → MLA/MP dashboard alert. At 168 hours → auto-flagged as "chronic issue" with pattern analysis.</span></div></li>
+          <li><span class="fi">📸</span><div><strong>Photo Evidence Support</strong><span>Citizens can attach images/videos. System uses vision AI to validate relevance (e.g., pothole, garbage pile, flooded street) and auto-generates structured descriptions.</span></div></li>
+        </ul>
+      </div>
+      <div>
+        <div class="col-title">What Makes It Different</div>
+        <ul class="feature-list">
+          <li><span class="fi">🔗</span><div><strong>Before & After Micro-Accountability</strong><span>When a ward issue (e.g., broken streetlight on Gali 4) is resolved, the system triggers a "Before & After" notification only to residents in that specific micro-zone.</span></div></li>
+          <li><span class="fi">📊</span><div><strong>Department Performance Dashboard</strong><span>Real-time SLA compliance score per department. Identifies systemic bottlenecks: "Water dept has 340 overdue tickets this month."</span></div></li>
+          <li><span class="fi">🎯</span><div><strong>Beneficiary Scheme Linkage</strong><span>Maps citizens submitting complaints to government scheme beneficiaries (Ayushman Bharat, PM Awas Yojana). Allows targeted scheme outreach to eligible non-beneficiaries.</span></div></li>
+          <li><span class="fi">🌍</span><div><strong>10+ Language Support</strong><span>Hindi, English, Tamil, Telugu, Bengali, Marathi, Gujarati, Kannada, Punjabi, Odia — using Whisper ASR for voice and IndicBERT/mBERT for text classification.</span></div></li>
+        </ul>
+        <div class="callout-green" style="margin-top:16px; font-size:0.8rem;">Demo Target: Show a citizen filing a complaint in Tamil via WhatsApp → system classifies it in 2 seconds → officer receives routed ticket → resolution with notification.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Module 2 -->
+  <div class="module-card">
+    <div class="module-header">
+      <div class="module-num mod-o">02</div>
+      <div>
+        <h3>SentinelPulse — Real-Time Constituency Sentiment Intelligence</h3>
+        <div class="module-subtitle">Social Media · News · WhatsApp Groups · Survey Data · Ground Reports</div>
+      </div>
+    </div>
+    <div class="module-body">
+      <div>
+        <div class="col-title">Core Features</div>
+        <ul class="feature-list">
+          <li><span class="fi">📡</span><div><strong>Multi-Source Ingestion</strong><span>Continuous scraping from Twitter/X, Facebook Groups, regional news sites, public WhatsApp channels, and Reddit India — across 10+ Indian languages simultaneously.</span></div></li>
+          <li><span class="fi">🧠</span><div><strong>Multilingual Sentiment Engine</strong><span>IndicBERT-based sentiment classifier detecting Positive / Negative / Neutral / Angry / Hopeful per topic per ward. Trained on Indian political and governance data.</span></div></li>
+          <li><span class="fi">🗺️</span><div><strong>Live Public Mood Heatmap</strong><span>Color-coded interactive map at ward, block, constituency, and district level. Red = high grievance zone. Green = satisfaction. Orange = emerging issue. Drillable in real time.</span></div></li>
+          <li><span class="fi">📈</span><div><strong>Trend Prediction Engine</strong><span>Detects emerging issue trends 3–5 days before they go viral. Sends proactive "Issue Emerging" alerts to administrators before public pressure builds.</span></div></li>
+          <li><span class="fi">🔥</span><div><strong>Viral Alert System</strong><span>Monitors tweet/post velocity. When a local issue gains abnormal momentum, sends immediate red-alert to the elected representative with context summary.</span></div></li>
+        </ul>
+      </div>
+      <div>
+        <div class="col-title">Dashboard Capabilities</div>
+        <ul class="feature-list">
+          <li><span class="fi">📊</span><div><strong>Topic Clustering</strong><span>Auto-groups complaints and posts by topic: Water, Road, Power, Corruption, Healthcare, Safety. Shows volume + sentiment per topic over time.</span></div></li>
+          <li><span class="fi">🏘️</span><div><strong>Booth-Level Granularity</strong><span>Segments sentiment at the electoral booth level (India has 10.5 lakh booths). Identifies which exact booth has rising resentment vs. satisfaction.</span></div></li>
+          <li><span class="fi">👥</span><div><strong>Demographic Segmentation</strong><span>Cross-analyzes sentiment by inferred demographics: youth tech frustrations vs. farmer subsidy concerns vs. women safety sentiment — without violating privacy.</span></div></li>
+          <li><span class="fi">📉</span><div><strong>Comparative Analytics</strong><span>Tracks sentiment change over time: "This constituency's satisfaction score dropped 12 points in 30 days — primary cause: water shortage complaints (+340% spike)."</span></div></li>
+        </ul>
+        <div class="callout-green" style="margin-top:16px; font-size:0.8rem;">Demo Target: Show live heatmap of a constituency with drilldown → click a red ward → see top 3 trending issues → view individual social posts that triggered the alert.</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Module 3 -->
+  <div class="module-card">
+    <div class="module-header">
+      <div class="module-num mod-b">03</div>
+      <div>
+        <h3>NayakAI — AI Co-Pilot for Public Leaders & Administrators</h3>
+        <div class="module-subtitle">Secure · Multilingual · Context-Aware · Real-Time Decision Support</div>
+      </div>
+    </div>
+    <div class="module-body">
+      <div>
+        <div class="col-title">Core Features</div>
+        <ul class="feature-list">
+          <li><span class="fi">📄</span><div><strong>Document Intelligence</strong><span>Upload any government document (scheme PDF, budget report, policy circular) and get a 5-bullet summary in 10 seconds. Ask follow-up questions in natural language.</span></div></li>
+          <li><span class="fi">✍️</span><div><strong>Speech & Letter Drafting</strong><span>AI drafts official responses, public speeches, inauguration scripts, RTI replies — in Hindi, English, or regional language — based on the context provided by the leader.</span></div></li>
+          <li><span class="fi">📅</span><div><strong>Smart Schedule Manager</strong><span>Integrates with constituency calendar. Shows upcoming events with AI-generated preparation briefs: "Tomorrow: Inauguration at Sector 12. Here are 5 key achievements to highlight."</span></div></li>
+          <li><span class="fi">🎯</span><div><strong>Constituency Intelligence Feed</strong><span>Morning briefing automatically generated every day: top 5 issues burning in constituency, which wards need personal attention, pending SLA violations, viral posts.</span></div></li>
+          <li><span class="fi">🔔</span><div><strong>Real-Time Action Alerts</strong><span>"3 complaints about water shortage in Ward 14 escalated to P0. Here is a drafted response + escalation order to the Water Department ready to send."</span></div></li>
+        </ul>
+      </div>
+      <div>
+        <div class="col-title">Advanced Capabilities</div>
+        <ul class="feature-list">
+          <li><span class="fi">🗣️</span><div><strong>Meeting Summarizer</strong><span>Record or upload public meeting audio. AI transcribes, identifies action items, assigns owners, and sets follow-up reminders within 60 seconds.</span></div></li>
+          <li><span class="fi">📊</span><div><strong>Development Report Card</strong><span>Automatically tracks and visualizes all infrastructure projects, scheme disbursements, and events in the constituency — generates shareable "What I Did This Month" reports.</span></div></li>
+          <li><span class="fi">🔐</span><div><strong>Secure Access Architecture</strong><span>Role-based access control: Leader sees constituency overview. Officer sees only their department. Staff sees only assigned tickets. All data encrypted at rest and in transit.</span></div></li>
+          <li><span class="fi">📱</span><div><strong>Mobile-First for Field Workers</strong><span>Lightweight mobile app for on-ground workers to log activities, update ticket statuses, and report from the field without needing desktop access.</span></div></li>
+        </ul>
+        <div class="callout-green" style="margin-top:16px; font-size:0.8rem;">Demo Target: Show "Morning Brief" dashboard → upload a 20-page scheme PDF → get 5-bullet summary → generate a speech for inauguration event using one click.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── ARCHITECTURE ── -->
+<div class="section" id="arch">
+  <div class="sec-label">System Design</div>
+  <h2 class="sec-title">System Architecture</h2>
+  <p class="sec-desc">A layered, scalable architecture — designed so the demo prototype can evolve into a production system.</p>
+
+  <div class="arch-box">
+    <div class="arch-layer">
+      <div class="arch-layer-title">Layer 1 — Presentation / Frontend</div>
+      <div class="arch-components">
+        <div class="arch-comp ac-frontend">React.js Web Dashboard</div>
+        <div class="arch-comp ac-frontend">React Native Mobile App</div>
+        <div class="arch-comp ac-frontend">WhatsApp Bot (Twilio)</div>
+        <div class="arch-comp ac-frontend">SMS/IVR Interface</div>
+        <div class="arch-comp ac-frontend">D3.js Heatmap Visualization</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-layer-title">Layer 2 — API Gateway / Orchestration</div>
+      <div class="arch-components">
+        <div class="arch-comp ac-backend">Node.js / Express REST API</div>
+        <div class="arch-comp ac-backend">FastAPI (Python — AI services)</div>
+        <div class="arch-comp ac-backend">Redis (Queue + Cache)</div>
+        <div class="arch-comp ac-backend">JWT Auth + RBAC</div>
+        <div class="arch-comp ac-backend">WebSocket (Real-time alerts)</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-layer-title">Layer 3 — AI / Intelligence Engine</div>
+      <div class="arch-components">
+        <div class="arch-comp ac-ai">IndicBERT / mBERT (NLP)</div>
+        <div class="arch-comp ac-ai">Whisper ASR (Voice → Text)</div>
+        <div class="arch-comp ac-ai">GPT-4 / Llama 3 (Document AI)</div>
+        <div class="arch-comp ac-ai">Sentiment Classifier (10 languages)</div>
+        <div class="arch-comp ac-ai">Trend Prediction (Time-Series ML)</div>
+        <div class="arch-comp ac-ai">Vision AI (Image Validation)</div>
+      </div>
+    </div>
+    <div class="arch-layer">
+      <div class="arch-layer-title">Layer 4 — Data / Storage</div>
+      <div class="arch-components">
+        <div class="arch-comp ac-db">PostgreSQL (Core data)</div>
+        <div class="arch-comp ac-db">MongoDB (Unstructured social data)</div>
+        <div class="arch-comp ac-db">Elasticsearch (Search + Analytics)</div>
+        <div class="arch-comp ac-db">S3-compatible (Media storage)</div>
+        <div class="arch-comp ac-db">Redis (Sessions + Cache)</div>
+      </div>
+    </div>
+    <div class="arch-layer" style="margin-bottom:0;">
+      <div class="arch-layer-title">Layer 5 — Infrastructure / Integrations</div>
+      <div class="arch-components">
+        <div class="arch-comp ac-infra">Docker + Docker Compose</div>
+        <div class="arch-comp ac-infra">Twilio (WhatsApp + SMS)</div>
+        <div class="arch-comp ac-infra">Twitter/X API v2</div>
+        <div class="arch-comp ac-infra">Mapbox / Leaflet.js (Maps)</div>
+        <div class="arch-comp ac-infra">HuggingFace Models</div>
+        <div class="arch-comp ac-infra">OpenStreetMap (Ward data)</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="callout-orange" style="margin-top:24px;">⚠ For the hackathon prototype, you do NOT need all of this running in production. Focus on: Docker Compose local stack + React frontend + FastAPI backend + PostgreSQL + Mock WhatsApp bot via Twilio sandbox + Pre-trained HuggingFace models for NLP.</div>
+</div>
+
+<!-- ── TECH STACK ── -->
+<div class="section" id="techstack">
+  <div class="sec-label">Technology</div>
+  <h2 class="sec-title">Detailed Tech Stack</h2>
+  <p class="sec-desc">Every technology chosen for build speed, availability of good tutorials, and maximum demo impressiveness.</p>
+
+  <div style="overflow-x:auto;">
+    <table class="stack-table">
+      <thead>
+        <tr>
+          <th>Component</th>
+          <th>Technology</th>
+          <th>Why This Choice</th>
+          <th>Difficulty</th>
+          <th>Priority</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td>Frontend Dashboard</td><td><span class="tech-tag">React.js</span> <span class="tech-tag">Tailwind CSS</span></td><td>Fast development, great UI libraries, D3.js integration</td><td>Medium</td><td><span class="badge-mvp">CRITICAL</span></td></tr>
+        <tr><td>Heatmap/Maps</td><td><span class="tech-tag">Leaflet.js</span> <span class="tech-tag">D3.js</span></td><td>Free, no API key needed, highly customizable India ward maps</td><td>Medium</td><td><span class="badge-mvp">CRITICAL</span></td></tr>
+        <tr><td>Backend API</td><td><span class="tech-tag">FastAPI</span> <span class="tech-tag">Python 3.11</span></td><td>Python ecosystem for AI, fast async, automatic docs</td><td>Easy</td><td><span class="badge-mvp">CRITICAL</span></td></tr>
+        <tr><td>Database</td><td><span class="tech-tag">PostgreSQL 16</span></td><td>Reliable, JSONB support, full-text search built-in</td><td>Easy</td><td><span class="badge-mvp">CRITICAL</span></td></tr>
+        <tr><td>Cache / Queue</td><td><span class="tech-tag">Redis</span></td><td>Real-time WebSocket state, job queueing for AI tasks</td><td>Easy</td><td><span class="badge-mvp">CRITICAL</span></td></tr>
+        <tr><td>NLP / Sentiment</td><td><span class="tech-tag">HuggingFace</span> <span class="tech-tag">IndicBERT</span> <span class="tech-tag">mBERT</span></td><td>Pre-trained on Indian languages, free, runs locally</td><td>Medium</td><td><span class="badge-mvp">CRITICAL</span></td></tr>
+        <tr><td>Voice to Text</td><td><span class="tech-tag">Whisper (OpenAI)</span></td><td>Best-in-class multilingual ASR, free, runs locally</td><td>Easy</td><td><span class="badge-mvp">CRITICAL</span></td></tr>
+        <tr><td>Document AI</td><td><span class="tech-tag">GPT-4o API</span> or <span class="tech-tag">Llama 3 (local)</span></td><td>Document summarization and speech drafting feature</td><td>Easy</td><td><span class="badge-mvp">CRITICAL</span></td></tr>
+        <tr><td>WhatsApp Bot</td><td><span class="tech-tag">Twilio Sandbox</span></td><td>Free sandbox for demo, easy 30-min setup</td><td>Easy</td><td><span class="badge-mvp">CRITICAL</span></td></tr>
+        <tr><td>Real-time Alerts</td><td><span class="tech-tag">Socket.io</span></td><td>Live dashboard updates without polling</td><td>Easy</td><td><span class="badge-full">IMPORTANT</span></td></tr>
+        <tr><td>Social Scraping</td><td><span class="tech-tag">Twitter API v2</span> <span class="tech-tag">Playwright</span></td><td>Real social data for sentiment engine demo</td><td>Medium</td><td><span class="badge-full">IMPORTANT</span></td></tr>
+        <tr><td>Containerization</td><td><span class="tech-tag">Docker</span> <span class="tech-tag">Docker Compose</span></td><td>One-command startup for demo reliability on stage</td><td>Easy</td><td><span class="badge-full">IMPORTANT</span></td></tr>
+        <tr><td>Mobile App</td><td><span class="tech-tag">React Native</span> or <span class="tech-tag">PWA</span></td><td>Field worker app — PWA is faster to build</td><td>Medium</td><td><span class="badge-skip">OPTIONAL</span></td></tr>
+        <tr><td>Auth</td><td><span class="tech-tag">JWT</span> <span class="tech-tag">bcrypt</span></td><td>Secure role-based login (Leader / Officer / Citizen)</td><td>Easy</td><td><span class="badge-mvp">CRITICAL</span></td></tr>
+        <tr><td>Charts</td><td><span class="tech-tag">Recharts</span> <span class="tech-tag">Chart.js</span></td><td>Fast implementation, beautiful out-of-the-box</td><td>Easy</td><td><span class="badge-mvp">CRITICAL</span></td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<!-- ── MVP vs FULL ── -->
+<div class="section" id="mvp">
+  <div class="sec-label">Build Strategy</div>
+  <h2 class="sec-title">MVP (Demo Day) vs Full Build</h2>
+  <p class="sec-desc">You have 25 days. Here is what to build, what to polish, and what to simulate/mock for demo purposes. Do not over-engineer — build what judges can <strong>see and touch</strong>.</p>
+
+  <div style="overflow-x:auto;">
+    <table class="mvp-table">
+      <thead>
+        <tr>
+          <th>Feature</th>
+          <th>🎯 MVP (Build for Demo)</th>
+          <th>🚀 Full Production</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Grievance Submission</td>
+          <td><span class="badge-mvp">BUILD</span> Web form + WhatsApp bot (Twilio sandbox) + voice upload</td>
+          <td>Native app, IVR integration, 14 language UI</td>
+        </tr>
+        <tr>
+          <td>AI Classification</td>
+          <td><span class="badge-mvp">BUILD</span> IndicBERT for Hindi + English classification live in demo</td>
+          <td>Full 22-language support, fine-tuned on gov data</td>
+        </tr>
+        <tr>
+          <td>Ticket Routing</td>
+          <td><span class="badge-mvp">BUILD</span> Rule-based routing with 5 departments, SLA timer visible on dashboard</td>
+          <td>ML-based smart routing, load balancing across officers</td>
+        </tr>
+        <tr>
+          <td>Escalation Engine</td>
+          <td><span class="badge-mvp">BUILD</span> Simulated escalation — show the UI flow with test data</td>
+          <td>Full automated SMS/email/push notification pipeline</td>
+        </tr>
+        <tr>
+          <td>Sentiment Heatmap</td>
+          <td><span class="badge-mvp">BUILD</span> Static pre-loaded ward data + live sentiment on 2–3 sample wards using Twitter API</td>
+          <td>Real-time all-India ward coverage, streaming updates</td>
+        </tr>
+        <tr>
+          <td>Sentiment Analysis</td>
+          <td><span class="badge-mvp">BUILD</span> Pre-run model outputs displayed on dashboard with live demo using 50 sample tweets</td>
+          <td>Continuous stream processing with Kafka</td>
+        </tr>
+        <tr>
+          <td>Trend Prediction</td>
+          <td><span class="badge-full">SIMULATE</span> Show a canned 7-day trend graph that demonstrates the concept</td>
+          <td>Real LSTM/Prophet model trained on historical data</td>
+        </tr>
+        <tr>
+          <td>NayakAI Co-Pilot</td>
+          <td><span class="badge-mvp">BUILD</span> Document summarizer (GPT-4o API) + speech drafter + morning brief generator — all functional</td>
+          <td>Fine-tuned private model, offline capable</td>
+        </tr>
+        <tr>
+          <td>Social Scraping</td>
+          <td><span class="badge-full">SIMULATE</span> Pre-collected dataset of 500–1000 tweets for demo. Run real scraper in background only.</td>
+          <td>Production-grade scraping with rate limit handling</td>
+        </tr>
+        <tr>
+          <td>Before & After Proof</td>
+          <td><span class="badge-mvp">BUILD</span> Demo flow: resolve a ticket → show notification trigger with fake before/after images</td>
+          <td>Automated image comparison with computer vision</td>
+        </tr>
+        <tr>
+          <td>Role-Based Login</td>
+          <td><span class="badge-mvp">BUILD</span> 3 demo accounts: Citizen, Officer, MLA — each with different dashboard view</td>
+          <td>SSO with Aadhaar OAuth, government PKI integration</td>
+        </tr>
+        <tr>
+          <td>Mobile App</td>
+          <td><span class="badge-full">SIMULATE</span> Show a PWA or Figma mockup — do not waste time building full native app</td>
+          <td>Full React Native app on Play Store</td>
+        </tr>
+        <tr>
+          <td>Department Analytics</td>
+          <td><span class="badge-mvp">BUILD</span> Dashboard with charts showing SLA performance per department with sample data</td>
+          <td>Real-time BI with hundreds of departments</td>
+        </tr>
+        <tr>
+          <td>Infrastructure</td>
+          <td><span class="badge-mvp">BUILD</span> Docker Compose — entire stack starts with `docker-compose up` for reliable demo</td>
+          <td>Kubernetes on NIC/RailCloud / NeSDA cloud</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="callout-orange">The golden rule: <strong>Build working MVPs of all 3 modules</strong> so judges can interact with each one. Better to have 3 modules working at 70% each than 1 module working at 100% and 2 missing.</div>
+</div>
+
+<!-- ── FIRST ROUND ── -->
+<div class="section" id="round1">
+  <div class="sec-label">Immediate Priority</div>
+  <h2 class="sec-title">First Round — Unstop Application</h2>
+  <p class="sec-desc">The Unstop registration/application is your entry to the event. Your application will be evaluated and shortlisted before you get the exhibition booth. This must be compelling enough to get selected. Do this <strong>in the first 3 days (by March 6)</strong>.</p>
+
+  <div class="round1-box">
+    <h3>🎯 What the Unstop Application Must Contain</h3>
+    <p style="font-size:0.87rem; color:var(--light); margin-bottom:18px;">Think of this as your first pitch. Evaluators will see dozens of applications. Make yours stand out with clarity, specificity, and evidence of real thinking.</p>
+    <ul class="checklist">
+      <li class="critical">
+        <div class="cb"></div>
+        <div><strong>One-Line Pitch</strong><span>Write one powerful sentence that captures the entire product: "PRAJA is an AI-powered, multilingual citizen grievance and constituency intelligence platform that replaces CPGRAMS with real-time sentiment heatmaps, automated routing, and an AI co-pilot for elected leaders."</span></div>
+      </li>
+      <li class="critical">
+        <div class="cb"></div>
+        <div><strong>Problem Statement Selection</strong><span>Select "Smart Public Service CRM (PS-CRM)" as your primary problem from Domain 2: Digital Democracy. You can mention that you are also addressing AI Co-Pilot + Sentiment Analysis in the same platform.</span></div>
+      </li>
+      <li class="critical">
+        <div class="cb"></div>
+        <div><strong>Solution Summary (200–300 words)</strong><span>Describe all 3 modules clearly. Mention the specific pain points being solved — CPGRAMS failure rate, 45-day resolution time, zero constituency intelligence for leaders. Include specific Indian statistics.</span></div>
+      </li>
+      <li class="critical">
+        <div class="cb"></div>
+        <div><strong>Tech Stack Mention</strong><span>List key technologies: FastAPI, React, IndicBERT, Whisper, Twilio, PostgreSQL, D3.js. Shows technical seriousness to evaluators.</span></div>
+      </li>
+      <li class="important">
+        <div class="cb"></div>
+        <div><strong>Team Composition</strong><span>List each team member's role clearly. Evaluators want to see that you have the skills to actually build this. Include: Full-Stack Dev, AI/ML Engineer, UI/UX Designer, Domain Researcher.</span></div>
+      </li>
+      <li class="important">
+        <div class="cb"></div>
+        <div><strong>Impact Statement</strong><span>Quantify the impact. Example: "If deployed across India's top 50 cities, PRAJA can reduce average grievance resolution time from 45 days to 5 days, covering 43 crore+ citizens."</span></div>
+      </li>
+      <li class="important">
+        <div class="cb"></div>
+        <div><strong>Scalability Mention</strong><span>State how the solution scales: "Microservices architecture allows deployment from a single ward office to a national-level installation without code changes."</span></div>
+      </li>
+      <li class="normal">
+        <div class="cb"></div>
+        <div><strong>Early Prototype / Wireframe (Bonus)</strong><span>If you have even a Figma wireframe or a basic working screen by Day 3, attach a screenshot. This significantly improves shortlisting chances.</span></div>
+      </li>
+    </ul>
+  </div>
+
+  <div class="callout-red"><strong>Critical Rule:</strong> Teams who get selected are those who show they have ALREADY started thinking and building — not those who are planning to start. If you have a 1-page architecture diagram ready, attach it. Visual evidence of thinking = higher shortlisting probability.</div>
+
+  <div style="margin-top:28px;">
+    <div class="sec-label" style="margin-bottom:14px;">What To Have Ready by March 6</div>
+    <div class="grid-3">
+      <div class="card">
+        <div class="card-icon">📝</div>
+        <h4>Unstop Application Submitted</h4>
+        <p>Full application with problem description, tech stack, team roles, and impact statement filled and submitted by end of Day 3.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🎨</div>
+        <h4>Figma Wireframes (3 Screens)</h4>
+        <p>At minimum: Citizen submission form, Officer dashboard with ticket list, and the constituency heatmap view. Attach to application.</p>
+      </div>
+      <div class="card">
+        <div class="card-icon">🗂️</div>
+        <h4>Project Repository Created</h4>
+        <p>GitHub repo initialized with README, folder structure, and initial boilerplate for FastAPI + React. Shows you are already moving.</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── TIMELINE ── -->
+<div class="section" id="timeline">
+  <div class="sec-label">25-Day Execution Plan</div>
+  <h2 class="sec-title">Week-by-Week Timeline</h2>
+  <p class="sec-desc">March 3 → March 28. Every day counts. No slack time built in — work must be parallel across team members.</p>
+
+  <div class="timeline">
+    <!-- Week 1 -->
+    <div class="tl-item">
+      <div class="tl-dot-wrap"><div class="tl-dot w1"></div></div>
+      <div class="tl-content">
+        <div class="tl-week-label lbl-w1">Week 1 — Foundation</div>
+        <div class="tl-title">March 3–9: Setup, Architecture & Unstop Application</div>
+        <div class="tl-dates">7 days · All systems GO</div>
+        <ul class="tl-tasks">
+          <li><div class="chk"></div><div><strong>Day 1–2: Unstop Application + Team Finalization</strong><span>Finalize team of 3–5. Assign roles (see Team Roles section). Submit Unstop application. Create GitHub repo with folder structure.</span></div></li>
+          <li><div class="chk"></div><div><strong>Day 2–3: Figma UI Design (All 3 Modules)</strong><span>Design key screens: Citizen submission form, Officer dashboard, Heatmap view, NayakAI co-pilot panel. Minimum 8 screens. Use a dark government-grade theme.</span></div></li>
+          <li><div class="chk"></div><div><strong>Day 3–4: Backend Scaffold + Database Schema</strong><span>FastAPI project with folder structure. PostgreSQL schema: Users, Grievances, Departments, Tickets, SentimentData, Wards, Notifications. Migrations ready. Docker Compose file created.</span></div></li>
+          <li><div class="chk"></div><div><strong>Day 4–5: Frontend Scaffold + Auth System</strong><span>React project with routing. 3 login roles: Citizen, Officer, Leader (MLA). JWT auth working. Protected routes. Basic layout with sidebar and header rendered.</span></div></li>
+          <li><div class="chk"></div><div><strong>Day 5–6: AI Model Setup + HuggingFace Integration</strong><span>Load IndicBERT / mBERT locally. Test sentiment classification on 50 sample Hindi/Tamil sentences. Whisper ASR setup: voice input → text output working. Document this carefully.</span></div></li>
+          <li><div class="chk"></div><div><strong>Day 6–7: Map + Ward Data Integration</strong><span>Load ward-level GeoJSON for 2 sample cities (Delhi + Mumbai). Render basic Leaflet.js map with ward boundaries. Color coding working. This visual is critical for demo.</span></div></li>
+        </ul>
+        <div class="tl-deliverable">Unstop application submitted. Figma designs done. Repo with working auth + DB schema + blank map rendering. All AI models loaded and tested locally.</div>
+        <div class="tl-warning">If AI model setup takes too long, use Google Cloud NL API as a temporary fallback for sentiment — replace with local model in Week 3.</div>
+      </div>
+    </div>
+
+    <!-- Week 2 -->
+    <div class="tl-item">
+      <div class="tl-dot-wrap"><div class="tl-dot w2"></div></div>
+      <div class="tl-content">
+        <div class="tl-week-label lbl-w2">Week 2 — Core Build</div>
+        <div class="tl-title">March 10–16: GrievanceOS + NayakAI Core Features</div>
+        <div class="tl-dates">7 days · Heaviest development week</div>
+        <ul class="tl-tasks">
+          <li><div class="chk"></div><div><strong>Day 8–9: Grievance Submission Flow (End-to-End)</strong><span>Citizen submits complaint via web form. AI classifies department + priority + language in real time. Ticket created in DB. Officer dashboard shows new ticket. Notification sent. This entire flow must be working by Day 9.</span></div></li>
+          <li><div class="chk"></div><div><strong>Day 9–10: WhatsApp Bot via Twilio Sandbox</strong><span>Set up Twilio WhatsApp sandbox. Build webhook that receives messages, runs through classification AI, creates ticket in DB, and sends back confirmation message with tracking ID. Test with Hindi and English messages.</span></div></li>
+          <li><div class="chk"></div><div><strong>Day 10–11: Officer Dashboard (Complete)</strong><span>Full ticket management view: list, filter by department/priority/status, assign officer, update status, add resolution notes. SLA timer visible per ticket. Escalation trigger button.</span></div></li>
+          <li><div class="chk"></div><div><strong>Day 11–12: NayakAI — Document Summarizer</strong><span>Upload button in Leader dashboard. Send PDF text to GPT-4o API or Llama 3 with structured prompt. Return 5-bullet summary + 3 recommended actions. Must work reliably on 15-page+ documents.</span></div></li>
+          <li><div class="chk"></div><div><strong>Day 12–13: NayakAI — Speech & Letter Drafter</strong><span>Form: event type + key points input → AI generates full speech (Hindi or English). Letter drafter: issue type + context → generates formal government response letter. Output must be copy-paste ready.</span></div></li>
+          <li><div class="chk"></div><div><strong>Day 13–14: Morning Brief Auto-Generator</strong><span>Scheduled script (or on-demand) compiles: Top 5 grievances, SLA violations, heatmap alerts, upcoming events. Renders as a clean "Morning Brief" card in the Leader dashboard. This is a critical wow-factor feature.</span></div></li>
+        </ul>
+        <div class="tl-deliverable">GrievanceOS full flow working (web + WhatsApp). Officer dashboard complete. NayakAI document summarizer + speech drafter + morning brief functional.</div>
+        <div class="tl-warning">WhatsApp bot setup can be tricky — allocate 4–6 hours for it. If it fails, have a fallback demo using a web form that simulates the WhatsApp intake.</div>
+      </div>
+    </div>
+
+    <!-- Week 3 -->
+    <div class="tl-item">
+      <div class="tl-dot-wrap"><div class="tl-dot w3"></div></div>
+      <div class="tl-content">
+        <div class="tl-week-label lbl-w3">Week 3 — Intelligence Layer</div>
+        <div class="tl-title">March 17–23: SentinelPulse Heatmap + AI Polish</div>
+        <div class="tl-dates">7 days · AI-heavy week</div>
+        <ul class="tl-tasks">
+          <li><div class="chk"></div><div><strong>Day 15–16: Sentiment Dataset + Model Pipeline</strong><span>Collect 500–1000 sample tweets/news items about Indian governance in Hindi + English + Tamil. Run through IndicBERT sentiment classifier. Store labeled results in DB. Build API endpoint that returns ward-level sentiment scores.</span></div></li>
+          <li><div class="chk"></div><div><strong>Day 16–17: Live Heatmap — SentinelPulse Dashboard</strong><span>Connect sentiment scores to Leaflet map. Wards color-coded Red/Orange/Yellow/Green. On click: show top 3 issues + last 5 posts that triggered the sentiment. Drilldown working. This is the most visually impressive screen in the entire demo.</span></div></li>
+          <li><div class="chk"></div><div><strong>Day 17–18: Topic Clustering + Trend Chart</strong><span>Group social posts by topic using keyword + embedding clustering. Show bar chart of top 5 issues per constituency. Show 7-day trend line for each issue. Use Chart.js/Recharts for clean visualization.</span></div></li>
+          <li><div class="chk"></div><div><strong>Day 18–19: Real-Time Alerts + WebSocket</strong><span>When sentiment score for a ward drops below threshold → WebSocket pushes notification to Leader dashboard in real time. Alert shows: ward name, issue, severity, and suggested action.</span></div></li>
+          <li><div class="chk"></div><div><strong>Day 19–20: Constituency Comparison Dashboard</strong><span>Compare sentiment scores across multiple wards or constituencies. Show "Your constituency's satisfaction score vs. state average." This gives the product a benchmarking angle that resonates with competitive politicians.</span></div></li>
+          <li><div class="chk"></div><div><strong>Day 20–21: Before & After Proof + Scheme Linkage</strong><span>Build the Before & After notification demo flow: resolve ticket → upload two photos → trigger targeted micro-zone notification. Also: show beneficiary linkage — citizen profile linked to scheme eligibility.</span></div></li>
+        </ul>
+        <div class="tl-deliverable">SentinelPulse heatmap fully interactive. Topic trends visible. Real-time alerts firing. Before &amp; After proof demo working. Scheme linkage visible.</div>
+        <div class="tl-warning">If Twitter API v2 access is unavailable or rate-limited, use a pre-collected CSV dataset of 1000 tweets instead. The demo cannot depend on live API availability on stage.</div>
+      </div>
+    </div>
+
+    <!-- Week 4 -->
+    <div class="tl-item">
+      <div class="tl-dot-wrap"><div class="tl-dot w4"></div></div>
+      <div class="tl-content">
+        <div class="tl-week-label lbl-w4">Week 4 — Polish & Demo Prep</div>
+        <div class="tl-title">March 24–28: Integration, UI Polish, Rehearsal & Contingency</div>
+        <div class="tl-dates">5 days · No new features — only polish and preparation</div>
+        <ul class="tl-tasks">
+          <li><div class="chk"></div><div><strong>Day 22–23: Full Integration Testing</strong><span>Run the complete demo flow 5 times start to finish without breaking. Fix all bugs. Ensure WhatsApp → ticket → heatmap → alert → NayakAI all flow correctly. Create a stable "demo branch" in git.</span></div></li>
+          <li><div class="chk"></div><div><strong>Day 23–24: UI Polish + Dark Theme Refinement</strong><span>Make the dashboard look genuinely production-grade. Judges will notice professional UI. Fix spacing, loading states, empty states, error messages. Add micro-animations where possible.</span></div></li>
+          <li><div class="chk"></div><div><strong>Day 24–25: Demo Script + Pitch Rehearsal</strong><span>Write a 7-minute demo script (see Demo Day Strategy). Practice 3 times. Each team member must know their 2-minute segment and be able to answer questions about technical implementation.</span></div></li>
+          <li><div class="chk"></div><div><strong>Day 25: Offline Mode + Contingency Setup</strong><span>Run everything on local machine with Docker. Prepare: offline dataset for sentiment demo, cached AI responses for slow connections, pre-filled demo accounts. Do NOT rely on internet on the demo day.</span></div></li>
+          <li><div class="chk"></div><div><strong>March 27: Final Dry Run + Travel to Delhi</strong><span>Complete one final full demo run at the exact venue setup (laptop + monitor/TV). Pack: laptop (fully charged with power bank), HDMI/USB-C adapters, 4G hotspot, backup USB with offline demo.</span></div></li>
+          <li><div class="chk"></div><div><strong>March 28: Demo Day</strong><span>Arrive at Bharat Mandapam by 8:00 AM. Set up booth. Run demo on schedule. Each judge gets a 7-minute live interaction. Have a printed one-pager ready for judges to take with them.</span></div></li>
+        </ul>
+        <div class="tl-deliverable">Final version deployed, bug-free, demo rehearsed 5 times, offline fallback ready, printed one-pager prepared. Team ready to pitch confidently.</div>
+        <div class="tl-warning">Week 4 is NOT for new features. If you are still building features in Week 4, you will not be ready for the demo. Freeze features by March 22 evening.</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ── DAILY SPRINT ── -->
+<div class="section" id="daily">
+  <div class="sec-label">Day-by-Day Breakdown</div>
+  <h2 class="sec-title">25-Day Sprint Calendar</h2>
+  <p class="sec-desc">Each box = one day. Tasks are prioritized — if time is short, focus on bold items.</p>
+
+  <div class="daily-grid">
+    <div class="day-box week1"><div class="day-label">Mon</div><div class="day-date">Mar 3</div><div class="day-task">Team formation. Roles assigned. Join WhatsApp community. Read all problem statements.</div></div>
+    <div class="day-box week1"><div class="day-label">Tue</div><div class="day-date">Mar 4</div><div class="day-task">Write Unstop application draft. Create GitHub repo. Set up dev environments.</div></div>
+    <div class="day-box week1"><div class="day-label">Wed</div><div class="day-date">Mar 5</div><div class="day-task">Submit Unstop application. Start Figma wireframes — 4 core screens done today.</div></div>
+    <div class="day-box week1"><div class="day-label">Thu</div><div class="day-date">Mar 6</div><div class="day-task">Figma complete (8 screens). FastAPI scaffold + DB schema finalized. Docker Compose up.</div></div>
+    <div class="day-box week1"><div class="day-label">Fri</div><div class="day-date">Mar 7</div><div class="day-task">React scaffold. JWT auth working. 3 role-based login views rendering correctly.</div></div>
+    <div class="day-box week1"><div class="day-label">Sat</div><div class="day-date">Mar 8</div><div class="day-task">Load IndicBERT + Whisper. Test on 50 Hindi/Tamil sentences. Ward GeoJSON + Leaflet map rendering.</div></div>
+    <div class="day-box week1"><div class="day-label">Sun</div><div class="day-date">Mar 9</div><div class="day-task">Week 1 review. Fix blocking issues. Prepare Week 2 tickets in GitHub Issues. Rest evening.</div></div>
+
+    <div class="day-box week2"><div class="day-label">Mon</div><div class="day-date">Mar 10</div><div class="day-task">Citizen grievance submission form → AI classification → ticket creation. End-to-end first pass.</div></div>
+    <div class="day-box week2"><div class="day-label">Tue</div><div class="day-date">Mar 11</div><div class="day-task">Officer dashboard: ticket list, filter, assign, status update. SLA timer visible.</div></div>
+    <div class="day-box week2"><div class="day-label">Wed</div><div class="day-date">Mar 12</div><div class="day-task">WhatsApp bot via Twilio sandbox. Hindi message → ticket created → reply with tracking ID.</div></div>
+    <div class="day-box week2"><div class="day-label">Thu</div><div class="day-date">Mar 13</div><div class="day-task">NayakAI: PDF upload → GPT-4o summary API → 5-bullet output rendering on dashboard.</div></div>
+    <div class="day-box week2"><div class="day-label">Fri</div><div class="day-date">Mar 14</div><div class="day-task">NayakAI: Speech drafter and letter generator. Test 5 real Indian governance scenarios.</div></div>
+    <div class="day-box week2"><div class="day-label">Sat</div><div class="day-date">Mar 15</div><div class="day-task">Morning Brief generator: compile top grievances + heatmap summary + schedule. Auto-generate card.</div></div>
+    <div class="day-box week2"><div class="day-label">Sun</div><div class="day-date">Mar 16</div><div class="day-task">Integration test: all of GrievanceOS + NayakAI flows. Bug fixes. Week 2 retrospective.</div></div>
+
+    <div class="day-box week3"><div class="day-label">Mon</div><div class="day-date">Mar 17</div><div class="day-task">Sentiment dataset (1000 tweets) collected & classified with IndicBERT. Ward sentiment scores in DB.</div></div>
+    <div class="day-box week3"><div class="day-label">Tue</div><div class="day-date">Mar 18</div><div class="day-task">SentinelPulse heatmap: Leaflet + color coding + drilldown working. Most critical visual done.</div></div>
+    <div class="day-box week3"><div class="day-label">Wed</div><div class="day-date">Mar 19</div><div class="day-task">Topic clustering + 7-day trend chart. Top 5 issues per constituency rendering.</div></div>
+    <div class="day-box week3"><div class="day-label">Thu</div><div class="day-date">Mar 20</div><div class="day-task">WebSocket real-time alerts: sentiment threshold breach → push notification to leader dashboard.</div></div>
+    <div class="day-box week3"><div class="day-label">Fri</div><div class="day-date">Mar 21</div><div class="day-task">Constituency comparison dashboard. Before & After proof demo flow complete.</div></div>
+    <div class="day-box week3"><div class="day-label">Sat</div><div class="day-date">Mar 22</div><div class="day-task">⛔ FEATURE FREEZE. Full integration test. All 3 modules connected and working together.</div></div>
+    <div class="day-box week3"><div class="day-label">Sun</div><div class="day-date">Mar 23</div><div class="day-task">Documentation: README, setup guide, API docs. One-pager for judges designed and printed.</div></div>
+
+    <div class="day-box week4"><div class="day-label">Mon</div><div class="day-date">Mar 24</div><div class="day-task">UI polish: spacing, loading states, animations, empty states. Make everything look production-grade.</div></div>
+    <div class="day-box week4"><div class="day-label">Tue</div><div class="day-date">Mar 25</div><div class="day-task">Demo script written (7 min). Each person rehearses their segment. First full dry run.</div></div>
+    <div class="day-box week4"><div class="day-label">Wed</div><div class="day-date">Mar 26</div><div class="day-task">Offline contingency setup. Docker run test offline. Pre-fill demo data. Backup on USB. 2nd dry run.</div></div>
+    <div class="day-box week4"><div class="day-label">Thu</div><div class="day-date">Mar 27</div><div class="day-task">Final dry run — simulate exact demo conditions. Travel to Delhi. Arrive by evening. Rest.</div></div>
+    <div class="day-box deadline"><div class="day-label">Fri ⭐</div><div class="day-date">Mar 28</div><div class="day-task">🏆 DEMO DAY. Arrive 8AM. Set up booth. Showcase PRAJA. Win.</div></div>
+  </div>
+</div>
+
+<!-- ── ROLES ── -->
+<div class="section" id="roles">
+  <div class="sec-label">Team Structure</div>
+  <h2 class="sec-title">Team Roles & Responsibilities</h2>
+  <p class="sec-desc">For a team of 4–5 people. If fewer members, combine backend + AI roles. Overlap is expected and healthy.</p>
+
+  <div class="role-grid">
+    <div class="role-card" style="border-top: 3px solid var(--blue);">
+      <div class="role-icon">💻</div>
+      <div class="role-title">Frontend Lead</div>
+      <ul class="role-tasks">
+        <li>React dashboard (all 3 modules)</li>
+        <li>Leaflet.js heatmap integration</li>
+        <li>Charts and data visualizations</li>
+        <li>Responsive design + dark theme</li>
+        <li>WebSocket real-time UI updates</li>
+        <li>Figma to code handoff</li>
+      </ul>
+    </div>
+    <div class="role-card" style="border-top: 3px solid var(--purple);">
+      <div class="role-icon">⚙️</div>
+      <div class="role-title">Backend Lead</div>
+      <ul class="role-tasks">
+        <li>FastAPI REST endpoints</li>
+        <li>PostgreSQL schema + migrations</li>
+        <li>JWT auth + RBAC system</li>
+        <li>Twilio WhatsApp webhook</li>
+        <li>Docker Compose setup</li>
+        <li>Redis caching + job queue</li>
+      </ul>
+    </div>
+    <div class="role-card" style="border-top: 3px solid var(--saffron);">
+      <div class="role-icon">🤖</div>
+      <div class="role-title">AI/ML Engineer</div>
+      <ul class="role-tasks">
+        <li>IndicBERT / mBERT classification</li>
+        <li>Whisper ASR voice pipeline</li>
+        <li>GPT-4o document summarizer</li>
+        <li>Sentiment analysis pipeline</li>
+        <li>Topic clustering model</li>
+        <li>Trend prediction module</li>
+      </ul>
+    </div>
+    <div class="role-card" style="border-top: 3px solid var(--cyan);">
+      <div class="role-icon">🎨</div>
+      <div class="role-title">UI/UX + Design</div>
+      <ul class="role-tasks">
+        <li>Figma wireframes (all screens)</li>
+        <li>Design system + color palette</li>
+        <li>Printed one-pager for judges</li>
+        <li>Demo presentation slides</li>
+        <li>Ward GeoJSON data collection</li>
+        <li>User testing & feedback</li>
+      </ul>
+    </div>
+    <div class="role-card" style="border-top: 3px solid var(--green);">
+      <div class="role-icon">📊</div>
+      <div class="role-title">Research + PM</div>
+      <ul class="role-tasks">
+        <li>Collect tweet/news datasets</li>
+        <li>CPGRAMS research + statistics</li>
+        <li>Write pitch script + presentation</li>
+        <li>Track sprint progress daily</li>
+        <li>Unstop application & comms</li>
+        <li>Prepare judge Q&A answers</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout-orange" style="margin-top:24px;"><strong>If you are a team of 3:</strong> Person 1 = Frontend + UI. Person 2 = Backend + DevOps. Person 3 = AI/ML + Research. The PM role is distributed — everyone owns their module's documentation and demo script.</div>
+</div>
+
+<!-- ── TARGETS ── -->
+<div class="section" id="targets">
+  <div class="sec-label">Success Metrics</div>
+  <h2 class="sec-title">Milestone Targets to Hit</h2>
+  <p class="sec-desc">These are the non-negotiable checkpoints. If you miss a target, escalate immediately within the team and reassign effort.</p>
+
+  <div style="margin-bottom:32px;">
+    <div class="progress-bar-wrap"><div class="pb-header"><span class="pb-title">GrievanceOS — Core Flow (Submission → Classification → Routing)</span><span class="pb-pct">Must be 100% by Mar 16</span></div><div class="pb"><div class="pb-fill pb-saffron" style="width:0%"></div></div></div>
+    <div class="progress-bar-wrap"><div class="pb-header"><span class="pb-title">WhatsApp Bot (Twilio sandbox functional)</span><span class="pb-pct">Must be 100% by Mar 12</span></div><div class="pb"><div class="pb-fill pb-blue" style="width:0%"></div></div></div>
+    <div class="progress-bar-wrap"><div class="pb-header"><span class="pb-title">NayakAI Co-Pilot (Summarizer + Drafter + Morning Brief)</span><span class="pb-pct">Must be 100% by Mar 15</span></div><div class="pb"><div class="pb-fill pb-purple" style="width:0%"></div></div></div>
+    <div class="progress-bar-wrap"><div class="pb-header"><span class="pb-title">SentinelPulse Heatmap (Interactive, color-coded, drilldown)</span><span class="pb-pct">Must be 100% by Mar 21</span></div><div class="pb"><div class="pb-fill pb-green" style="width:0%"></div></div></div>
+    <div class="progress-bar-wrap"><div class="pb-header"><span class="pb-title">Full Integration + Feature Freeze</span><span class="pb-pct">Must be 100% by Mar 22</span></div><div class="pb"><div class="pb-fill pb-saffron" style="width:0%"></div></div></div>
+    <div class="progress-bar-wrap"><div class="pb-header"><span class="pb-title">Demo Rehearsal (5 complete dry runs)</span><span class="pb-pct">Must be 100% by Mar 27</span></div><div class="pb"><div class="pb-fill pb-green" style="width:0%"></div></div></div>
+  </div>
+
+  <div class="grid-2">
+    <div>
+      <div class="sec-label" style="margin-bottom:12px;">Week-by-Week Go/No-Go Checkpoints</div>
+      <ul class="checklist">
+        <li class="critical"><div class="cb"></div><div><strong>March 9 Checkpoint</strong><span>Auth working. DB schema finalized. AI models loaded. Ward map rendering. Figma done. Unstop submitted.</span></div></li>
+        <li class="critical"><div class="cb"></div><div><strong>March 16 Checkpoint</strong><span>Complete grievance flow end-to-end. WhatsApp bot live. NayakAI 3 features functional. Morning brief generating.</span></div></li>
+        <li class="critical"><div class="cb"></div><div><strong>March 22 Checkpoint</strong><span>Heatmap complete. Sentiment alerts firing. All 3 modules integrated. Feature freeze enacted.</span></div></li>
+        <li class="critical"><div class="cb"></div><div><strong>March 27 Checkpoint</strong><span>5 dry runs done. Offline mode confirmed. Demo script memorized. Physical materials printed.</span></div></li>
+      </ul>
+    </div>
+    <div>
+      <div class="sec-label" style="margin-bottom:12px;">Judge Evaluation Criteria (Score to Hit 10/10)</div>
+      <ul class="checklist">
+        <li class="important"><div class="cb"></div><div><strong>Product Clarity & Impact</strong><span>In 30 seconds, every judge must understand what PRAJA does and who it helps. Practice your one-liner until it is effortless.</span></div></li>
+        <li class="important"><div class="cb"></div><div><strong>Innovation & Scalability</strong><span>Highlight: multilingual AI + predictive sentiment + micro-accountability + scheme linkage. Mention the 10.5 lakh booth coverage potential.</span></div></li>
+        <li class="important"><div class="cb"></div><div><strong>Feasibility & Execution</strong><span>Live working demo is the proof. Every feature you claim must be demonstrable in real time — not slides.</span></div></li>
+        <li class="important"><div class="cb"></div><div><strong>Domain Relevance</strong><span>Tie every feature back to Digital Democracy and Citizen Services. Mention CPGRAMS by name and contrast it with PRAJA's capabilities.</span></div></li>
+      </ul>
+    </div>
+  </div>
+</div>
+
+<!-- ── RISKS ── -->
+<div class="section" id="risks">
+  <div class="sec-label">Risk Management</div>
+  <h2 class="sec-title">Risks & Mitigation Strategies</h2>
+  <p class="sec-desc">Identifying risks early is what separates prepared teams from those who scramble on demo day.</p>
+
+  <div class="risk-list">
+    <div class="risk-item">
+      <div><div class="risk-label">Risk</div><div class="risk-name">AI Model Too Slow for Live Demo</div><div class="risk-sev sev-high">High Severity</div></div>
+      <div><div class="risk-label">Probability</div><div style="color:var(--light); font-size:0.83rem;">High — IndicBERT inference on CPU can take 3–8 seconds per request on average laptops.</div></div>
+      <div><div class="risk-label">Impact</div><div style="color:var(--light); font-size:0.83rem;">Demo looks slow and unimpressive to judges who expect instant response.</div></div>
+      <div><div class="risk-label">Mitigation</div><div style="color: #86efac; font-size:0.83rem;">Pre-cache top 20 demo inputs and their AI outputs. Show spinner UI with "AI Processing…" loading state. Use GPU Colab to pre-generate and store in DB for instant retrieval.</div></div>
+    </div>
+    <div class="risk-item">
+      <div><div class="risk-label">Risk</div><div class="risk-name">Twitter API Unavailable / Rate Limited</div><div class="risk-sev sev-high">High Severity</div></div>
+      <div><div class="risk-label">Probability</div><div style="color:var(--light); font-size:0.83rem;">High — Twitter API v2 free tier has strict limits. Paid access required for streaming.</div></div>
+      <div><div class="risk-label">Impact</div><div style="color:var(--light); font-size:0.83rem;">SentinelPulse cannot show real-time sentiment on demo day.</div></div>
+      <div><div class="risk-label">Mitigation</div><div style="color: #86efac; font-size:0.83rem;">Pre-collect 1000–2000 tweets during development. Store in DB. Demo uses pre-loaded data presented as "real-time." This is perfectly acceptable for a hackathon prototype.</div></div>
+    </div>
+    <div class="risk-item">
+      <div><div class="risk-label">Risk</div><div class="risk-name">No Internet at Venue</div><div class="risk-sev sev-high">High Severity</div></div>
+      <div><div class="risk-label">Probability</div><div style="color:var(--light); font-size:0.83rem;">Medium — Large venue, but expo WiFi is often congested and unreliable.</div></div>
+      <div><div class="risk-label">Impact</div><div style="color:var(--light); font-size:0.83rem;">GPT-4o API calls fail. WhatsApp bot unreachable. Everything crashes during judge demo.</div></div>
+      <div><div class="risk-label">Mitigation</div><div style="color: #86efac; font-size:0.83rem;">Run EVERYTHING locally on Docker. Pre-cache all GPT-4o responses. Use a personal 4G hotspot as backup internet. Test the entire demo in airplane mode before leaving home.</div></div>
+    </div>
+    <div class="risk-item">
+      <div><div class="risk-label">Risk</div><div class="risk-name">Twilio WhatsApp Bot Fails on Stage</div><div class="risk-sev sev-med">Medium Severity</div></div>
+      <div><div class="risk-label">Probability</div><div style="color:var(--light); font-size:0.83rem;">Medium — Sandbox has number restrictions and requires pre-approved recipients.</div></div>
+      <div><div class="risk-label">Impact</div><div style="color:var(--light); font-size:0.83rem;">The most impressive part of the demo (filing complaint via WhatsApp) breaks in front of judge.</div></div>
+      <div><div class="risk-label">Mitigation</div><div style="color: #86efac; font-size:0.83rem;">Pre-register all team demo numbers in Twilio sandbox. Have a pre-recorded video of the WhatsApp flow as backup. Build a "simulated WhatsApp" UI as a secondary fallback demo within the web app.</div></div>
+    </div>
+    <div class="risk-item">
+      <div><div class="risk-label">Risk</div><div class="risk-name">Team Member Unavailable (Sick / Emergency)</div><div class="risk-sev sev-med">Medium Severity</div></div>
+      <div><div class="risk-label">Probability</div><div style="color:var(--light); font-size:0.83rem;">Low-Medium — 25 days is a long time and life happens.</div></div>
+      <div><div class="risk-label">Impact</div><div style="color:var(--light); font-size:0.83rem;">Critical module left incomplete or demo team member missing on Day 28.</div></div>
+      <div><div class="risk-label">Mitigation</div><div style="color: #86efac; font-size:0.83rem;">Every team member must understand all 3 modules — not just their own. Cross-train from Day 1. Keep code well-commented and documented so anyone can pick up another's work in 2 hours.</div></div>
+    </div>
+    <div class="risk-item">
+      <div><div class="risk-label">Risk</div><div class="risk-name">Scope Creep / Over-Engineering</div><div class="risk-sev sev-med">Medium Severity</div></div>
+      <div><div class="risk-label">Probability</div><div style="color:var(--light); font-size:0.83rem;">High — Developers love adding features. This is the #1 reason teams arrive with an incomplete product.</div></div>
+      <div><div class="risk-label">Impact</div><div style="color:var(--light); font-size:0.83rem;">Core features unfinished because team spent time on "nice to have" features nobody asked for.</div></div>
+      <div><div class="risk-label">Mitigation</div><div style="color: #86efac; font-size:0.83rem;">Strict feature freeze on March 22. Any new ideas go in a "backlog" doc — not in code. PM role enforces this with daily standups: "Are we building MVP features or nice-to-have?"</div></div>
+    </div>
+  </div>
+</div>
+
+<!-- ── DEMO DAY ── -->
+<div class="section" id="demo">
+  <div class="sec-label">Demo Strategy</div>
+  <h2 class="sec-title">Demo Day Strategy — March 28</h2>
+  <p class="sec-desc">The demo is the product. You have roughly 7–10 minutes with each judge or group of judges. Every second must be planned.</p>
+
+  <div class="grid-2" style="margin-bottom:28px;">
+    <div>
+      <div class="sec-label" style="margin-bottom:12px;">Demo Sequence (7 Minutes)</div>
+      <ul class="checklist">
+        <li class="critical"><div class="cb"></div><div><strong>00:00 – 01:00 — Problem Hook</strong><span>Open with a shocking stat: "India's CPGRAMS takes 45+ days to resolve a complaint, and 60% are closed without resolution. 96 crore citizens have no real voice in governance. PRAJA is the fix."</span></div></li>
+        <li class="critical"><div class="cb"></div><div><strong>01:00 – 02:30 — GrievanceOS Live Demo</strong><span>Send a WhatsApp message in Hindi about a pothole. Show AI classification happen in real time. Show ticket appear in Officer dashboard. Explain SLA timer and escalation engine.</span></div></li>
+        <li class="critical"><div class="cb"></div><div><strong>02:30 – 04:00 — SentinelPulse Heatmap</strong><span>Switch to the heatmap view. Click on a red ward. Show the top 3 issues and the tweets driving the sentiment. Show the 7-day trend heading upward. "Your administrator saw this 3 days before it went viral."</span></div></li>
+        <li class="critical"><div class="cb"></div><div><strong>04:00 – 05:30 — NayakAI Co-Pilot</strong><span>Show the Morning Brief card. Upload a 10-page scheme PDF. Get 5-bullet summary in 5 seconds. Click "Draft a response letter" — show the AI generate a professional Hindi government letter.</span></div></li>
+        <li class="important"><div class="cb"></div><div><strong>05:30 – 06:30 — Scale & Impact</strong><span>"This can cover all 4,000+ municipal corporations. 10.5 lakh election booths. 543 constituencies. Every state, every ward." Show the architecture slide briefly.</span></div></li>
+        <li class="important"><div class="cb"></div><div><strong>06:30 – 07:00 — Close</strong><span>"We are not just a hackathon project. We are a direct replacement for CPGRAMS — smarter, faster, multilingual, and actually accountable. PRAJA means people. This is governance for them."</span></div></li>
+      </ul>
+    </div>
+    <div>
+      <div class="sec-label" style="margin-bottom:12px;">Booth Setup Checklist</div>
+      <ul class="checklist">
+        <li class="critical"><div class="cb"></div><div><strong>Laptop Fully Charged + Power Bank</strong><span>Do not trust venue power outlets to be free. Carry a 65W USB-C power bank that can run your laptop for 3+ hours.</span></div></li>
+        <li class="critical"><div class="cb"></div><div><strong>Monitor / TV Connected via HDMI</strong><span>Show dashboard on a large screen. Judges should not be squinting at a 15-inch laptop. Bring HDMI + USB-C adapter.</span></div></li>
+        <li class="critical"><div class="cb"></div><div><strong>4G Hotspot Active</strong><span>Personal SIM hotspot as primary internet. Do not depend on venue WiFi.</span></div></li>
+        <li class="critical"><div class="cb"></div><div><strong>Docker Running Before Doors Open</strong><span>Start Docker Compose and seed demo data by 8:15 AM before any judges arrive.</span></div></li>
+        <li class="important"><div class="cb"></div><div><strong>Printed One-Pager (Judges Take Away)</strong><span>A4 double-sided: PRAJA overview, 3 modules, key stats, your team, contact. Judges see 50+ booths — give them something to remember you by.</span></div></li>
+        <li class="important"><div class="cb"></div><div><strong>Demo Phone Pre-Registered in Twilio</strong><span>The phone used for WhatsApp demo must be registered in Twilio sandbox at least 24 hours before.</span></div></li>
+        <li class="normal"><div class="cb"></div><div><strong>Backup USB with Offline Demo</strong><span>Videos of all 3 demo flows pre-recorded as last-resort fallback if everything breaks.</span></div></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout-green">The single most impressive moment in your demo will be: a judge watching a WhatsApp message in Tamil → instantly converted to a classified, routed government ticket in front of their eyes. Protect this demo flow at all costs.</div>
+</div>
+
+<!-- ── PITCH SCRIPT ── -->
+<div class="section" id="pitch">
+  <div class="sec-label">What to Say</div>
+  <h2 class="sec-title">Pitch Script & Judge Q&A Prep</h2>
+  <p class="sec-desc">Anticipate judge questions and have crisp, confident answers ready. These are the most likely hard questions.</p>
+
+  <div class="pitch-steps" style="margin-bottom:32px;">
+    <div class="pitch-step"><strong>Opening Hook (memorize this exactly)</strong><span>"India has 96 crore voters and a government complaint system — CPGRAMS — that takes 45 days on average to resolve a complaint, with 60% closed without resolution. At the same time, elected representatives have zero real-time intelligence on what their 20 lakh constituents are thinking or suffering. PRAJA solves both."</span></div>
+    <div class="pitch-step"><strong>Module 1 — GrievanceOS</strong><span>"Any citizen can submit a grievance via WhatsApp, in any Indian language, at any time. Our AI classifies the issue, routes it to the correct department in under 3 seconds, starts a 72-hour SLA timer, and auto-escalates to the MLA if unresolved. When resolved, the system sends a Before &amp; After proof notification only to the residents of that exact street."</span></div>
+    <div class="pitch-step"><strong>Module 2 — SentinelPulse</strong><span>"Our sentiment engine monitors social media, news, and community channels across 10+ Indian languages in real time. The result is this heatmap — ward by ward, updated every hour. When a ward goes Red, the administrator receives a predictive alert 3 to 5 days before the issue becomes a public crisis."</span></div>
+    <div class="pitch-step"><strong>Module 3 — NayakAI</strong><span>"Every morning, the MLA or collector opens their dashboard to a personalized intelligence brief: top 5 constituency issues, SLA violations, viral sentiment alerts, and today's schedule with AI-generated preparation notes. They can upload any 100-page scheme document and get a 5-bullet summary in 10 seconds. They can draft an official government letter in Hindi in one click."</span></div>
+    <div class="pitch-step"><strong>Closing Statement</strong><span>"PRAJA is not a startup idea. It is production-ready architecture designed to replace CPGRAMS at national scale. We support 10+ Indian languages, ward-level granularity across India's 10.5 lakh polling booths, and multi-role access for citizens, officers, and leaders. We are not building for a demo — we are building for deployment."</span></div>
+  </div>
+
+  <div class="sec-label" style="margin-bottom:14px;">Anticipated Judge Questions + Ideal Answers</div>
+  <div style="display:flex; flex-direction:column; gap:14px;">
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:10px; padding:18px;">
+      <div style="font-weight:700; color:var(--saffron); margin-bottom:8px;">Q: How is this different from CPGRAMS or the CM Helpline?</div>
+      <div style="font-size:0.85rem; color:var(--light);">CPGRAMS is a form-submission system with no AI, no multilingual support, no sentiment intelligence, and no predictive capability. It is reactive. PRAJA is proactive — it predicts issues before citizens even file complaints, supports 10+ languages natively, routes intelligently in seconds, and gives elected leaders a real-time intelligence layer that CPGRAMS does not have. We are not competing with CPGRAMS. We are its successor.</div>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:10px; padding:18px;">
+      <div style="font-weight:700; color:var(--saffron); margin-bottom:8px;">Q: How will you handle data privacy for citizens?</div>
+      <div style="font-size:0.85rem; color:var(--light);">All citizen grievance data is stored on government-controlled infrastructure, encrypted at rest using AES-256 and in transit using TLS 1.3. Sentiment analysis uses public social media posts — no private data. Role-based access ensures a street-level officer can only see their assigned tickets, not the entire constituency data. We are compliant with India's Digital Personal Data Protection Act 2023 architecture by design.</div>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:10px; padding:18px;">
+      <div style="font-weight:700; color:var(--saffron); margin-bottom:8px;">Q: What happens when a politician uses this to profile voters politically?</div>
+      <div style="font-size:0.85rem; color:var(--light);">PRAJA is a governance tool, not a political targeting tool. The sentiment and grievance data is town-aggregated at ward level — it shows which issues are hot in which areas, not individual citizen data. The system has audit logs for every data access, and administrator-level use is auditable by the Election Commission. The design is based on issue-tracking, not voter profiling.</div>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:10px; padding:18px;">
+      <div style="font-weight:700; color:var(--saffron); margin-bottom:8px;">Q: What is your go-to-market strategy if you win?</div>
+      <div style="font-size:0.85rem; color:var(--light);">Three parallel paths: First, government procurement — approach state IT departments and NIC to pilot in 2–3 municipal corporations. Second, political party CRM — license it as a constituency management tool to parties directly. Third, MLA/MP direct adoption — offer a freemium model where the basic tier is free for elected representatives, with premium analytics as paid. The first paid pilot can be up in 6 months with a team of 8.</div>
+    </div>
+    <div style="background:var(--card); border:1px solid var(--border); border-radius:10px; padding:18px;">
+      <div style="font-weight:700; color:var(--saffron); margin-bottom:8px;">Q: Can it scale to all 96 crore voters / 10.5 lakh booths?</div>
+      <div style="font-size:0.85rem; color:var(--light);">The architecture is designed for it. We use a microservices pattern — each module (GrievanceOS, SentinelPulse, NayakAI) can scale independently. The sentiment engine can process 100,000 posts per hour on a 3-node cluster, which covers all major Indian metropolitan areas in real time. Full national deployment with NIC infrastructure and government cloud is achievable within 18 months of a funded rollout.</div>
+    </div>
+  </div>
+</div>
+
+<!-- ── FOOTER ── -->
+<div class="footer">
+  <div><strong style="color:var(--saffron);">PRAJA</strong> — India Innovates 2026 Blueprint | Domain: Digital Democracy</div>
+  <div>Bharat Mandapam, New Delhi · 28 March 2026 · ₹1,00,000 First Prize</div>
+  <div style="color:var(--muted);">25 days. 3 modules. 1 national platform. Build it.</div>
+</div>
+
+</div><!-- end .main -->
+</body>
+</html>
