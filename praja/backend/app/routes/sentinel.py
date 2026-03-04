@@ -1,5 +1,5 @@
 from fastapi import APIRouter, Depends
-from supabase._sync.client import SyncClient as Client
+from supabase import Client
 from app.db.database import get_supabase
 from app.utils.jwt import get_current_user
 

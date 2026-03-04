@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel, EmailStr
 from typing import Optional
-from supabase._sync.client import SyncClient as Client
+from supabase import Client
 from app.db.database import get_supabase
 from app.utils.jwt import create_access_token, get_password_hash, verify_password, get_current_user
 

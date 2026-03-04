@@ -1,4 +1,4 @@
-from supabase._sync.client import SyncClient as Client, create_client
+from supabase import Client, create_client
 from app.config import settings
 
 _client: Client | None = None
