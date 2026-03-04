@@ -1,43 +1,74 @@
+import re
+import json
+import secrets
+from datetime import datetime, timezone
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from typing import Optional
 from supabase import Client
+from groq import Groq
+from app.config import settings
 from app.db.database import get_supabase
 from app.utils.jwt import get_current_user
 
 router = APIRouter()
+_groq = Groq(api_key=settings.GROQ_API_KEY)
+
+CATEGORIES = ["Water Supply", "Roads", "Electricity", "Sanitation",
+              "Drainage", "Parks", "Health", "Education", "General"]
+
+
+def _classify(title: str, desc: str) -> dict:
+    prompt = f"""Classify this Indian citizen complaint. Respond with ONLY valid JSON:
+{{"category":"<Water Supply|Roads|Electricity|Sanitation|Drainage|Parks|Health|Education|General>","priority":"<low|medium|high|critical>","sentiment":"<negative|neutral|positive>"}}
+Complaint: {title}. {desc[:300]}"""
+    try:
+        r = _groq.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=80, temperature=0.1,
+        )
+        raw = re.sub(r"```.*?```", "", (r.choices[0].message.content or ""), flags=re.DOTALL).strip()
+        data = json.loads(raw)
+        if data.get("category") not in CATEGORIES:
+            data["category"] = "General"
+        if data.get("priority") not in ["low", "medium", "high", "critical"]:
+            data["priority"] = "medium"
+        return data
+    except Exception:
+        return {"category": "General", "priority": "medium", "sentiment": "negative"}
+
+
+def _gen_tracking_id() -> str:
+    return f"PRJ-{datetime.now(timezone.utc).strftime('%y%m%d')}-{secrets.token_hex(3).upper()}"
 
 
 class GrievanceCreate(BaseModel):
     title: str
     description: str
-    category: str = "General"
-    ward_id:  Optional[int] = None
-    location: Optional[str] = None
-    address:  Optional[str] = None
-    media_urls: Optional[list[str]] = None
 
 
+@router.post("/submit", status_code=201)
 @router.post("/", status_code=201)
 def create_grievance(
     body: GrievanceCreate,
     current: dict = Depends(get_current_user),
     sb: Client = Depends(get_supabase),
 ):
-    payload = {
+    cls = _classify(body.title, body.description)
+    row = sb.table("grievances").insert({
+        "tracking_id":  _gen_tracking_id(),
         "citizen_id":   current["sub"],
         "title":        body.title,
         "description":  body.description,
-        "category":     body.category,
-        "ward_id":      body.ward_id,
-        "location":     body.location,
-        "address":      body.address,
-        "media_urls":   body.media_urls or [],
+        "ai_category":  cls["category"],
+        "ai_sentiment": cls.get("sentiment", "negative"),
+        "priority":     cls["priority"],
         "status":       "open",
-        "priority":     "medium",
-    }
-    row = sb.table("grievances").insert(payload).execute()
-    return row.data[0]
+        "channel":      "web",
+    }).execute()
+    g = row.data[0]
+    return {**g, "tracking_id": g["tracking_id"], "priority": g["priority"]}
 
 
 @router.get("/")
@@ -48,7 +79,7 @@ def list_grievances(
     current: dict = Depends(get_current_user),
     sb: Client = Depends(get_supabase),
 ):
-    q = sb.table("grievances").select("*")
+    q = sb.table("grievances").select("*").order("created_at", desc=True)
     if current["role"] == "citizen":
         q = q.eq("citizen_id", current["sub"])
     if status:
@@ -80,10 +111,13 @@ def update_status(
     if current["role"] == "citizen":
         raise HTTPException(status_code=403, detail="Forbidden")
     sb.table("grievances").update({"status": status}).eq("id", grievance_id).execute()
-    sb.table("ticket_logs").insert({
-        "grievance_id": grievance_id,
-        "officer_id":   current["sub"],
-        "action":       f"status_changed_to_{status}",
-        "notes":        notes,
-    }).execute()
+    try:
+        sb.table("ticket_logs").insert({
+            "grievance_id": grievance_id,
+            "officer_id":   current["sub"],
+            "action":       f"status_changed_to_{status}",
+            "notes":        notes,
+        }).execute()
+    except Exception:
+        pass
     return {"ok": True}
