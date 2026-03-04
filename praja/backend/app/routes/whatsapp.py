@@ -42,25 +42,14 @@ def _translate(text: str) -> str:
 
 
 def detect_language(text: str) -> str:
-    """Detect the language of the text using simple Unicode range checks."""
-    try:
-        from deep_translator import GoogleTranslator
-        # Check common Indic script ranges
-        devanagari = any('\u0900' <= c <= '\u097F' for c in text)
-        tamil      = any('\u0B80' <= c <= '\u0BFF' for c in text)
-        telugu     = any('\u0C00' <= c <= '\u0C7F' for c in text)
-        kannada    = any('\u0C80' <= c <= '\u0CFF' for c in text)
-        malayalam  = any('\u0D00' <= c <= '\u0D7F' for c in text)
-        bengali    = any('\u0980' <= c <= '\u09FF' for c in text)
-        if devanagari: return "Hindi"
-        if tamil:      return "Tamil"
-        if telugu:     return "Telugu"
-        if kannada:    return "Kannada"
-        if malayalam:  return "Malayalam"
-        if bengali:    return "Bengali"
-        return "English"
-    except Exception:
-        return "English"
+    """Detect language using Unicode script ranges — no network call."""
+    if any('\u0900' <= c <= '\u097F' for c in text): return "Hindi"
+    if any('\u0B80' <= c <= '\u0BFF' for c in text): return "Tamil"
+    if any('\u0C00' <= c <= '\u0C7F' for c in text): return "Telugu"
+    if any('\u0C80' <= c <= '\u0CFF' for c in text): return "Kannada"
+    if any('\u0D00' <= c <= '\u0D7F' for c in text): return "Malayalam"
+    if any('\u0980' <= c <= '\u09FF' for c in text): return "Bengali"
+    return "English"
 
 
 def classify_with_groq(text: str) -> dict:
@@ -128,14 +117,28 @@ async def whatsapp_webhook(
     Body: str = Form(...),
     From: str = Form(...),
 ):
+    resp = MessagingResponse()
+    try:
+        await _handle_message(Body, From, resp)
+    except Exception as exc:
+        import traceback
+        traceback.print_exc()
+        resp.message(
+            f"\u26a0\ufe0f PRAJA encountered an error processing your message.\n"
+            f"Please try again or send *help* for commands.\n"
+            f"Error ref: {type(exc).__name__}"
+        )
+    return xml_response(resp)
+
+
+async def _handle_message(Body: str, From: str, resp: MessagingResponse) -> None:
     sb = get_supabase()
     text = Body.strip()
     sender = From
-    resp = MessagingResponse()
 
     if text.lower() in ("help", "hi", "hello", "helo", "hai"):
         resp.message(HELP_MSG)
-        return xml_response(resp)
+        return
 
     track_match = re.match(r"^track\s+(\S+)", text, re.IGNORECASE)
     if track_match:
@@ -147,7 +150,7 @@ async def whatsapp_webhook(
             rows = sb.table("grievances").select("*").eq("id", ticket_id).execute()
         if not rows.data:
             resp.message(f"\u274c No complaint found with ID *{ticket_id}*.\nSend *status* to see your complaints.")
-            return xml_response(resp)
+            return
         g = rows.data[0]
         s_emoji = {"open": "\U0001f4ec", "in_progress": "\U0001f527", "resolved": "\u2705", "escalated": "\U0001f6a8", "closed": "\U0001f512"}.get(g["status"], "\U0001f4cb")
         created_at = g.get("created_at", "")
@@ -176,7 +179,7 @@ async def whatsapp_webhook(
             + (f"\n\n\U0001f4dd *Resolution:* {g['resolution_note']}" if g.get("resolution_note") else "\n\nReply *help* for more commands.")
         )
         resp.message(reply)
-        return xml_response(resp)
+        return
 
     if text.lower() == "status":
         user_id = get_or_create_user(sender, sb)
@@ -190,14 +193,14 @@ async def whatsapp_webhook(
         )
         if not rows.data:
             resp.message("You have no complaints yet. Send me your issue to get started!")
-            return xml_response(resp)
+            return
         lines = ["\U0001f4cb *Your Recent Complaints:*\n"]
         for g in rows.data:
             st = g["status"].replace("_", " ").title()
             lines.append(f"\u2022 {g.get('tracking_id', g['id'][:8])} | {g.get('ai_category','General')} | {st}")
         lines.append("\nSend *track <full_id>* to see full details.")
         resp.message("\n".join(lines))
-        return xml_response(resp)
+        return
 
     user_id = get_or_create_user(sender, sb)
     lang = detect_language(text)
@@ -235,4 +238,4 @@ async def whatsapp_webhook(
         f"Track: reply *track {g['tracking_id']}*"
     )
     resp.message(reply)
-    return xml_response(resp)
+    return
