@@ -45,18 +45,7 @@ def me(current: dict = Depends(get_current_user), sb: Any = Depends(get_supabase
 
 
 
-class UserRegister(BaseModel):
-    full_name: str
-    email: EmailStr
-    password: str
-    phone: str = ""
-    constituency: str = ""
-    role: str = "citizen"
 
-
-class UserLogin(BaseModel):
-    email: EmailStr
-    password: str
 
 
 class Token(BaseModel):

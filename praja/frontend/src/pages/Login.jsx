@@ -36,7 +36,11 @@ export default function Login() {
       const userData = await login(raw, password)
       navigate('/dashboard')
     } catch (err) {
-      setError(err.response?.data?.detail || 'Invalid Aadhaar or password')
+      const detail = err.response?.data?.detail
+      const msg = Array.isArray(detail)
+        ? detail.map(d => (typeof d === 'object' ? (d.msg || JSON.stringify(d)) : String(d))).join('; ')
+        : (typeof detail === 'string' ? detail : 'Invalid Aadhaar or password')
+      setError(msg)
     } finally {
       setLoading(false)
     }
