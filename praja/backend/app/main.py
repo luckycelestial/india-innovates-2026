@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.config import settings
-from app.routes import auth, grievances, officers, nayakai, sentinel, whatsapp
+from app.routes import auth, grievances, officers, nayakai, sentinel, whatsapp, sms, voice
 import re, traceback
 
 app = FastAPI(title="PRAJA API", description="AI-powered Citizen Grievance Platform", version="1.0.0")
@@ -35,6 +35,8 @@ app.include_router(officers.router,    prefix="/api/officers",   tags=["Officers
 app.include_router(nayakai.router,     prefix="/api/nayakai",    tags=["NayakAI"])
 app.include_router(sentinel.router,    prefix="/api/sentinel",   tags=["SentinelPulse"])
 app.include_router(whatsapp.router,    prefix="/api/whatsapp",   tags=["WhatsApp"])
+app.include_router(sms.router,         prefix="/api/sms",        tags=["SMS"])
+app.include_router(voice.router,       prefix="/api/voice",      tags=["Voice"])
 
 @app.get("/")
 def root():

@@ -15,6 +15,9 @@ class Settings(BaseSettings):
     TWILIO_ACCOUNT_SID:     str = ""
     TWILIO_AUTH_TOKEN:      str = ""
     TWILIO_WHATSAPP_NUMBER: str = "whatsapp:+14155238886"
+    TWILIO_PHONE_NUMBER:    str = "+12362043968"   # Canadian SMS+Voice number
+    MSG91_API_KEY:           str = ""
+    MSG91_SENDER_ID:         str = "PRAJA2"
     GROQ_API_KEY:      str = ""
     ENVIRONMENT:  str = "development"
     FRONTEND_URL: str = "http://localhost:5173"

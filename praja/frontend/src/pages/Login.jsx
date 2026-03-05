@@ -2,12 +2,6 @@
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
-const ROLES = [
-  { id: 'citizen', label: 'Citizen',    sub: 'Submit & track complaints' },
-  { id: 'officer', label: 'Officer',    sub: 'Manage and resolve tickets' },
-  { id: 'leader',  label: 'MLA / Leader', sub: 'Constituency dashboard' },
-]
-
 export default function Login() {
   const { login, register } = useAuth()
   const navigate = useNavigate()
@@ -90,23 +84,6 @@ export default function Login() {
                   {m === 'login' ? 'Sign In' : 'Register'}
                 </button>
               ))}
-            </div>
-
-            {/* Role selector */}
-            <div style={{ marginBottom: '18px' }}>
-              <div style={{ fontSize: '0.7rem', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '1px', color: 'var(--muted)', marginBottom: '8px' }}>I am a...</div>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3,1fr)', gap: '8px' }}>
-                {ROLES.map(r => (
-                  <div key={r.id} onClick={() => setRole(r.id)} style={{
-                    padding: '10px 6px', textAlign: 'center', borderRadius: '8px', cursor: 'pointer',
-                    border: `2px solid ${role === r.id ? 'var(--navy)' : 'var(--border)'}`,
-                    background: role === r.id ? 'var(--navy-light)' : 'var(--bg)',
-                  }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.82rem', color: role === r.id ? 'var(--navy)' : 'var(--text)' }}>{r.label}</div>
-                    <div style={{ fontSize: '0.62rem', color: 'var(--muted)', marginTop: '2px' }}>{r.sub}</div>
-                  </div>
-                ))}
-              </div>
             </div>
 
             <form onSubmit={handleSubmit}>
