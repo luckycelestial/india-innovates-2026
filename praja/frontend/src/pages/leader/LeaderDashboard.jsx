@@ -33,7 +33,191 @@ function MiniBar({value,color,label}){return(<div style={{marginBottom:10}}><div
 
 function HeatMapGrid({selectedWard,onSelect}){return(<div><div style={{display:"grid",gridTemplateColumns:"repeat(4,1fr)",gap:8,marginBottom:16}}>{WARD_DATA.map(w=>(<div key={w.id} onClick={()=>onSelect(w)} style={{background:`${scoreColor(w.score)}22`,border:`2px solid ${selectedWard?.id===w.id?scoreColor(w.score):scoreColor(w.score)+"55"}`,borderRadius:10,padding:"10px 8px",cursor:"pointer",transition:"all 0.2s",transform:selectedWard?.id===w.id?"scale(1.04)":"scale(1)"}}><div style={{fontSize:"0.65rem",color:MUTED,marginBottom:2}}>Ward {w.id}</div><div style={{fontSize:"1.4rem",fontWeight:900,color:scoreColor(w.score)}}>{w.score}</div><div style={{fontSize:"0.62rem",color:scoreColor(w.score),fontWeight:700}}>{w.trending}</div></div>))}</div><div style={{display:"flex",gap:12,flexWrap:"wrap",fontSize:"0.72rem"}}>{[{label:"Satisfied 70+",c:GREEN},{label:"Moderate 45–70",c:GOLD},{label:"Tense 25–45",c:SAFFRON},{label:"Crisis <25",c:RED}].map(l=>(<div key={l.label} style={{display:"flex",alignItems:"center",gap:5}}><div style={{width:10,height:10,borderRadius:2,background:l.c}}/><span style={{color:LIGHT}}>{l.label}</span></div>))}</div></div>)}
 
-function NayakAIPanel(){const[activeTab,setActiveTab]=useState("brief");const[brief,setBrief]=useState(null);const[briefLoading,setBL]=useState(false);const[prompt,setPrompt]=useState("");const[speechTopic,setST]=useState("");const[speechLang,setSL]=useState("English");const[loading,setLoading]=useState(false);const[aiOutput,setAiOutput]=useState("");const tabs=[{id:"brief",label:"☀️ Morning Brief"},{id:"doc",label:"📄 Doc Summarizer"},{id:"speech",label:"✍️ Speech Drafter"}];useEffect(()=>{if(activeTab==="brief"&&!brief)loadBrief()},[activeTab]);async function loadBrief(){setBL(true);try{const{data}=await api.post('/nayakai/morning-brief',{});setBrief(data)}catch(e){console.error(e)}finally{setBL(false)}}async function callBackend(text,mode){setLoading(true);setAiOutput("");try{const{data}=await api.post('/nayakai/assist',{text,mode});setAiOutput(data.result||"No response received.")}catch(e){setAiOutput("⚠️ Connection error. Please try again.")}finally{setLoading(false)}}return(<div><div style={{display:"flex",gap:8,marginBottom:20}}>{tabs.map(t=>(<button key={t.id} onClick={()=>{setActiveTab(t.id);setAiOutput("")}} style={{padding:"7px 14px",borderRadius:8,border:`1px solid ${activeTab===t.id?SAFFRON:BORDER}`,background:activeTab===t.id?`${SAFFRON}22`:"transparent",color:activeTab===t.id?SAFFRON:LIGHT,fontSize:"0.8rem",fontWeight:600,cursor:"pointer"}}>{t.label}</button>))}</div>{activeTab==="brief"&&(<div>{briefLoading?<div style={{textAlign:"center",color:MUTED,padding:40}}>Generating brief...</div>:brief?(<div><div style={{background:`${SAFFRON}11`,border:`1px solid ${SAFFRON}44`,borderRadius:12,padding:18,marginBottom:16}}><div style={{fontSize:"0.65rem",color:SAFFRON,letterSpacing:2,fontWeight:700,marginBottom:4}}>MORNING BRIEF</div><div style={{fontWeight:800,fontSize:"1rem",marginBottom:2}}>Good morning, Leader</div><div style={{fontSize:"0.75rem",color:MUTED}}>{brief.date}</div></div><div style={{display:"grid",gridTemplateColumns:"repeat(3,1fr)",gap:10,marginBottom:16}}>{[["Open",brief.total_open,SAFFRON],["Critical",brief.critical_open,RED],["SLA Violations",brief.sla_violations,GOLD]].map(([lbl,val,c])=>(<div key={lbl} style={{background:`${c}11`,border:`1px solid ${c}44`,borderRadius:10,padding:"12px 14px"}}><div style={{fontSize:"1.6rem",fontWeight:900,color:c}}>{val??"—"}</div><div style={{fontSize:"0.7rem",color:MUTED}}>{lbl}</div></div>))}</div>{brief.top_issues?.length>0&&(<div style={{marginBottom:14}}><div style={{fontSize:"0.65rem",color:MUTED,letterSpacing:2,fontWeight:700,marginBottom:8}}>TOP ISSUES</div>{brief.top_issues.map((issue,i)=>(<div key={i} style={{display:"flex",justifyContent:"space-between",alignItems:"center",padding:"8px 12px",marginBottom:6,background:"rgba(255,255,255,0.03)",borderRadius:8,border:`1px solid ${BORDER}`}}><div style={{fontSize:"0.83rem",color:TEXT}}>{typeof issue==="string"?issue:issue.topic}</div>{issue.count&&<span style={{fontSize:"0.75rem",color:RED,fontWeight:700}}>{issue.count}</span>}</div>))}</div>)}{brief.summary&&(<div style={{background:"rgba(255,255,255,0.03)",border:`1px solid ${BORDER}`,borderRadius:10,padding:14,fontSize:"0.83rem",color:LIGHT,lineHeight:1.65}}>{brief.summary}</div>)}<button onClick={loadBrief} style={{marginTop:14,padding:"7px 18px",borderRadius:8,border:`1px solid ${SAFFRON}55`,background:`${SAFFRON}11`,color:SAFFRON,fontSize:"0.8rem",fontWeight:600,cursor:"pointer"}}>↻ Refresh</button></div>):(<button onClick={loadBrief} style={{padding:"10px 22px",borderRadius:8,border:"none",background:`linear-gradient(90deg,${SAFFRON},${GOLD})`,color:"#000",fontWeight:700,cursor:"pointer"}}>☀️ Generate Morning Brief</button>)}</div>)}{activeTab==="doc"&&(<div><div style={{fontSize:"0.78rem",color:LIGHT,marginBottom:8}}>Paste a document or describe a scheme:</div><textarea value={prompt} onChange={e=>setPrompt(e.target.value)} placeholder="e.g. PM Awas Yojana guidelines..." rows={4} style={{width:"100%",padding:12,borderRadius:8,border:`1px solid ${BORDER}`,background:"#0d1526",color:TEXT,fontSize:"0.83rem",resize:"vertical",fontFamily:"inherit",lineHeight:1.5}}/><button onClick={()=>callBackend(prompt,"summarize")} disabled={loading||!prompt.trim()} style={{marginTop:10,padding:"9px 20px",borderRadius:8,border:"none",background:loading?MUTED:`linear-gradient(90deg,${SAFFRON},${GOLD})`,color:"#000",fontWeight:700,fontSize:"0.83rem",cursor:loading?"not-allowed":"pointer",marginBottom:16}}>{loading?"⏳ Summarizing...":"🧠 Summarize with NayakAI"}</button>{aiOutput&&<div style={{background:"#0d1526",border:`1px solid ${GREEN}44`,borderRadius:10,padding:14,whiteSpace:"pre-wrap",fontSize:"0.83rem",color:TEXT,lineHeight:1.7}}>{aiOutput}</div>}</div>)}{activeTab==="speech"&&(<div><div style={{display:"flex",gap:10,marginBottom:12}}><input value={speechTopic} onChange={e=>setST(e.target.value)} placeholder="Event: e.g. Inauguration of Community Park" style={{flex:1,padding:"10px 14px",borderRadius:8,border:`1px solid ${BORDER}`,background:"#0d1526",color:TEXT,fontSize:"0.83rem",fontFamily:"inherit"}}/><select value={speechLang} onChange={e=>setSL(e.target.value)} style={{padding:"10px 12px",borderRadius:8,border:`1px solid ${BORDER}`,background:"#0d1526",color:TEXT,fontSize:"0.83rem"}}>{["English","Hindi","Tamil","Telugu","Bengali","Marathi"].map(l=><option key={l}>{l}</option>)}</select></div><button onClick={()=>callBackend(`Event: ${speechTopic}. Language: ${speechLang}. Constituency: Delhi North.`,"speech")} disabled={loading||!speechTopic.trim()} style={{padding:"9px 20px",borderRadius:8,border:"none",background:loading?MUTED:`linear-gradient(90deg,${SAFFRON},${GOLD})`,color:"#000",fontWeight:700,fontSize:"0.83rem",cursor:loading?"not-allowed":"pointer",marginBottom:16}}>{loading?"⏳ Drafting...":"✍️ Draft Speech with NayakAI"}</button>{aiOutput&&<div style={{background:"#0d1526",border:`1px solid ${GOLD}44`,borderRadius:10,padding:16,whiteSpace:"pre-wrap",fontSize:"0.84rem",color:TEXT,lineHeight:1.8}}>{aiOutput}</div>}</div>)}</div>)}
+function NayakAIPanel() {
+  const [activeTab, setActiveTab] = useState("brief")
+  const [brief, setBrief] = useState(null)
+  const [briefLoading, setBL] = useState(false)
+  const [prompt, setPrompt] = useState("")
+  const [speechTopic, setST] = useState("")
+  const [speechLang, setSL] = useState("English")
+  const [loading, setLoading] = useState(false)
+  const [aiOutput, setAiOutput] = useState("")
+  // Chat state
+  const [chatHistory, setChatHistory] = useState([])
+  const [chatInput, setChatInput] = useState("")
+  const [chatLoading, setChatLoading] = useState(false)
+
+  const tabs = [
+    { id: "brief",  label: "☀️ Morning Brief" },
+    { id: "chat",   label: "💬 Chat" },
+    { id: "doc",    label: "📄 Summarize" },
+    { id: "speech", label: "✍️ Speech" },
+  ]
+
+  useEffect(() => { if (activeTab === "brief" && !brief) loadBrief() }, [activeTab])
+
+  async function loadBrief() {
+    setBL(true)
+    try { const { data } = await api.post('/nayakai/morning-brief', {}); setBrief(data) }
+    catch (e) { console.error(e) } finally { setBL(false) }
+  }
+
+  async function callBackend(text, mode) {
+    setLoading(true); setAiOutput("")
+    try { const { data } = await api.post('/nayakai/assist', { text, mode }); setAiOutput(data.result || "No response received.") }
+    catch (e) { setAiOutput("⚠️ Connection error. Please try again.") }
+    finally { setLoading(false) }
+  }
+
+  async function sendChat(e) {
+    e.preventDefault()
+    if (!chatInput.trim()) return
+    const userMsg = chatInput.trim()
+    setChatInput("")
+    setChatHistory(h => [...h, { role: "user", text: userMsg }])
+    setChatLoading(true)
+    try {
+      const { data } = await api.post('/nayakai/ask', { question: userMsg, constituency: "Delhi North" })
+      setChatHistory(h => [...h, { role: "ai", text: data.answer }])
+    } catch (e) {
+      setChatHistory(h => [...h, { role: "ai", text: "⚠️ Could not connect. Please try again." }])
+    } finally { setChatLoading(false) }
+  }
+
+  return (
+    <div>
+      {/* Tab bar */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 20, flexWrap: "wrap" }}>
+        {tabs.map(t => (
+          <button key={t.id} onClick={() => { setActiveTab(t.id); setAiOutput("") }} style={{
+            padding: "7px 14px", borderRadius: 8,
+            border: `1px solid ${activeTab === t.id ? SAFFRON : BORDER}`,
+            background: activeTab === t.id ? `${SAFFRON}22` : "transparent",
+            color: activeTab === t.id ? SAFFRON : LIGHT,
+            fontSize: "0.8rem", fontWeight: 600, cursor: "pointer",
+          }}>{t.label}</button>
+        ))}
+      </div>
+
+      {/* Morning Brief */}
+      {activeTab === "brief" && (
+        <div>
+          {briefLoading ? <div style={{ textAlign: "center", color: MUTED, padding: 40 }}>Generating brief...</div>
+          : brief ? (
+            <div>
+              <div style={{ background: `${SAFFRON}11`, border: `1px solid ${SAFFRON}44`, borderRadius: 12, padding: 18, marginBottom: 16 }}>
+                <div style={{ fontSize: "0.65rem", color: SAFFRON, letterSpacing: 2, fontWeight: 700, marginBottom: 4 }}>MORNING BRIEF</div>
+                <div style={{ fontWeight: 800, fontSize: "1rem", marginBottom: 2 }}>Good morning, Leader</div>
+                <div style={{ fontSize: "0.75rem", color: MUTED }}>{brief.date}</div>
+              </div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 16 }}>
+                {[["Open", brief.total_open, SAFFRON], ["Critical", brief.critical_open, RED], ["SLA Violations", brief.sla_violations, GOLD]].map(([lbl, val, c]) => (
+                  <div key={lbl} style={{ background: `${c}11`, border: `1px solid ${c}44`, borderRadius: 10, padding: "12px 14px" }}>
+                    <div style={{ fontSize: "1.6rem", fontWeight: 900, color: c }}>{val ?? "—"}</div>
+                    <div style={{ fontSize: "0.7rem", color: MUTED }}>{lbl}</div>
+                  </div>
+                ))}
+              </div>
+              {brief.top_issues?.length > 0 && (
+                <div style={{ marginBottom: 14 }}>
+                  <div style={{ fontSize: "0.65rem", color: MUTED, letterSpacing: 2, fontWeight: 700, marginBottom: 8 }}>TOP ISSUES</div>
+                  {brief.top_issues.map((issue, i) => (
+                    <div key={i} style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "8px 12px", marginBottom: 6, background: "rgba(255,255,255,0.03)", borderRadius: 8, border: `1px solid ${BORDER}` }}>
+                      <div style={{ fontSize: "0.83rem", color: TEXT }}>{typeof issue === "string" ? issue : issue.topic}</div>
+                      {issue.count && <span style={{ fontSize: "0.75rem", color: RED, fontWeight: 700 }}>{issue.count}</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
+              {brief.summary && <div style={{ background: "rgba(255,255,255,0.03)", border: `1px solid ${BORDER}`, borderRadius: 10, padding: 14, fontSize: "0.83rem", color: LIGHT, lineHeight: 1.65 }}>{brief.summary}</div>}
+              <button onClick={loadBrief} style={{ marginTop: 14, padding: "7px 18px", borderRadius: 8, border: `1px solid ${SAFFRON}55`, background: `${SAFFRON}11`, color: SAFFRON, fontSize: "0.8rem", fontWeight: 600, cursor: "pointer" }}>↻ Refresh</button>
+            </div>
+          ) : (
+            <button onClick={loadBrief} style={{ padding: "10px 22px", borderRadius: 8, border: "none", background: `linear-gradient(90deg,${SAFFRON},${GOLD})`, color: "#000", fontWeight: 700, cursor: "pointer" }}>☀️ Generate Morning Brief</button>
+          )}
+        </div>
+      )}
+
+      {/* Chat */}
+      {activeTab === "chat" && (
+        <div style={{ display: "flex", flexDirection: "column", height: 420 }}>
+          <div style={{ flex: 1, overflowY: "auto", marginBottom: 12, display: "flex", flexDirection: "column", gap: 10 }}>
+            {chatHistory.length === 0 && (
+              <div style={{ color: MUTED, fontSize: "0.82rem", textAlign: "center", marginTop: 60 }}>
+                Ask anything about your constituency, grievances, schemes, or governance.
+              </div>
+            )}
+            {chatHistory.map((msg, i) => (
+              <div key={i} style={{
+                alignSelf: msg.role === "user" ? "flex-end" : "flex-start",
+                maxWidth: "85%", padding: "10px 14px", borderRadius: 12,
+                background: msg.role === "user" ? `${SAFFRON}33` : "rgba(255,255,255,0.05)",
+                border: `1px solid ${msg.role === "user" ? SAFFRON + "55" : BORDER}`,
+                fontSize: "0.84rem", color: TEXT, lineHeight: 1.6, whiteSpace: "pre-wrap",
+              }}>
+                {msg.role === "ai" && <div style={{ fontSize: "0.65rem", color: SAFFRON, fontWeight: 700, marginBottom: 4 }}>🤖 NAYAKAI</div>}
+                {msg.text}
+              </div>
+            ))}
+            {chatLoading && (
+              <div style={{ alignSelf: "flex-start", padding: "10px 14px", borderRadius: 12, background: "rgba(255,255,255,0.05)", border: `1px solid ${BORDER}`, fontSize: "0.84rem", color: MUTED }}>
+                🤖 Thinking...
+              </div>
+            )}
+          </div>
+          <form onSubmit={sendChat} style={{ display: "flex", gap: 8 }}>
+            <input
+              value={chatInput}
+              onChange={e => setChatInput(e.target.value)}
+              placeholder="Ask NayakAI anything..."
+              style={{ flex: 1, padding: "10px 14px", borderRadius: 8, border: `1px solid ${BORDER}`, background: "#0d1526", color: TEXT, fontSize: "0.84rem", fontFamily: "inherit" }}
+            />
+            <button type="submit" disabled={chatLoading || !chatInput.trim()} style={{
+              padding: "10px 18px", borderRadius: 8, border: "none",
+              background: chatLoading ? MUTED : `linear-gradient(90deg,${SAFFRON},${GOLD})`,
+              color: "#000", fontWeight: 700, cursor: chatLoading ? "not-allowed" : "pointer", fontSize: "0.84rem",
+            }}>Send</button>
+          </form>
+        </div>
+      )}
+
+      {/* Doc Summarizer */}
+      {activeTab === "doc" && (
+        <div>
+          <div style={{ fontSize: "0.78rem", color: LIGHT, marginBottom: 8 }}>Paste a document or describe a scheme:</div>
+          <textarea value={prompt} onChange={e => setPrompt(e.target.value)} placeholder="e.g. PM Awas Yojana guidelines..." rows={4}
+            style={{ width: "100%", padding: 12, borderRadius: 8, border: `1px solid ${BORDER}`, background: "#0d1526", color: TEXT, fontSize: "0.83rem", resize: "vertical", fontFamily: "inherit", lineHeight: 1.5 }} />
+          <button onClick={() => callBackend(prompt, "summarize")} disabled={loading || !prompt.trim()} style={{
+            marginTop: 10, padding: "9px 20px", borderRadius: 8, border: "none",
+            background: loading ? MUTED : `linear-gradient(90deg,${SAFFRON},${GOLD})`,
+            color: "#000", fontWeight: 700, fontSize: "0.83rem", cursor: loading ? "not-allowed" : "pointer", marginBottom: 16,
+          }}>{loading ? "⏳ Summarizing..." : "🧠 Summarize with NayakAI"}</button>
+          {aiOutput && <div style={{ background: "#0d1526", border: `1px solid ${GREEN}44`, borderRadius: 10, padding: 14, whiteSpace: "pre-wrap", fontSize: "0.83rem", color: TEXT, lineHeight: 1.7 }}>{aiOutput}</div>}
+        </div>
+      )}
+
+      {/* Speech Drafter */}
+      {activeTab === "speech" && (
+        <div>
+          <div style={{ display: "flex", gap: 10, marginBottom: 12 }}>
+            <input value={speechTopic} onChange={e => setST(e.target.value)} placeholder="Event: e.g. Inauguration of Community Park"
+              style={{ flex: 1, padding: "10px 14px", borderRadius: 8, border: `1px solid ${BORDER}`, background: "#0d1526", color: TEXT, fontSize: "0.83rem", fontFamily: "inherit" }} />
+            <select value={speechLang} onChange={e => setSL(e.target.value)} style={{ padding: "10px 12px", borderRadius: 8, border: `1px solid ${BORDER}`, background: "#0d1526", color: TEXT, fontSize: "0.83rem" }}>
+              {["English", "Hindi", "Tamil", "Telugu", "Bengali", "Marathi"].map(l => <option key={l}>{l}</option>)}
+            </select>
+          </div>
+          <button onClick={() => callBackend(`Event: ${speechTopic}. Language: ${speechLang}. Constituency: Delhi North.`, "speech")}
+            disabled={loading || !speechTopic.trim()} style={{
+              padding: "9px 20px", borderRadius: 8, border: "none",
+              background: loading ? MUTED : `linear-gradient(90deg,${SAFFRON},${GOLD})`,
+              color: "#000", fontWeight: 700, fontSize: "0.83rem", cursor: loading ? "not-allowed" : "pointer", marginBottom: 16,
+            }}>{loading ? "⏳ Drafting..." : "✍️ Draft Speech with NayakAI"}</button>
+          {aiOutput && <div style={{ background: "#0d1526", border: `1px solid ${GOLD}44`, borderRadius: 10, padding: 16, whiteSpace: "pre-wrap", fontSize: "0.84rem", color: TEXT, lineHeight: 1.8 }}>{aiOutput}</div>}
+        </div>
+      )}
+    </div>
+  )
+}
 
 
 

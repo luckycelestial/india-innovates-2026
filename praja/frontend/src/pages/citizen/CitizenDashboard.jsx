@@ -1,6 +1,25 @@
-﻿import { useState, useEffect } from 'react'
+﻿import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../../context/AuthContext'
 import api from '../../services/api'
+
+function Toast({ message, type, onClose }) {
+  useEffect(() => { const t = setTimeout(onClose, 4000); return () => clearTimeout(t) }, [onClose])
+  const bg = type === 'success' ? '#138808' : '#e63946'
+  return (
+    <div style={{
+      position: 'fixed', top: 20, right: 20, zIndex: 9999,
+      background: bg, color: '#fff', padding: '12px 20px',
+      borderRadius: 10, fontWeight: 600, fontSize: '0.88rem',
+      boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+      display: 'flex', alignItems: 'center', gap: 10,
+      maxWidth: 340, animation: 'slideIn 0.2s ease',
+    }}>
+      <span>{type === 'success' ? '✅' : '❌'}</span>
+      <span style={{ flex: 1 }}>{message}</span>
+      <span onClick={onClose} style={{ cursor: 'pointer', opacity: 0.7, fontSize: '1.1rem' }}>×</span>
+    </div>
+  )
+}
 
 const SAFFRON="#FF6B00",GOLD="#f59e0b",GREEN="#22c55e",NAVY="#080f1e",CARD="#111d35",BORDER="#1e2d4d",MUTED="#64748b",LIGHT="#94a3b8",TEXT="#e2e8f0",RED="#ef4444",BLUE="#3b82f6"
 
@@ -21,6 +40,8 @@ export default function CitizenDashboard() {
   const [tickets, setTickets] = useState([])
   const [tab, setTab] = useState('submit')
   const [error, setError] = useState('')
+  const [toast, setToast] = useState(null)
+  const dismissToast = useCallback(() => setToast(null), [])
 
   useEffect(() => { if (tab === 'history') loadTickets() }, [tab])
 
@@ -38,8 +59,11 @@ export default function CitizenDashboard() {
       const { data } = await api.post('/grievances/submit', { title, description })
       setSubmitted(data)
       setTitle(''); setDescription('')
+      setToast({ message: `Submitted! Tracking ID: ${data.tracking_id}`, type: 'success' })
     } catch (err) {
-      setError(err.response?.data?.detail || 'Submission failed. Please try again.')
+      const msg = err.response?.data?.detail || 'Submission failed. Please try again.'
+      setError(msg)
+      setToast({ message: msg, type: 'error' })
     } finally { setSubmitting(false) }
   }
 
@@ -47,6 +71,8 @@ export default function CitizenDashboard() {
 
   return (
     <div style={{ minHeight: '100vh', background: NAVY, display: 'flex', flexDirection: 'column', fontFamily: "'Segoe UI', system-ui, sans-serif", color: TEXT }}>
+      {toast && <Toast message={toast.message} type={toast.type} onClose={dismissToast} />}
+      <style>{`@keyframes slideIn{from{transform:translateX(40px);opacity:0}to{transform:translateX(0);opacity:1}}`}</style>
       {/* TOP BAR */}
       <div style={{ background: '#0d1526', padding: '14px 28px', display: 'flex', alignItems: 'center', justifyContent: 'space-between', borderBottom: `1px solid ${BORDER}`, position: 'sticky', top: 0, zIndex: 100 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

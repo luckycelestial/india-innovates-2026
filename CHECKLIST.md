@@ -38,7 +38,7 @@
 - [x] WhatsApp bot (Twilio sandbox) — receive complaint, save to DB, reply with tracking ID
 - [x] WhatsApp `track PRJ-...` command to check status
 - [ ] Officer web dashboard — accept / resolve / escalate tickets ✅ (UI done, API needs test)
-- [ ] SLA deadline auto-set on ticket creation
+- [x] SLA deadline auto-set on ticket creation
 - [ ] Push notification when ticket status changes
 - [ ] Attach photo/image to grievance (media_url)
 
@@ -51,7 +51,7 @@
 - [x] `POST /api/nayakai/speech` — draft public speech from key points
 - [x] `POST /api/nayakai/letter` — draft formal government letter
 - [x] Leader dashboard UI with tab nav (Morning Brief / Alerts / NayakAI / Heatmap)
-- [ ] NayakAI Q&A / chat interface
+- [x] NayakAI Q&A / chat interface
 - [ ] Export speech/letter as PDF/DOCX
 
 ---
@@ -76,7 +76,7 @@
 - [x] Leader dashboard — brief, alerts, NayakAI, heatmap placeholder
 - [ ] Mobile responsive polish
 - [ ] Loading skeletons / empty states
-- [ ] Toast notifications on submit success/error
+- [x] Toast notifications on submit success/error
 
 ---
 

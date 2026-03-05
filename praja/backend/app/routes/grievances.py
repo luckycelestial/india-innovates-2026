@@ -1,7 +1,7 @@
 import re
 import json
 import secrets
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from typing import Optional, Any
@@ -20,6 +20,8 @@ _groq = Groq(api_key=settings.GROQ_API_KEY)
 
 CATEGORIES = ["Water Supply", "Roads", "Electricity", "Sanitation",
               "Drainage", "Parks", "Health", "Education", "General"]
+
+SLA_HOURS = {"critical": 24, "high": 72, "medium": 168, "low": 720}  # 1d / 3d / 7d / 30d
 
 
 def _classify(title: str, desc: str) -> dict:
@@ -70,6 +72,9 @@ def create_grievance(
     sb: Any = Depends(get_supabase),
 ):
     cls = _classify(body.title, body.description)
+    now = datetime.now(timezone.utc)
+    hours = SLA_HOURS.get(cls["priority"], 168)
+    sla_deadline = (now + timedelta(hours=hours)).isoformat()
     row = sb.table("grievances").insert({
         "tracking_id":  _gen_tracking_id(),
         "citizen_id":   current["sub"],
@@ -80,6 +85,7 @@ def create_grievance(
         "priority":     cls["priority"],
         "status":       "open",
         "channel":      "web",
+        "sla_deadline":  sla_deadline,
     }).execute()
     g = row.data[0]
     return {**g, "tracking_id": g["tracking_id"], "priority": g["priority"]}
