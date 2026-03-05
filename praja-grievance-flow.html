@@ -1,0 +1,787 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PRAJA vs CPGRAMS — Grievance Flow Comparison</title>
+  <style>
+    :root {
+      --saffron: #FF9933;
+      --green: #138808;
+      --bg: #07070f;
+      --card: #10101e;
+      --border: #22223a;
+      --text: #e8e8f0;
+      --muted: #7777aa;
+      --praja: #FF9933;
+      --cpgrams: #3b82f6;
+      --red: #ef4444;
+      --yellow: #facc15;
+      --lime: #84cc16;
+      --purple: #a855f7;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: 'Segoe UI', system-ui, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      padding: 36px 20px 80px;
+    }
+
+    /* ─── HEADER ─── */
+    header { text-align: center; margin-bottom: 52px; }
+    .badge {
+      display: inline-block;
+      background: linear-gradient(135deg, var(--saffron), #ffb347);
+      color: #000; font-size: 11px; font-weight: 700;
+      letter-spacing: 2px; text-transform: uppercase;
+      padding: 4px 14px; border-radius: 20px; margin-bottom: 14px;
+    }
+    header h1 {
+      font-size: clamp(22px, 4vw, 38px); font-weight: 800;
+      background: linear-gradient(135deg, var(--saffron) 0%, #fff 50%, var(--green) 100%);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+      background-clip: text; margin-bottom: 10px;
+    }
+    header p { color: var(--muted); font-size: 14px; max-width: 600px; margin: 0 auto; }
+
+    /* ─── COLUMNS ─── */
+    .compare-grid {
+      display: grid;
+      grid-template-columns: 1fr 60px 1fr;
+      max-width: 1240px;
+      margin: 0 auto;
+      gap: 0;
+      align-items: start;
+    }
+
+    /* column headers */
+    .col-header {
+      text-align: center;
+      padding: 16px 20px 24px;
+      border-radius: 16px 16px 0 0;
+      margin-bottom: 0;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .col-header.praja-header {
+      background: linear-gradient(135deg, #1a0d00, #221200);
+      border: 1px solid #ff993360;
+      border-bottom: none;
+    }
+    .col-header.cpgrams-header {
+      background: linear-gradient(135deg, #00081a, #001022);
+      border: 1px solid #3b82f660;
+      border-bottom: none;
+    }
+    .col-header .system-name {
+      font-size: 20px; font-weight: 800; letter-spacing: 1px;
+    }
+    .col-header .system-sub {
+      font-size: 11px; color: var(--muted); margin-top: 4px;
+    }
+    .col-header .status-pill {
+      display: inline-block; font-size: 10px; font-weight: 700;
+      padding: 3px 12px; border-radius: 20px; margin-top: 8px;
+      letter-spacing: 1px; text-transform: uppercase;
+    }
+    .pill-new  { background: #ff993322; color: var(--saffron); border: 1px solid var(--saffron); }
+    .pill-old  { background: #3b82f622; color: #60a5fa; border: 1px solid #3b82f6; }
+
+    /* divider column */
+    .vs-col {
+      display: flex; flex-direction: column;
+      align-items: center; padding-top: 30px; gap: 0;
+    }
+    .vs-label {
+      background: var(--border); border: 1px solid #444460;
+      border-radius: 50%; width: 40px; height: 40px;
+      display: flex; align-items: center; justify-content: center;
+      font-size: 12px; font-weight: 800; color: var(--muted);
+      position: sticky; top: 30px;
+    }
+    .vs-line {
+      width: 2px; flex: 1;
+      background: linear-gradient(to bottom, #333355, transparent);
+      min-height: 1200px;
+    }
+
+    /* ─── FLOW COLUMNS ─── */
+    .flow-col {
+      display: flex; flex-direction: column; align-items: center;
+      padding: 0 12px 32px;
+      border-left: 1px solid;
+      border-right: 1px solid;
+      border-bottom: 1px solid;
+      border-radius: 0 0 16px 16px;
+    }
+    .flow-col.praja-col {
+      border-color: #ff993360;
+      background: linear-gradient(180deg, #120900 0%, #07070f 100%);
+    }
+    .flow-col.cpgrams-col {
+      border-color: #3b82f660;
+      background: linear-gradient(180deg, #00080f 0%, #07070f 100%);
+    }
+
+    /* ─── NODE ─── */
+    .node { width: 100%; display: flex; flex-direction: column; align-items: center; }
+
+    /* arrow */
+    .arrow {
+      display: flex; flex-direction: column; align-items: center;
+      margin: 0; width: 100%;
+      position: relative;
+    }
+    .arrow-line {
+      width: 2px; height: 28px;
+    }
+    .arrow-head {
+      width: 0; height: 0;
+      border-left: 7px solid transparent;
+      border-right: 7px solid transparent;
+    }
+    .arrow-label {
+      font-size: 10px; font-weight: 600; letter-spacing: 0.5px;
+      padding: 2px 8px; border-radius: 10px; margin: 3px 0;
+      text-align: center; max-width: 180px;
+    }
+
+    /* PRAJA arrows go UP (but we render top-to-bottom visually with labels) */
+    .praja-arrow .arrow-line   { background: linear-gradient(to bottom, #ff993366, #ff6600aa); }
+    .praja-arrow .arrow-head   { border-top: 9px solid #ff9933; }
+    .praja-arrow .arrow-label  { background: #ff993318; color: #ffbb55; border: 1px solid #ff993333; }
+
+    .cpgrams-arrow .arrow-line { background: linear-gradient(to bottom, #3b82f666, #1d4ed8aa); }
+    .cpgrams-arrow .arrow-head { border-top: 9px solid #3b82f6; }
+    .cpgrams-arrow .arrow-label{ background: #3b82f618; color: #7dd3fc; border: 1px solid #3b82f633; }
+
+    /* escalation (dashed, red) */
+    .escalation-arrow .arrow-line {
+      background: repeating-linear-gradient(to bottom, #ef4444 0px, #ef4444 4px, transparent 4px, transparent 8px);
+      width: 2px; height: 36px;
+    }
+    .escalation-arrow .arrow-head  { border-top: 9px solid #ef4444; }
+    .escalation-arrow .arrow-label { background: #ef444418; color: #fca5a5; border: 1px solid #ef444433; }
+
+    /* ─── STEP CARD ─── */
+    .step {
+      width: 100%; border-radius: 12px; padding: 12px 16px;
+      border: 1px solid; text-align: center;
+      position: relative; transition: box-shadow 0.2s;
+    }
+    .step:hover { box-shadow: 0 6px 24px rgba(0,0,0,0.6); }
+
+    .step-num {
+      position: absolute; top: -10px; left: 50%; transform: translateX(-50%);
+      font-size: 10px; font-weight: 800; letter-spacing: 1px;
+      padding: 1px 10px; border-radius: 10px; white-space: nowrap;
+    }
+    .step-icon  { font-size: 22px; margin-bottom: 4px; }
+    .step-title { font-size: 14px; font-weight: 700; margin-bottom: 3px; }
+    .step-sub   { font-size: 11px; color: var(--muted); line-height: 1.5; }
+    .step-tags  { display: flex; flex-wrap: wrap; gap: 4px; justify-content: center; margin-top: 8px; }
+    .stag       { font-size: 10px; font-weight: 600; padding: 2px 8px; border-radius: 10px; border: 1px solid; }
+
+    /* PRAJA step colours */
+    .s-citizen  { background: #120800; border-color: var(--saffron);     }
+    .s-citizen  .step-title { color: var(--saffron); }
+    .s-citizen  .step-num   { background: var(--saffron); color: #000; }
+
+    .s-ai       { background: #0d0a1a; border-color: #a855f7;            }
+    .s-ai       .step-title { color: #c084fc; }
+    .s-ai       .step-num   { background: #a855f7; color: #000; }
+
+    .s-ward     { background: #0a100a; border-color: #84cc16;            }
+    .s-ward     .step-title { color: #bef264; }
+    .s-ward     .step-num   { background: #84cc16; color: #000; }
+
+    .s-muni     { background: #0a0c10; border-color: #38bdf8;            }
+    .s-muni     .step-title { color: #7dd3fc; }
+    .s-muni     .step-num   { background: #38bdf8; color: #000; }
+
+    .s-dist     { background: #100a10; border-color: #e879f9;            }
+    .s-dist     .step-title { color: #f0abfc; }
+    .s-dist     .step-num   { background: #e879f9; color: #000; }
+
+    .s-state    { background: #100800; border-color: #fb923c;            }
+    .s-state    .step-title { color: #fdba74; }
+    .s-state    .step-num   { background: #fb923c; color: #000; }
+
+    .s-resolved { background: #071208; border-color: var(--green);       }
+    .s-resolved .step-title { color: #4ade80; }
+    .s-resolved .step-num   { background: var(--green); color: #fff; }
+
+    /* CPGRAMS step colours */
+    .c-citizen  { background: #07080f; border-color: #3b82f6;            }
+    .c-citizen  .step-title { color: #93c5fd; }
+    .c-citizen  .step-num   { background: #3b82f6; color: #000; }
+
+    .c-portal   { background: #07070f; border-color: #64748b;            }
+    .c-portal   .step-title { color: #94a3b8; }
+    .c-portal   .step-num   { background: #64748b; color: #fff; }
+
+    .c-nodal    { background: #0a070f; border-color: #8b5cf6;            }
+    .c-nodal    .step-title { color: #c4b5fd; }
+    .c-nodal    .step-num   { background: #8b5cf6; color: #fff; }
+
+    .c-dept     { background: #0f0707; border-color: #f87171;            }
+    .c-dept     .step-title { color: #fca5a5; }
+    .c-dept     .step-num   { background: #f87171; color: #000; }
+
+    .c-stuck    { background: #100707; border-color: #ef4444;            }
+    .c-stuck    .step-title { color: #ef4444; }
+    .c-stuck    .step-num   { background: #ef4444; color: #fff; }
+
+    .c-appeal   { background: #0f0f07; border-color: #ca8a04;            }
+    .c-appeal   .step-title { color: #fde047; }
+    .c-appeal   .step-num   { background: #ca8a04; color: #000; }
+
+    .c-closed   { background: #070f07; border-color: #4ade80;            }
+    .c-closed   .step-title { color: #4ade80; }
+    .c-closed   .step-num   { background: #4ade80; color: #000; }
+
+    /* tags */
+    .t-ai       { color: #c084fc; border-color: #a855f740; background: #a855f715; }
+    .t-time     { color: #fbbf24; border-color: #fbbf2440; background: #fbbf2415; }
+    .t-whatsapp { color: #22c55e; border-color: #22c55e40; background: #22c55e15; }
+    .t-live     { color: #38bdf8; border-color: #38bdf840; background: #38bdf815; }
+    .t-slow     { color: #f87171; border-color: #f8717140; background: #f8717115; }
+    .t-manual   { color: #94a3b8; border-color: #94a3b840; background: #94a3b815; }
+    .t-no       { color: #ef4444;  border-color: #ef444440; background: #ef444415; }
+
+    /* ─── ESCALATION TIMER BOX ─── */
+    .timer-box {
+      border: 1px dashed #ef444466;
+      border-radius: 10px;
+      padding: 8px 14px;
+      background: #ef444409;
+      font-size: 11px; color: #fca5a5;
+      text-align: center; width: 100%;
+      line-height: 1.6;
+    }
+    .timer-box strong { color: #f87171; }
+
+    /* ─── OUTCOME SUMMARY ─── */
+    .outcome-row {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      max-width: 1240px;
+      margin: 52px auto 0;
+    }
+    .outcome-card {
+      border-radius: 14px; padding: 22px 24px;
+      border: 1px solid;
+    }
+    .outcome-card.praja-out { border-color: #ff993360; background: #120900; }
+    .outcome-card.cpgrams-out { border-color: #3b82f660; background: #00080f; }
+    .outcome-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 14px; }
+    .outcome-card.praja-out h3   { color: var(--saffron); }
+    .outcome-card.cpgrams-out h3 { color: #60a5fa; }
+
+    .metric-row { display: flex; justify-content: space-between; align-items: center;
+      padding: 8px 0; border-bottom: 1px solid var(--border); font-size: 13px; }
+    .metric-row:last-child { border-bottom: none; }
+    .metric-label { color: var(--muted); }
+    .metric-val   { font-weight: 700; }
+    .good { color: #4ade80; }
+    .bad  { color: #f87171; }
+    .med  { color: #facc15; }
+
+    @media (max-width: 760px) {
+      .compare-grid { grid-template-columns: 1fr; }
+      .vs-col { display: none; }
+      .outcome-row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="badge">System Comparison</div>
+  <h1>PRAJA vs CPGRAMS — Grievance Flow</h1>
+  <p>How a citizen's complaint travels bottom-up through the Indian political hierarchy in PRAJA, compared to the current CPGRAMS system</p>
+</header>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MAIN COMPARISON GRID
+════════════════════════════════════════════════════════════ -->
+<div class="compare-grid">
+
+  <!-- ════ PRAJA COLUMN ════ -->
+  <div>
+    <div class="col-header praja-header">
+      <div class="system-name" style="color:var(--saffron)">🪷 PRAJA</div>
+      <div class="system-sub">AI-Powered Citizen Grievance Platform (2026)</div>
+      <span class="status-pill pill-new">Proposed System</span>
+    </div>
+
+    <div class="flow-col praja-col">
+
+      <!-- STEP 0: CITIZEN FILES -->
+      <div style="height:20px"></div>
+      <div class="node">
+        <div class="step s-citizen">
+          <div class="step-num">STEP 1</div>
+          <div class="step-icon">🧑‍🌾</div>
+          <div class="step-title">Citizen Files Complaint</div>
+          <div class="step-sub">Web portal or WhatsApp in local language.<br/>Photo / voice note / text supported.</div>
+          <div class="step-tags">
+            <span class="stag t-whatsapp">WhatsApp Bot</span>
+            <span class="stag t-live">Web Portal</span>
+            <span class="stag t-ai">Voice to Text</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="arrow praja-arrow">
+        <div class="arrow-line"></div>
+        <div class="arrow-label">Instant — AI processes in &lt;2 sec</div>
+        <div class="arrow-line" style="height:8px"></div>
+        <div class="arrow-head"></div>
+      </div>
+
+      <!-- STEP 1: AI ENGINE -->
+      <div class="node">
+        <div class="step s-ai">
+          <div class="step-num">STEP 2</div>
+          <div class="step-icon">🤖</div>
+          <div class="step-title">AI Engine (Groq · LLaMA 3.3)</div>
+          <div class="step-sub">
+            Auto-classifies department (Water / Roads / Health…)<br/>
+            Assigns priority: <strong style="color:#ef4444">CRITICAL</strong> /
+            <strong style="color:#facc15">HIGH</strong> /
+            <strong style="color:#84cc16">MEDIUM</strong> /
+            <strong style="color:#64748b">LOW</strong><br/>
+            Generates unique ticket ID · Sets SLA timer
+          </div>
+          <div class="step-tags">
+            <span class="stag t-ai">AI Classification</span>
+            <span class="stag t-time">SLA Timer Starts</span>
+            <span class="stag t-live">SMS Confirmation</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="arrow praja-arrow">
+        <div class="arrow-line"></div>
+        <div class="arrow-label">Routed to ward of the citizen</div>
+        <div class="arrow-line" style="height:8px"></div>
+        <div class="arrow-head"></div>
+      </div>
+
+      <!-- STEP 2: WARD LEVEL -->
+      <div class="node">
+        <div class="step s-ward">
+          <div class="step-num">STEP 3</div>
+          <div class="step-icon">🪑</div>
+          <div class="step-title">Ward Councillor / Gram Panch</div>
+          <div class="step-sub">
+            Receives complaint on PRAJA dashboard.<br/>
+            Must acknowledge &amp; assign to local officer.<br/>
+            <strong style="color:#bef264">SLA: 3 days (Critical) · 7 days (Normal)</strong>
+          </div>
+          <div class="step-tags">
+            <span class="stag t-live">Live Dashboard</span>
+            <span class="stag t-time">SLA: 3–7 days</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="arrow escalation-arrow">
+        <div class="arrow-line"></div>
+        <div class="arrow-label">⏰ NOT resolved within SLA → AUTO-ESCALATE</div>
+        <div class="arrow-line" style="height:8px"></div>
+        <div class="arrow-head"></div>
+      </div>
+
+      <div class="timer-box">
+        <strong>Auto-Escalation Timer</strong><br/>
+        If Ward Councillor does not resolve within SLA,<br/>
+        PRAJA automatically forwards to the next level.<br/>
+        Citizen gets notified via SMS/WhatsApp.
+      </div>
+
+      <div class="arrow escalation-arrow">
+        <div class="arrow-line"></div>
+        <div class="arrow-head"></div>
+      </div>
+
+      <!-- STEP 3: MUNICIPALITY / BLOCK LEVEL -->
+      <div class="node">
+        <div class="step s-muni">
+          <div class="step-num">STEP 4</div>
+          <div class="step-icon">🏙️</div>
+          <div class="step-title">Municipal Officer / Block Officer</div>
+          <div class="step-sub">
+            Urban: Deputy Mayor / Municipal Commissioner<br/>
+            Rural: Block Development Officer (BDO)<br/>
+            <strong style="color:#7dd3fc">SLA: +5 days to resolve</strong>
+          </div>
+          <div class="step-tags">
+            <span class="stag t-live">Officer Alert</span>
+            <span class="stag t-time">SLA: +5 days</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="arrow escalation-arrow">
+        <div class="arrow-line"></div>
+        <div class="arrow-label">⏰ Still unresolved → ESCALATE HIGHER</div>
+        <div class="arrow-line" style="height:8px"></div>
+        <div class="arrow-head"></div>
+      </div>
+
+      <!-- STEP 4: DISTRICT LEVEL -->
+      <div class="node">
+        <div class="step s-dist">
+          <div class="step-num">STEP 5</div>
+          <div class="step-icon">🏢</div>
+          <div class="step-title">District Collector / Mayor</div>
+          <div class="step-sub">
+            District Magistrate (IAS) or Mayor of the city.<br/>
+            High-visibility level — political accountability kicks in.<br/>
+            <strong style="color:#f0abfc">SLA: +5 days to resolve</strong>
+          </div>
+          <div class="step-tags">
+            <span class="stag t-live">SentinelPulse Alert</span>
+            <span class="stag t-time">SLA: +5 days</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="arrow escalation-arrow">
+        <div class="arrow-line"></div>
+        <div class="arrow-label">⚠️ CRITICAL / systemic issue → STATE LEVEL</div>
+        <div class="arrow-line" style="height:8px"></div>
+        <div class="arrow-head"></div>
+      </div>
+
+      <!-- STEP 5: STATE LEVEL -->
+      <div class="node">
+        <div class="step s-state">
+          <div class="step-num">STEP 6</div>
+          <div class="step-icon">🌟</div>
+          <div class="step-title">MLA → State Minister → Chief Minister</div>
+          <div class="step-sub">
+            Complaint appears in CM's NayakAI morning brief.<br/>
+            SentinelPulse flags ward-level sentiment crisis.<br/>
+            Ministerial intervention enforced by deadline.
+          </div>
+          <div class="step-tags">
+            <span class="stag t-ai">NayakAI Brief</span>
+            <span class="stag t-live">SentinelPulse</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="arrow praja-arrow">
+        <div class="arrow-line"></div>
+        <div class="arrow-label">Resolution confirmed → citizen notified</div>
+        <div class="arrow-line" style="height:8px"></div>
+        <div class="arrow-head"></div>
+      </div>
+
+      <!-- RESOLVED -->
+      <div class="node">
+        <div class="step s-resolved">
+          <div class="step-num">OUTCOME</div>
+          <div class="step-icon">✅</div>
+          <div class="step-title">Resolved &amp; Closed</div>
+          <div class="step-sub">
+            Citizen rates resolution (1–5 stars).<br/>
+            Digital proof photo uploaded by officer.<br/>
+            Full audit trail stored in Supabase.<br/>
+            <strong style="color:#4ade80">Avg. target: 7–15 days</strong>
+          </div>
+          <div class="step-tags">
+            <span class="stag t-live">Rating &amp; Feedback</span>
+            <span class="stag t-ai">Audit Trail</span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /praja-col -->
+  </div>
+
+  <!-- ════ VS DIVIDER ════ -->
+  <div class="vs-col">
+    <div class="vs-label">VS</div>
+    <div class="vs-line"></div>
+  </div>
+
+  <!-- ════ CPGRAMS COLUMN ════ -->
+  <div>
+    <div class="col-header cpgrams-header">
+      <div class="system-name" style="color:#60a5fa">🏛️ CPGRAMS</div>
+      <div class="system-sub">Centralised Public Grievance Redress &amp; Monitoring System</div>
+      <span class="status-pill pill-old">Current System (Govt of India)</span>
+    </div>
+
+    <div class="flow-col cpgrams-col">
+
+      <div style="height:20px"></div>
+
+      <!-- C-STEP 1: CITIZEN -->
+      <div class="node">
+        <div class="step c-citizen">
+          <div class="step-num">STEP 1</div>
+          <div class="step-icon">🧑‍🌾</div>
+          <div class="step-title">Citizen Files on Portal</div>
+          <div class="step-sub">
+            Must register on pgportal.gov.in.<br/>
+            English/Hindi only (limited regional language).<br/>
+            No WhatsApp, no voice note support.
+          </div>
+          <div class="step-tags">
+            <span class="stag t-manual">Web Portal Only</span>
+            <span class="stag t-no">No WhatsApp</span>
+            <span class="stag t-no">No Voice Input</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="arrow cpgrams-arrow">
+        <div class="arrow-line"></div>
+        <div class="arrow-label">Manual routing — 1 to 3 days</div>
+        <div class="arrow-line" style="height:8px"></div>
+        <div class="arrow-head"></div>
+      </div>
+
+      <!-- C-STEP 2: PORTAL ROUTING -->
+      <div class="node">
+        <div class="step c-portal">
+          <div class="step-num">STEP 2</div>
+          <div class="step-icon">📋</div>
+          <div class="step-title">Ministry / Dept Nodal Officer</div>
+          <div class="step-sub">
+            Complaint sent to concerned ministry's nodal officer.<br/>
+            Citizen must correctly identify the ministry.<br/>
+            <strong style="color:#94a3b8">No AI classification — manual triage only</strong>
+          </div>
+          <div class="step-tags">
+            <span class="stag t-manual">Manual Routing</span>
+            <span class="stag t-no">No AI Priority</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="arrow cpgrams-arrow">
+        <div class="arrow-line"></div>
+        <div class="arrow-label">Forwarded within ministry hierarchy</div>
+        <div class="arrow-line" style="height:8px"></div>
+        <div class="arrow-head"></div>
+      </div>
+
+      <!-- C-STEP 3: DEPT OFFICER -->
+      <div class="node">
+        <div class="step c-dept">
+          <div class="step-num">STEP 3</div>
+          <div class="step-icon">🗂️</div>
+          <div class="step-title">Department / Field Officer</div>
+          <div class="step-sub">
+            Assigned to a field-level officer in the dept.<br/>
+            No standard SLA enforced at local level.<br/>
+            Officer can mark "under process" indefinitely.
+          </div>
+          <div class="step-tags">
+            <span class="stag t-no">No Enforced SLA</span>
+            <span class="stag t-slow">Avg. 30–60 days</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="arrow cpgrams-arrow">
+        <div class="arrow-line"></div>
+        <div class="arrow-label">Sits here for weeks...</div>
+        <div class="arrow-line" style="height:8px"></div>
+        <div class="arrow-head"></div>
+      </div>
+
+      <!-- C-STEP 4: STUCK -->
+      <div class="node">
+        <div class="step c-stuck">
+          <div class="step-num">⚠️ PROBLEM</div>
+          <div class="step-icon">🚫</div>
+          <div class="step-title">Complaint Gets Stuck</div>
+          <div class="step-sub">
+            No automatic escalation exists in CPGRAMS.<br/>
+            Citizen has no visibility into where it is.<br/>
+            Common reply: <em>"Under examination"</em> — for months.<br/>
+            No ward-level elected representative involvement.
+          </div>
+          <div class="step-tags">
+            <span class="stag t-no">No Auto-Escalation</span>
+            <span class="stag t-no">No Local Leader</span>
+            <span class="stag t-slow">Opaque Process</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="arrow cpgrams-arrow">
+        <div class="arrow-line"></div>
+        <div class="arrow-label">Citizen must manually file a reminder</div>
+        <div class="arrow-line" style="height:8px"></div>
+        <div class="arrow-head"></div>
+      </div>
+
+      <!-- C-STEP 5: APPEAL -->
+      <div class="node">
+        <div class="step c-appeal">
+          <div class="step-num">STEP 4</div>
+          <div class="step-icon">📝</div>
+          <div class="step-title">Citizen Files a Reminder / Appeal</div>
+          <div class="step-sub">
+            Citizen must log in again and file a reminder.<br/>
+            Goes back to the <em>same</em> nodal officer.<br/>
+            No political accountability, no sentiment tracking.
+          </div>
+          <div class="step-tags">
+            <span class="stag t-manual">Manual Reminder</span>
+            <span class="stag t-no">No Accountability</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="arrow cpgrams-arrow">
+        <div class="arrow-line"></div>
+        <div class="arrow-label">Eventually — if lucky</div>
+        <div class="arrow-line" style="height:8px"></div>
+        <div class="arrow-head"></div>
+      </div>
+
+      <!-- C-STEP 6: CLOSED -->
+      <div class="node">
+        <div class="step c-closed">
+          <div class="step-num">OUTCOME</div>
+          <div class="step-icon">📁</div>
+          <div class="step-title">Marked Closed (Often Prematurely)</div>
+          <div class="step-sub">
+            Complaint closed without citizen consent in many cases.<br/>
+            No photo proof, no citizen rating.<br/>
+            No audit trail of who handled what.<br/>
+            <strong style="color:#fca5a5">Avg. resolution: 30–90+ days</strong>
+          </div>
+          <div class="step-tags">
+            <span class="stag t-no">No Citizen Rating</span>
+            <span class="stag t-no">No Proof Required</span>
+            <span class="stag t-slow">30–90+ days</span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /cpgrams-col -->
+  </div>
+
+</div><!-- /compare-grid -->
+
+
+<!-- ═══════════════════════════════════════════════════════════
+     OUTCOME SUMMARY
+════════════════════════════════════════════════════════════ -->
+<div class="outcome-row">
+
+  <div class="outcome-card praja-out">
+    <h3>🪷 PRAJA — Key Advantages</h3>
+    <div class="metric-row">
+      <span class="metric-label">Avg. Resolution Time</span>
+      <span class="metric-val good">7 – 15 days</span>
+    </div>
+    <div class="metric-row">
+      <span class="metric-label">Complaint Filing</span>
+      <span class="metric-val good">Web + WhatsApp + Voice</span>
+    </div>
+    <div class="metric-row">
+      <span class="metric-label">Auto Escalation</span>
+      <span class="metric-val good">✅ Yes — timer-based</span>
+    </div>
+    <div class="metric-row">
+      <span class="metric-label">AI Classification</span>
+      <span class="metric-val good">✅ LLaMA 3.3 · &lt;2 sec</span>
+    </div>
+    <div class="metric-row">
+      <span class="metric-label">Local Leader Involvement</span>
+      <span class="metric-val good">✅ Ward Councillor first</span>
+    </div>
+    <div class="metric-row">
+      <span class="metric-label">Citizen Tracking</span>
+      <span class="metric-val good">✅ Real-time SMS / Chat</span>
+    </div>
+    <div class="metric-row">
+      <span class="metric-label">Sentiment Analysis</span>
+      <span class="metric-val good">✅ SentinelPulse heatmap</span>
+    </div>
+    <div class="metric-row">
+      <span class="metric-label">Resolution Proof</span>
+      <span class="metric-val good">✅ Photo + Rating required</span>
+    </div>
+    <div class="metric-row">
+      <span class="metric-label">Languages</span>
+      <span class="metric-val good">All 22 scheduled + dialects</span>
+    </div>
+  </div>
+
+  <div class="outcome-card cpgrams-out">
+    <h3>🏛️ CPGRAMS — Current Gaps</h3>
+    <div class="metric-row">
+      <span class="metric-label">Avg. Resolution Time</span>
+      <span class="metric-val bad">30 – 90+ days</span>
+    </div>
+    <div class="metric-row">
+      <span class="metric-label">Complaint Filing</span>
+      <span class="metric-val bad">Web portal only</span>
+    </div>
+    <div class="metric-row">
+      <span class="metric-label">Auto Escalation</span>
+      <span class="metric-val bad">❌ No — manual reminders</span>
+    </div>
+    <div class="metric-row">
+      <span class="metric-label">AI Classification</span>
+      <span class="metric-val bad">❌ No AI — manual triage</span>
+    </div>
+    <div class="metric-row">
+      <span class="metric-label">Local Leader Involvement</span>
+      <span class="metric-val bad">❌ Bypasses local reps</span>
+    </div>
+    <div class="metric-row">
+      <span class="metric-label">Citizen Tracking</span>
+      <span class="metric-val med">⚠️ Basic status only</span>
+    </div>
+    <div class="metric-row">
+      <span class="metric-label">Sentiment Analysis</span>
+      <span class="metric-val bad">❌ None</span>
+    </div>
+    <div class="metric-row">
+      <span class="metric-label">Resolution Proof</span>
+      <span class="metric-val bad">❌ No proof required</span>
+    </div>
+    <div class="metric-row">
+      <span class="metric-label">Languages</span>
+      <span class="metric-val med">⚠️ Hindi &amp; English only</span>
+    </div>
+  </div>
+
+</div>
+
+<!-- ── Escalation Legend ── -->
+<div style="max-width:1240px; margin:32px auto 0; padding:20px 24px; background:var(--card); border:1px solid var(--border); border-radius:14px;">
+  <div style="font-size:12px; font-weight:700; letter-spacing:1.5px; text-transform:uppercase; color:var(--muted); margin-bottom:14px;">PRAJA — Escalation Timeline</div>
+  <div style="display:flex; flex-wrap:wrap; gap:16px; align-items:center; font-size:12px;">
+    <span>🧑‍🌾 <strong>Day 0</strong> — Citizen files</span>
+    <span style="color:var(--muted)">→</span>
+    <span style="color:#bef264">🪑 <strong>Day 0–3</strong> — Ward Councillor (Critical) / 0–7 (Normal)</span>
+    <span style="color:var(--muted)">→⏰</span>
+    <span style="color:#7dd3fc">🏙️ <strong>Day 3–8</strong> — Municipal / Block Officer</span>
+    <span style="color:var(--muted)">→⏰</span>
+    <span style="color:#f0abfc">🏢 <strong>Day 8–13</strong> — District Collector / Mayor</span>
+    <span style="color:var(--muted)">→⚠️</span>
+    <span style="color:#fdba74">🌟 <strong>Day 13+</strong> — State level (MLA → CM)</span>
+  </div>
+</div>
+
+</body>
+</html>
