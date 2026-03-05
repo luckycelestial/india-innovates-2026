@@ -13,7 +13,7 @@
 - [x] React + Vite frontend scaffolded (`praja/frontend`)
 - [x] Backend deployed on Vercel (`praja-backend.vercel.app`)
 - [x] Frontend deployed on Vercel (`india-innovates-2026-luckycelestials-projects.vercel.app`)
-- [ ] Custom domain (optional)
+- [x] Custom domain (optional)
 
 ---
 
@@ -60,8 +60,7 @@
 
 - [x] `GET /api/sentinel/alerts` — ward-level sentiment alerts
 - [x] `GET /api/sentinel/heatmap` — ward sentiment scores
-- [ ] Ingest tweets / social posts (free Twitter API v2 or mock data)
-- [ ] Leaflet.js ward heatmap on leader dashboard
+- [x] Leaflet.js ward heatmap on leader dashboard
 - [ ] Auto-alert when ward sentiment < threshold
 - [ ] Sentiment trend graph (line chart)
 
@@ -87,7 +86,7 @@
 - [ ] Test Tamil/Tanglish complaint classification accuracy
 - [ ] Test critical complaint auto-flag (suicide/threat keywords)
 - [ ] Stress test Groq rate limits (14,400 req/day)
-- [ ] Load test Supabase free tier (500MB DB, 2GB bandwidth)
+- [x] Load test Supabase free tier (500MB DB, 2GB bandwidth)
 
 ---
 
