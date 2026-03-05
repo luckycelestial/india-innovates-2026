@@ -254,13 +254,13 @@ function NayakAITab() {
   const [chatInput, setChatInput] = useState('')
   const [chatLoading, setChatLoading] = useState(false)
 
-  useEffect(() => { if (activeTab === 'brief' && !brief) loadBrief() }, [activeTab])
-
   const loadBrief = async () => {
     setBL(true)
     try { const { data } = await api.post('/nayakai/morning-brief', {}); setBrief(data) }
     catch (e) { console.error(e) } finally { setBL(false) }
   }
+
+  useEffect(() => { if (activeTab === 'brief' && !brief) loadBrief() }, [activeTab])
 
   const callBackend = async (text, mode) => {
     setLoading(true); setAiOutput('')
