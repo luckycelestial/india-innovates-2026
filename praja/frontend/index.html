@@ -6,35 +6,14 @@
     <title>PRAJA — Citizen Grievance Platform</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;500;600;700;800&family=Noto+Sans+Devanagari:wght@400;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-      :root {
-        --saffron:       #E8590C;
-        --saffron-dark:  #C44E08;
-        --saffron-light: #FFF3EC;
-        --saffron-mid:   #FFDCC5;
-        --green:         #1A7340;
-        --green-light:   #E8F5EE;
-        --navy:          #003580;
-        --navy-light:    #EBF0FA;
-        --white:         #FFFFFF;
-        --bg:            #F2F5F9;
-        --card:          #FFFFFF;
-        --border:        #DDE3EE;
-        --text:          #1C2433;
-        --muted:         #6B7A99;
-        --light:         #4A5568;
-        --danger:        #C0392B;
-        --danger-bg:     #FDF3F3;
-        --gold:          #B7791F;
-        --yellow:        #F6C90E;
-      }
       body {
-        font-family: 'Noto Sans', system-ui, sans-serif;
-        background: var(--bg);
-        color: var(--text);
+        font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
+        background: #060c18;
+        color: #e2e8f0;
         line-height: 1.6;
         -webkit-tap-highlight-color: transparent;
       }
@@ -42,9 +21,10 @@
         font-family: inherit;
       }
       #root { min-height: 100vh; }
-      ::-webkit-scrollbar { width: 6px; }
-      ::-webkit-scrollbar-track { background: var(--bg); }
-      ::-webkit-scrollbar-thumb { background: var(--border); border-radius: 3px; }
+      ::-webkit-scrollbar { width: 5px; }
+      ::-webkit-scrollbar-track { background: #060c18; }
+      ::-webkit-scrollbar-thumb { background: #1a2744; border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background: #5a6a84; }
     </style>
   </head>
   <body>

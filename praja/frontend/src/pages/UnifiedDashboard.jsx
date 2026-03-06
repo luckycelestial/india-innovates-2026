@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
+import SentinelHeatmap from '../components/SentinelHeatmap'
 import './UnifiedDashboard.css'
 
 // ─── helpers ────────────────────────────────────────────
@@ -426,11 +427,7 @@ function NayakAITab() {
             placeholder="e.g. PM Awas Yojana guidelines..."
           />
           <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>
-            <label style={{
-              padding: '8px 16px', borderRadius: 8, cursor: 'pointer',
-              background: 'rgba(255,255,255,0.06)', border: '1px solid #1e2d4d',
-              color: '#94a3b8', fontSize: '0.85rem', fontFamily: 'inherit',
-            }}>
+            <label className="ud-btn-small" style={{ cursor: 'pointer' }}>
               📎 Upload File
               <input type="file" accept=".txt,.pdf,.doc,.docx" style={{ display: 'none' }} onChange={e => {
                 const file = e.target.files?.[0]
@@ -484,92 +481,12 @@ function NayakAITab() {
 }
 
 // ─── SentinelPulse ───────────────────────────────────────
-const WARDS = [
-  { id: 1,  name: 'Connaught Place', score: 72, issues: ['Road maintenance','Parking'],           trend: '+5%'  },
-  { id: 3,  name: 'Karol Bagh',      score: 38, issues: ['Garbage','Water shortage'],             trend: '-12%' },
-  { id: 7,  name: 'Rohini',          score: 21, issues: ['Water supply','Power cuts','Drainage'], trend: '-23%' },
-  { id: 11, name: 'Dwarka',          score: 61, issues: ['Traffic lights','Parks'],               trend: '+8%'  },
-  { id: 14, name: 'Saket',           score: 45, issues: ['Street lights','Potholes'],             trend: '-6%'  },
-  { id: 19, name: 'Okhla',           score: 18, issues: ['Sewage','Flooding','Healthcare'],       trend: '-31%' },
-  { id: 22, name: 'Lajpat Nagar',    score: 54, issues: ['Road conditions','Noise'],              trend: '-4%'  },
-  { id: 28, name: 'Janakpuri',       score: 83, issues: ['Minor road issues'],                    trend: '+11%' },
-]
-
-function wardColor(score) {
-  if (score >= 70) return '#22c55e'
-  if (score >= 45) return '#f59e0b'
-  if (score >= 25) return '#FF6B00'
-  return '#ef4444'
-}
-
 function SentinelTab() {
-  const [selected, setSelected] = useState(null)
-
   return (
     <div>
       <p className="ud-title">🗺️ SentinelPulse — Ward Sentiment</p>
-      <p className="ud-subtitle">Real-time mood index per ward. Click any ward for details.</p>
-
-      <div className="sp-legend">
-        {[
-          ['Satisfied 70+',  '#22c55e'],
-          ['Moderate 45–70', '#f59e0b'],
-          ['Tense 25–45',    '#FF6B00'],
-          ['Crisis <25',     '#ef4444'],
-        ].map(([label, color]) => (
-          <div key={color} className="sp-legend-item">
-            <div className="sp-legend-dot" style={{ background: color }} />
-            {label}
-          </div>
-        ))}
-      </div>
-
-      <div className="sp-grid">
-        {WARDS.map(w => {
-          const c = wardColor(w.score)
-          const isSel = selected?.id === w.id
-          return (
-            <div
-              key={w.id}
-              className={`sp-ward ${isSel ? 'selected' : ''}`}
-              style={{ background: `${c}15`, borderColor: isSel ? c : `${c}44` }}
-              onClick={() => setSelected(isSel ? null : w)}
-            >
-              <div className="sp-ward-id">Ward {w.id}</div>
-              <div className="sp-ward-score" style={{ color: c }}>{w.score}</div>
-              <div className="sp-ward-trend" style={{ color: c }}>{w.trend}</div>
-              <div className="sp-ward-name">{w.name}</div>
-            </div>
-          )
-        })}
-      </div>
-
-      {selected && (
-        <div className="sp-detail ud-card" style={{ borderColor: `${wardColor(selected.score)}55` }}>
-          <div className="sp-detail-title" style={{ color: wardColor(selected.score) }}>
-            Ward {selected.id} — {selected.name}
-          </div>
-          <div className="sp-detail-meta">
-            Score: <strong style={{ color: wardColor(selected.score) }}>{selected.score}/100</strong>
-            {' · Trend: '}<strong>{selected.trend}</strong>
-          </div>
-          <div className="sp-issues-label">Top Issues</div>
-          {selected.issues.map((issue, i) => (
-            <div key={i} className="sp-issue">{issue}</div>
-          ))}
-        </div>
-      )}
-
-      <div className="sp-alerts-label" style={{ marginTop: 20 }}>Critical Alerts</div>
-      {WARDS.filter(w => w.score < 25).map(w => (
-        <div key={w.id} className="sp-alert">
-          <div>
-            <div className="sp-alert-name">🚨 Ward {w.id} — {w.name}</div>
-            <div className="sp-alert-sub">Score: {w.score} · {w.issues.join(', ')}</div>
-          </div>
-          <span className="sp-alert-trend">{w.trend}</span>
-        </div>
-      ))}
+      <p className="ud-subtitle">Real-time ward-level grievance density map. Click a ward circle for details.</p>
+      <SentinelHeatmap />
     </div>
   )
 }
@@ -605,6 +522,8 @@ export default function UnifiedDashboard() {
   return (
     <div className="ud-root">
       {toast && <Toast message={toast.message} type={toast.type} onClose={closeToast} />}
+
+      <div style={{ height: 3, background: 'linear-gradient(to right, #FF9933 33.3%, #fff 33.3%, #fff 66.6%, #138808 66.6%)' }} />
 
       <header className="ud-topbar">
         <div className="ud-logo">
