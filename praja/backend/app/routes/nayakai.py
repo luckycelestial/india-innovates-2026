@@ -2,7 +2,7 @@ import re
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
-from typing import Optional, Any
+from typing import Optional, Any, List
 from groq import AsyncGroq
 
 from app.config import settings
@@ -238,3 +238,240 @@ async def draft_letter(data: LetterRequest):
     text = f"Issue: {data.issue_type}\nContext: {data.context}\nRecipient: {data.recipient}\nSender: {data.sender_title}"
     r = await assist(AssistRequest(text=text, mode="letter"))
     return {"letter": r["result"]}
+
+
+# ── Smart Schedule Manager ──────────────────────────────────────
+
+class ScheduleCreate(BaseModel):
+    title: str
+    description: str = ""
+    event_date: str  # YYYY-MM-DD
+    event_time: str = ""  # HH:MM
+    location: str = ""
+    event_type: str = "meeting"
+
+
+@router.post("/schedule")
+async def create_schedule(
+    data: ScheduleCreate,
+    current: dict = Depends(get_current_user),
+    sb: Any = Depends(get_supabase),
+):
+    """Create a schedule item and generate AI preparation brief."""
+    brief_prompt = (
+        f"You are NayakAI. Generate a short preparation brief (3-4 bullet points) for this event:\n"
+        f"Title: {data.title}\nDescription: {data.description}\nType: {data.event_type}\n"
+        f"Location: {data.location}\nDate: {data.event_date}\n\n"
+        "Include: key talking points, relevant data to review, and potential questions to expect."
+    )
+    try:
+        ai_brief = await _ask_groq(brief_prompt, max_tokens=300)
+    except Exception:
+        ai_brief = "AI brief unavailable."
+
+    insert_data = {
+        "user_id": current["sub"],
+        "title": data.title,
+        "description": data.description,
+        "event_date": data.event_date,
+        "location": data.location,
+        "event_type": data.event_type,
+        "ai_brief": ai_brief,
+    }
+    if data.event_time:
+        insert_data["event_time"] = data.event_time
+
+    result = sb.table("schedules").insert(insert_data).execute()
+    return result.data[0] if result.data else {"ok": True}
+
+
+@router.get("/schedule")
+def list_schedule(
+    current: dict = Depends(get_current_user),
+    sb: Any = Depends(get_supabase),
+):
+    """List upcoming schedule items for the current user."""
+    today = datetime.now(timezone.utc).strftime("%Y-%m-%d")
+    result = (
+        sb.table("schedules")
+        .select("*")
+        .eq("user_id", current["sub"])
+        .gte("event_date", today)
+        .order("event_date", desc=False)
+        .limit(20)
+        .execute()
+    )
+    return result.data or []
+
+
+@router.put("/schedule/{schedule_id}/complete")
+def complete_schedule(
+    schedule_id: str,
+    current: dict = Depends(get_current_user),
+    sb: Any = Depends(get_supabase),
+):
+    sb.table("schedules").update({"is_completed": True}).eq("id", schedule_id).eq("user_id", current["sub"]).execute()
+    return {"ok": True}
+
+
+# ── Real-Time Action Alerts ─────────────────────────────────────
+
+@router.post("/action-alerts")
+async def action_alerts(
+    current: dict = Depends(get_current_user),
+    sb: Any = Depends(get_supabase),
+):
+    """Get escalated/critical complaints with AI-drafted action responses."""
+    now = datetime.now(timezone.utc)
+    cutoff = (now - timedelta(hours=72)).isoformat()
+
+    escalated = (
+        sb.table("grievances")
+        .select("id, tracking_id, title, description, ai_category, priority, status, created_at")
+        .eq("status", "escalated")
+        .order("created_at", desc=True)
+        .limit(5)
+        .execute()
+    )
+    critical = (
+        sb.table("grievances")
+        .select("id, tracking_id, title, description, ai_category, priority, status, created_at")
+        .eq("priority", "critical")
+        .neq("status", "resolved")
+        .order("created_at", desc=True)
+        .limit(5)
+        .execute()
+    )
+
+    seen = set()
+    alerts_items = []
+    for g in (escalated.data or []) + (critical.data or []):
+        if g["id"] in seen:
+            continue
+        seen.add(g["id"])
+
+        try:
+            prompt = (
+                "You are NayakAI. Draft a brief action response (3 sentences max) for this escalated grievance:\n"
+                f"Title: {g['title']}\nDescription: {g.get('description', '')[:300]}\n"
+                f"Category: {g.get('ai_category', 'General')}\nPriority: {g.get('priority', 'high')}\n\n"
+                "Suggest: immediate action, who to notify, and timeline."
+            )
+            draft = await _ask_groq(prompt, max_tokens=200)
+        except Exception:
+            draft = "Review this escalated complaint and take immediate action."
+
+        alerts_items.append({
+            "id": g["id"],
+            "tracking_id": g.get("tracking_id"),
+            "title": g["title"],
+            "category": g.get("ai_category", "General"),
+            "priority": g.get("priority"),
+            "created_at": g.get("created_at"),
+            "ai_draft_response": draft,
+        })
+
+    return alerts_items[:8]
+
+
+# ── Meeting Summarizer ──────────────────────────────────────────
+
+class MeetingSummaryRequest(BaseModel):
+    notes: str
+    meeting_type: str = "general"
+
+
+@router.post("/meeting-summary")
+async def meeting_summary(data: MeetingSummaryRequest):
+    """Summarize meeting notes into key decisions and action items."""
+    if not data.notes.strip():
+        raise HTTPException(status_code=400, detail="Meeting notes are empty")
+
+    prompt = (
+        "You are NayakAI. Summarize these meeting notes for an Indian government official.\n"
+        "Format your response EXACTLY as:\n\n"
+        "MEETING SUMMARY:\n[2-3 sentence overview]\n\n"
+        "KEY DECISIONS:\n* [decision 1]\n* [decision 2]\n* [decision 3]\n\n"
+        "ACTION ITEMS:\n1. [action] — Owner: [who] — Deadline: [when]\n"
+        "2. [action] — Owner: [who] — Deadline: [when]\n"
+        "3. [action] — Owner: [who] — Deadline: [when]\n\n"
+        "FOLLOW-UP REQUIRED:\n* [item]\n\n"
+        f"Meeting Type: {data.meeting_type}\n"
+        f"Notes:\n{data.notes[:6000]}"
+    )
+    result = await _ask_groq(prompt, max_tokens=800)
+    return {"summary": result, "meeting_type": data.meeting_type}
+
+
+# ── Development Report Card ─────────────────────────────────────
+
+class ReportCardRequest(BaseModel):
+    constituency: str = ""
+    period: str = "month"  # month | week
+
+
+@router.post("/report-card")
+async def report_card(
+    data: ReportCardRequest,
+    current: dict = Depends(get_current_user),
+    sb: Any = Depends(get_supabase),
+):
+    """Generate 'What I Did This Month' development report card."""
+    now = datetime.now(timezone.utc)
+    days = 30 if data.period == "month" else 7
+    cutoff = (now - timedelta(days=days)).isoformat()
+
+    resolved_res = (
+        sb.table("grievances")
+        .select("id, title, ai_category, priority, resolved_at, created_at")
+        .eq("status", "resolved")
+        .gte("updated_at", cutoff)
+        .execute()
+    )
+    total_res = (
+        sb.table("grievances")
+        .select("id, ai_category, status, priority")
+        .gte("created_at", cutoff)
+        .execute()
+    )
+
+    resolved = resolved_res.data or []
+    total = total_res.data or []
+    new_count = len(total)
+    resolved_count = len(resolved)
+
+    cat_resolved: dict[str, int] = {}
+    for r in resolved:
+        cat = r.get("ai_category") or "General"
+        cat_resolved[cat] = cat_resolved.get(cat, 0) + 1
+    top_resolved = sorted(cat_resolved.items(), key=lambda x: x[1], reverse=True)[:5]
+
+    stats_text = (
+        f"Period: Last {days} days\n"
+        f"New grievances filed: {new_count}\n"
+        f"Grievances resolved: {resolved_count}\n"
+        f"Resolution rate: {round(resolved_count / new_count * 100) if new_count else 0}%\n"
+        f"Top categories resolved: {', '.join(f'{c}({n})' for c, n in top_resolved)}\n"
+    )
+
+    prompt = (
+        "You are NayakAI. Write a professional development report card for an Indian elected leader.\n"
+        "This is a 'What I Did This Month' report for their constituency.\n"
+        "Format as a brief, impressive but honest newsletter-style summary (200 words max).\n"
+        "Include: achievements, areas of focus, and commitment statement.\n\n"
+        f"Constituency: {data.constituency or 'General'}\n{stats_text}"
+    )
+    try:
+        narrative = await _ask_groq(prompt, max_tokens=400)
+    except Exception:
+        narrative = f"This {data.period}, {resolved_count} grievances were resolved out of {new_count} new complaints."
+
+    return {
+        "period": data.period,
+        "days": days,
+        "new_grievances": new_count,
+        "resolved_count": resolved_count,
+        "resolution_rate": round(resolved_count / new_count * 100) if new_count else 0,
+        "top_categories": [{"category": c, "count": n} for c, n in top_resolved],
+        "narrative": narrative,
+    }
