@@ -7,6 +7,7 @@ from app.utils.jwt import create_access_token, verify_password, get_current_user
 router = APIRouter()
 
 
+# Auth uses Aadhaar number + password (PRAJA PIN)
 class UserLogin(BaseModel):
     aadhaar_number: str
     password: str
