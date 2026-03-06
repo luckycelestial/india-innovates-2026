@@ -347,7 +347,7 @@ function NayakAITab() {
 
   return (
     <div>
-      <p className="ud-title">🤖 NayakAI — Leader Intelligence</p>
+      <p className="ud-title">🤖 NayakAI — Governance Intelligence</p>
 
       <div className="nk-tabs">
         {NK_TABS.map(t => (
@@ -417,7 +417,7 @@ function NayakAITab() {
 
       {activeTab === 'doc' && (
         <div>
-          <p className="nk-ai-hint">Paste any government document or scheme description:</p>
+          <p className="nk-ai-hint">Paste text or upload a document (.txt, .pdf, .doc):</p>
           <textarea
             className="ud-textarea"
             rows={4}
@@ -425,12 +425,29 @@ function NayakAITab() {
             onChange={e => setPrompt(e.target.value)}
             placeholder="e.g. PM Awas Yojana guidelines..."
           />
-          <button
-            className="ud-btn-primary"
-            style={{ marginTop: 10 }}
-            disabled={loading || !prompt.trim()}
-            onClick={() => callAI(prompt, 'summarize')}
-          >{loading ? '⏳ Summarizing...' : '🧠 Summarize'}</button>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 10 }}>
+            <label style={{
+              padding: '8px 16px', borderRadius: 8, cursor: 'pointer',
+              background: 'rgba(255,255,255,0.06)', border: '1px solid #1e2d4d',
+              color: '#94a3b8', fontSize: '0.85rem', fontFamily: 'inherit',
+            }}>
+              📎 Upload File
+              <input type="file" accept=".txt,.pdf,.doc,.docx" style={{ display: 'none' }} onChange={e => {
+                const file = e.target.files?.[0]
+                if (!file) return
+                if (file.size > 2 * 1024 * 1024) { alert('File too large (max 2 MB)'); return }
+                const reader = new FileReader()
+                reader.onload = () => setPrompt(reader.result)
+                reader.readAsText(file)
+                e.target.value = ''
+              }} />
+            </label>
+            <button
+              className="ud-btn-primary"
+              disabled={loading || !prompt.trim()}
+              onClick={() => callAI(prompt, 'summarize')}
+            >{loading ? '⏳ Summarizing...' : '🧠 Summarize'}</button>
+          </div>
           {aiOutput && <div className="nk-output green">{aiOutput}</div>}
         </div>
       )}
@@ -566,16 +583,24 @@ export default function UnifiedDashboard() {
   const role = user?.role || 'citizen'
 
   const TABS = [
-    { id: 'submit',   label: '📝 Submit',         roles: ['citizen','officer','leader'] },
-    { id: 'mine',     label: '📋 My Complaints',  roles: ['citizen','officer','leader'] },
-    { id: 'manage',   label: '🗂️ Manage Tickets', roles: ['officer','leader'] },
-    { id: 'nayak',    label: '🤖 NayakAI',         roles: ['leader'] },
-    { id: 'sentinel', label: '🗺️ Sentinel',         roles: ['leader'] },
+    { id: 'submit',   label: '📝 Submit',         roles: ['citizen','sarpanch','district_collector','mla','mp'] },
+    { id: 'mine',     label: '📋 My Complaints',  roles: ['citizen','sarpanch','district_collector','mla','mp'] },
+    { id: 'manage',   label: '🗂️ Manage Tickets', roles: ['sarpanch','district_collector','mla','mp'] },
+    { id: 'nayak',    label: '🤖 NayakAI',         roles: ['district_collector','mla','mp'] },
+    { id: 'sentinel', label: '🗺️ Sentinel',         roles: ['mla','mp'] },
   ].filter(t => t.roles.includes(role))
 
   const [activeTab, setActiveTab] = useState(TABS[0]?.id || 'submit')
 
-  const roleLabel = { citizen: 'Citizen', officer: 'Officer', leader: 'Leader' }[role] || safe(role)
+  const roleLabel = {
+    citizen: 'Citizen',
+    sarpanch: 'Sarpanch',
+    district_collector: 'District Collector',
+    mla: 'MLA',
+    mp: 'Member of Parliament',
+    officer: 'Officer',
+    leader: 'Leader',
+  }[role] || safe(role)
 
   return (
     <div className="ud-root">

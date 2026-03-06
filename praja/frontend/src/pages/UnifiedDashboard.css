@@ -84,6 +84,10 @@
 .ud-user-role.citizen { color: var(--saffron); }
 .ud-user-role.officer { color: var(--blue); }
 .ud-user-role.leader  { color: var(--gold); }
+.ud-user-role.sarpanch { color: #22c55e; }
+.ud-user-role.district_collector { color: #38bdf8; }
+.ud-user-role.mla { color: var(--gold); }
+.ud-user-role.mp { color: #a78bfa; }
 
 .ud-signout-btn {
   padding: 6px 14px;
@@ -123,6 +127,10 @@
 .ud-tab.active.citizen { color: var(--saffron); border-bottom-color: var(--saffron); font-weight: 700; }
 .ud-tab.active.officer { color: var(--blue);    border-bottom-color: var(--blue);    font-weight: 700; }
 .ud-tab.active.leader  { color: var(--gold);    border-bottom-color: var(--gold);    font-weight: 700; }
+.ud-tab.active.sarpanch { color: #22c55e; border-bottom-color: #22c55e; font-weight: 700; }
+.ud-tab.active.district_collector { color: #38bdf8; border-bottom-color: #38bdf8; font-weight: 700; }
+.ud-tab.active.mla { color: var(--gold); border-bottom-color: var(--gold); font-weight: 700; }
+.ud-tab.active.mp { color: #a78bfa; border-bottom-color: #a78bfa; font-weight: 700; }
 
 /* ── Content area ───────────────────────────────────────── */
 .ud-content {

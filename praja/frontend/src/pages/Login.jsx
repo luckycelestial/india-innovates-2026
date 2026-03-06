@@ -7,9 +7,11 @@ const SAFFRON = '#FF6B00', GOLD = '#f59e0b', MUTED = '#64748b'
 const TEXT = '#e2e8f0', LIGHT = '#94a3b8', RED = '#ef4444', GREEN = '#22c55e'
 
 const DEMO_USERS = [
-  { role: 'Citizen',  aadhaar: '2345 6789 0123', password: 'Demo1234', name: 'Ramesh Kumar' },
-  { role: 'Officer',  aadhaar: '7890 1234 5678', password: 'Demo1234', name: 'Vikram Singh' },
-  { role: 'Leader',   aadhaar: '9012 3456 7890', password: 'Demo1234', name: 'Arjun Mehta (MLA)' },
+  { role: 'Citizen',            level: 'Public',   aadhaar: '2345 6789 0123', password: 'Demo1234', name: 'Ramesh Kumar',     color: SAFFRON },
+  { role: 'Sarpanch',           level: 'Local',    aadhaar: '1111 2222 3333', password: 'Demo1234', name: 'Lakshmi Devi',     color: '#22c55e' },
+  { role: 'District Collector',  level: 'District', aadhaar: '7890 1234 5678', password: 'Demo1234', name: 'Vikram Singh',     color: '#38bdf8' },
+  { role: 'MLA',                level: 'State',    aadhaar: '9012 3456 7890', password: 'Demo1234', name: 'Arjun Mehta',      color: GOLD },
+  { role: 'MP',                 level: 'Union',    aadhaar: '4444 5555 6666', password: 'Demo1234', name: 'Rajendra Prasad',  color: '#a78bfa' },
 ]
 
 export default function Login() {
@@ -75,16 +77,6 @@ export default function Login() {
 
       <div style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', padding: '32px 16px' }}>
         <div style={{ width: '100%', maxWidth: 440 }}>
-
-          {/* Auth method reasoning */}
-          <div style={{ background: '#0d1526', border: `1px solid ${BORDER}`, borderRadius: 12, padding: '14px 18px', marginBottom: 20, fontSize: '0.8rem', color: LIGHT, lineHeight: 1.6 }}>
-            <div style={{ fontWeight: 700, color: SAFFRON, marginBottom: 6, fontSize: '0.82rem' }}>🔐 Why Aadhaar + Password?</div>
-            <div style={{ color: MUTED }}>
-              <span style={{ color: RED }}>✗</span> <strong>Aadhaar + OTP</strong> — UIDAI API is government-restricted (not available in hackathon)<br />
-              <span style={{ color: RED }}>✗</span> <strong>Aadhaar + Password + OTP</strong> — Indian SMS blocked by carriers for international numbers<br />
-              <span style={{ color: GREEN }}>✓</span> <strong>Aadhaar + Password</strong> — instant, secure, demo-ready. Password acts as your PRAJA PIN.
-            </div>
-          </div>
 
           {/* Login card */}
           <div style={{ background: CARD, borderRadius: 16, overflow: 'hidden', boxShadow: '0 8px 32px rgba(0,0,0,0.4)', border: `1px solid ${BORDER}` }}>
@@ -154,8 +146,10 @@ export default function Login() {
                   transition: 'border-color 0.15s',
                 }}>
                   <div style={{ textAlign: 'left' }}>
-                    <div style={{ fontWeight: 700, fontSize: '0.85rem', color: u.role === 'Leader' ? GOLD : u.role === 'Officer' ? '#38bdf8' : SAFFRON }}>{u.role} · {u.name}</div>
-                    <div style={{ fontSize: '0.75rem', color: MUTED, marginTop: 2 }}>Aadhaar: {u.aadhaar} · pw: {u.password}</div>
+                    <div style={{ fontWeight: 700, fontSize: '0.85rem', color: u.color }}>{u.role} · {u.name}</div>
+                    <div style={{ fontSize: '0.7rem', color: MUTED, marginTop: 2 }}>
+                      <span style={{ color: u.color, fontWeight: 600 }}>{u.level}</span> · Aadhaar: {u.aadhaar} · pw: {u.password}
+                    </div>
                   </div>
                   <span style={{ color: MUTED, fontSize: '0.75rem' }}>Use →</span>
                 </button>

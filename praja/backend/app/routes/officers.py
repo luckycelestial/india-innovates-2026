@@ -7,7 +7,7 @@ router = APIRouter()
 
 
 def require_officer(current: dict = Depends(get_current_user)):
-    if current["role"] not in ("officer", "leader", "admin"):
+    if current["role"] in ("citizen",):
         raise HTTPException(status_code=403, detail="Officers only")
     return current
 
