@@ -1,0 +1,18 @@
+{
+  "name": "praja-mcp-server",
+  "version": "1.0.0",
+  "description": "PRAJA MCP Server – exposes grievance, NayakAI, and sentinel tools to GitHub Copilot Chat",
+  "type": "module",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "@hono/node-server": "^1.19.10",
+    "@modelcontextprotocol/sdk": "^1.27.1",
+    "cors": "^2.8.5",
+    "dotenv": "^16.0.0",
+    "express": "^4.18.2",
+    "express-rate-limit": "^7.0.0"
+  }
+}
