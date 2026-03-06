@@ -66,9 +66,9 @@ export default function OfficerDashboard() {
 
   const updateStatus = async (id, status) => {
     try {
-      await api.put(`/grievances/${id}/status`, { status })
+      await api.put(`/grievances/${id}/status`, null, { params: { status } })
       loadTickets()
-    } catch (e) { alert(e.response?.data?.detail || 'Error updating') }
+    } catch (e) { console.error('Status update failed:', e.response?.data || e.message) }
   }
 
   // All tickets (unfiltered) for analytics — reload without filter

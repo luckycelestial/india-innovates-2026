@@ -192,14 +192,14 @@ function ManageTicketsTab() {
   const updateStatus = async (id, status) => {
     setUpdating(id)
     try {
-      await api.put(`/grievances/${id}/status`, { status })
+      await api.put(`/grievances/${id}/status`, null, { params: { status } })
       load()
     } catch (err) {
       const detail = err.response?.data?.detail
       const msg = Array.isArray(detail)
         ? detail.map(d => safe(d.msg ?? d)).join('; ')
         : safe(detail) || 'Error updating status'
-      alert(msg)
+      console.error('Status update failed:', msg)
     } finally {
       setUpdating(null)
     }
