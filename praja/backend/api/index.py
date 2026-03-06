@@ -2,6 +2,7 @@ import sys
 import os
 import traceback
 
+# Build: 2025-03-06-v2 — blueprint features
 # Ensure project root is in sys.path for imports
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
