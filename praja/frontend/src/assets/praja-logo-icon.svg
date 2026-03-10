@@ -1,0 +1,31 @@
+<svg width="256" height="256" viewBox="0 0 256 256" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="prajaIconTitle prajaIconDesc">
+  <title id="prajaIconTitle">PRAJA Official Seal Icon</title>
+  <desc id="prajaIconDesc">Government-style circular seal icon for PRAJA.</desc>
+
+  <defs>
+    <linearGradient id="sealRing" x1="18" y1="18" x2="238" y2="238" gradientUnits="userSpaceOnUse">
+      <stop offset="0" stop-color="#FF9933"/>
+      <stop offset="0.5" stop-color="#FFFFFF"/>
+      <stop offset="1" stop-color="#138808"/>
+    </linearGradient>
+  </defs>
+
+  <rect x="10" y="10" width="236" height="236" rx="44" fill="#EDF2F8"/>
+  <rect x="10" y="10" width="236" height="236" rx="44" stroke="#CCD8E6" stroke-width="2"/>
+
+  <circle cx="128" cy="128" r="86" fill="#FFFFFF" stroke="url(#sealRing)" stroke-width="10"/>
+  <circle cx="128" cy="128" r="66" fill="#FFFFFF" stroke="#D5DDE8" stroke-width="2"/>
+
+  <circle cx="128" cy="128" r="22" fill="none" stroke="#1A4B8C" stroke-width="3"/>
+  <circle cx="128" cy="128" r="3.5" fill="#1A4B8C"/>
+  <line x1="128" y1="106" x2="128" y2="150" stroke="#1A4B8C" stroke-width="1.8"/>
+  <line x1="106" y1="128" x2="150" y2="128" stroke="#1A4B8C" stroke-width="1.8"/>
+  <line x1="112.5" y1="112.5" x2="143.5" y2="143.5" stroke="#1A4B8C" stroke-width="1.8"/>
+  <line x1="112.5" y1="143.5" x2="143.5" y2="112.5" stroke="#1A4B8C" stroke-width="1.8"/>
+
+  <path d="M92 154C97 147 103 141 112 138" stroke="#1F6A2C" stroke-width="3" stroke-linecap="round"/>
+  <path d="M164 154C159 147 153 141 144 138" stroke="#1F6A2C" stroke-width="3" stroke-linecap="round"/>
+
+  <text x="128" y="84" text-anchor="middle" fill="#20324D" font-family="Georgia, Times New Roman, serif" font-size="11" font-weight="700" letter-spacing="1">PRAJA</text>
+  <text x="128" y="178" text-anchor="middle" fill="#4A5F7A" font-family="Georgia, Times New Roman, serif" font-size="8" font-weight="700" letter-spacing="0.5">PUBLIC SERVICE PORTAL</text>
+</svg>
