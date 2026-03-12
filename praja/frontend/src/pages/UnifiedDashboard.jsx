@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
 import SentinelHeatmap from '../components/SentinelHeatmap'
 import AnalyticsTab from '../components/AnalyticsTab'
+import prajaIcon from '../assets/praja-logo-icon.svg'
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import './UnifiedDashboard.css'
 
@@ -1079,7 +1080,7 @@ export default function UnifiedDashboard() {
 
       <header className="ud-topbar">
         <div className="ud-logo">
-          <div className="ud-logo-icon">P</div>
+          <img src={prajaIcon} alt="PRAJA Seal" className="ud-logo-icon" style={{ width: 44, height: 44, objectFit: 'contain' }} />
           <div>
             <div className="ud-logo-name">PRAJA</div>
             <div className="ud-logo-sub">Citizen Grievance Platform</div>

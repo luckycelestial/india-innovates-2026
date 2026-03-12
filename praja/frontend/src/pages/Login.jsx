@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import prajaIcon from '../assets/praja-logo-icon.svg'
 import './Login.css'
 
 const DEMO_USERS = [
@@ -115,7 +116,7 @@ export default function Login() {
         <section className="login-form-panel" aria-label="Sign in form">
           <div className="login-form-panel-header">
             <div className="portal-logo">
-              <div className="portal-logo-icon">P</div>
+              <img src={prajaIcon} alt="PRAJA Seal" className="portal-logo-icon" style={{ width: 48, height: 48, objectFit: 'contain' }} />
               <div className="portal-logo-text">
                 <div className="name">PRAJA</div>
                 <div className="sub">Citizen Grievance Platform</div>
