@@ -3,31 +3,52 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>PRAJA — Citizen Grievance Platform</title>
+    <meta name="description" content="PRAJA — Official Citizen Grievance Redressal Portal. File complaints, track status, and connect with your representatives." />
+    <meta name="theme-color" content="#003087" />
+    <title>PRAJA | Citizen Grievance Platform — India Innovates 2026</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏛</text></svg>" />
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Noto+Serif:wght@600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
     <style>
       *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+      :root {
+        --gov-primary:   #003087;
+        --gov-accent:    #FF6600;
+        --gov-green:     #006400;
+        --gov-bg:        #f0f4f8;
+        --gov-surface:   #ffffff;
+        --gov-text:      #1a1a2e;
+        --gov-muted:     #64748b;
+        --gov-border:    #cbd5e1;
+        --gov-shadow:    0 1px 4px rgba(0,0,0,0.08);
+      }
       body {
-        font-family: 'Inter', 'Segoe UI', system-ui, -apple-system, sans-serif;
-        background: #060c18;
-        color: #e2e8f0;
+        font-family: 'Noto Sans', 'Segoe UI', system-ui, -apple-system, sans-serif;
+        background: var(--gov-bg);
+        color: var(--gov-text);
         line-height: 1.6;
         -webkit-tap-highlight-color: transparent;
       }
-      input, textarea, button, select {
-        font-family: inherit;
-      }
+      input, textarea, button, select { font-family: inherit; }
       #root { min-height: 100vh; }
-      ::-webkit-scrollbar { width: 5px; }
-      ::-webkit-scrollbar-track { background: #060c18; }
-      ::-webkit-scrollbar-thumb { background: #1a2744; border-radius: 4px; }
-      ::-webkit-scrollbar-thumb:hover { background: #5a6a84; }
+      ::-webkit-scrollbar { width: 6px; height: 6px; }
+      ::-webkit-scrollbar-track { background: #e2e8f0; }
+      ::-webkit-scrollbar-thumb { background: #94a3b8; border-radius: 4px; }
+      ::-webkit-scrollbar-thumb:hover { background: #64748b; }
+      a { color: var(--gov-primary); text-decoration: none; }
+      a:hover { text-decoration: underline; }
+      .skip-to-main {
+        position: absolute; top: -40px; left: 0; background: var(--gov-primary);
+        color: white; padding: 8px 16px; z-index: 9999; font-size: 0.875rem;
+        transition: top 0.2s;
+      }
+      .skip-to-main:focus { top: 0; }
     </style>
   </head>
   <body>
+    <a href="#main-content" class="skip-to-main">Skip to main content</a>
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

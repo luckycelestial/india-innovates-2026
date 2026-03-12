@@ -357,10 +357,10 @@ function ManageTicketsTab({ onToast }) {
               <p className="ud-chart-title">Category Breakdown</p>
               <ResponsiveContainer width="100%" height={220}>
                 <BarChart data={perf.category_breakdown} margin={{top:5,right:10,left:0,bottom:5}}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                  <XAxis dataKey="category" tick={{fill:'#94a3b8',fontSize:11}} angle={-20} textAnchor="end" height={50} />
-                  <YAxis tick={{fill:'#94a3b8',fontSize:11}} />
-                  <Tooltip contentStyle={{background:'#0e1a30',border:'1px solid #1e3a5f',borderRadius:8,color:'#e2e8f0'}} />
+                  <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                  <XAxis dataKey="category" tick={{fill:'#475569',fontSize:11}} angle={-20} textAnchor="end" height={50} />
+                  <YAxis tick={{fill:'#475569',fontSize:11}} />
+                  <Tooltip contentStyle={{background:'#ffffff',border:'1px solid #e2e8f0',borderRadius:8,color:'#1e293b'}} />
                   <Bar dataKey="total" name="Total" radius={[4,4,0,0]}>
                     {perf.category_breakdown.map((_,i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                   </Bar>
@@ -783,7 +783,7 @@ function NayakAITab() {
                 </div>
               </div>
               <div className="nk-output gold" style={{marginTop:8}}>
-                <div style={{fontSize:'0.75rem',color:'#94a3b8',marginBottom:4}}>🤖 AI Suggested Action</div>
+                <div style={{fontSize:'0.75rem',color:'#64748b',marginBottom:4}}>🤖 AI Suggested Action</div>
                 {safe(a.ai_draft_response)}
               </div>
             </div>
@@ -837,10 +837,10 @@ function NayakAITab() {
                   <p className="ud-chart-title">Top Categories Resolved</p>
                   <ResponsiveContainer width="100%" height={180}>
                     <BarChart data={reportCard.top_categories}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                      <XAxis dataKey="category" tick={{fill:'#94a3b8',fontSize:11}} />
-                      <YAxis tick={{fill:'#94a3b8',fontSize:11}} />
-                      <Tooltip contentStyle={{background:'#0e1a30',border:'1px solid #1e3a5f',borderRadius:8,color:'#e2e8f0'}} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                      <XAxis dataKey="category" tick={{fill:'#475569',fontSize:11}} />
+                      <YAxis tick={{fill:'#475569',fontSize:11}} />
+                      <Tooltip contentStyle={{background:'#ffffff',border:'1px solid #e2e8f0',borderRadius:8,color:'#1e293b'}} />
                       <Bar dataKey="count" fill="#10b981" radius={[4,4,0,0]} />
                     </BarChart>
                   </ResponsiveContainer>
@@ -918,10 +918,10 @@ function SentinelTab() {
               <div className="ud-chart-container">
                 <ResponsiveContainer width="100%" height={280}>
                   <BarChart data={topics} margin={{top:5,right:10,left:0,bottom:5}}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                    <XAxis dataKey="topic" tick={{fill:'#94a3b8',fontSize:11}} angle={-15} textAnchor="end" height={50} />
-                    <YAxis tick={{fill:'#94a3b8',fontSize:11}} />
-                    <Tooltip contentStyle={{background:'#0e1a30',border:'1px solid #1e3a5f',borderRadius:8,color:'#e2e8f0'}} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis dataKey="topic" tick={{fill:'#475569',fontSize:11}} angle={-15} textAnchor="end" height={50} />
+                    <YAxis tick={{fill:'#475569',fontSize:11}} />
+                    <Tooltip contentStyle={{background:'#ffffff',border:'1px solid #e2e8f0',borderRadius:8,color:'#1e293b'}} />
                     <Bar dataKey="count" name="Total Open" radius={[4,4,0,0]}>
                       {topics.map((_,i) => <Cell key={i} fill={CHART_COLORS[i % CHART_COLORS.length]} />)}
                     </Bar>
@@ -952,10 +952,10 @@ function SentinelTab() {
               <div className="ud-chart-container">
                 <ResponsiveContainer width="100%" height={280}>
                   <LineChart data={trends} margin={{top:5,right:10,left:0,bottom:5}}>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                    <XAxis dataKey="date" tick={{fill:'#94a3b8',fontSize:11}} />
-                    <YAxis tick={{fill:'#94a3b8',fontSize:11}} />
-                    <Tooltip contentStyle={{background:'#0e1a30',border:'1px solid #1e3a5f',borderRadius:8,color:'#e2e8f0'}} />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                    <XAxis dataKey="date" tick={{fill:'#475569',fontSize:11}} />
+                    <YAxis tick={{fill:'#475569',fontSize:11}} />
+                    <Tooltip contentStyle={{background:'#ffffff',border:'1px solid #e2e8f0',borderRadius:8,color:'#1e293b'}} />
                     <Line type="monotone" dataKey="total" stroke="#3b82f6" strokeWidth={2} dot={{fill:'#3b82f6',r:4}} name="New" />
                     <Line type="monotone" dataKey="resolved" stroke="#10b981" strokeWidth={2} dot={{fill:'#10b981',r:4}} name="Resolved" />
                   </LineChart>
@@ -975,10 +975,10 @@ function SentinelTab() {
                 <div className="ud-chart-container">
                   <ResponsiveContainer width="100%" height={250}>
                     <BarChart data={comparison} margin={{top:5,right:10,left:0,bottom:5}}>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#1e293b" />
-                      <XAxis dataKey="category" tick={{fill:'#94a3b8',fontSize:11}} angle={-15} textAnchor="end" height={50} />
-                      <YAxis tick={{fill:'#94a3b8',fontSize:11}} />
-                      <Tooltip contentStyle={{background:'#0e1a30',border:'1px solid #1e3a5f',borderRadius:8,color:'#e2e8f0'}} />
+                      <CartesianGrid strokeDasharray="3 3" stroke="#e2e8f0" />
+                      <XAxis dataKey="category" tick={{fill:'#475569',fontSize:11}} angle={-15} textAnchor="end" height={50} />
+                      <YAxis tick={{fill:'#475569',fontSize:11}} />
+                      <Tooltip contentStyle={{background:'#ffffff',border:'1px solid #e2e8f0',borderRadius:8,color:'#1e293b'}} />
                       <Bar dataKey="resolution_rate" name="Resolution %" fill="#10b981" radius={[4,4,0,0]} />
                       <Bar dataKey="satisfaction_score" name="Satisfaction %" fill="#3b82f6" radius={[4,4,0,0]} />
                     </BarChart>
@@ -997,7 +997,7 @@ function SentinelTab() {
                           <td>{c.resolved}</td>
                           <td style={{color: c.resolution_rate >= 60 ? '#10b981' : '#ef4444'}}>{c.resolution_rate}%</td>
                           <td style={{color: c.satisfaction_score >= 60 ? '#3b82f6' : '#f59e0b'}}>{c.satisfaction_score}%</td>
-                          <td style={{color: c.critical_count > 0 ? '#ef4444' : '#94a3b8'}}>{c.critical_count}</td>
+                          <td style={{color: c.critical_count > 0 ? '#ef4444' : '#64748b'}}>{c.critical_count}</td>
                         </tr>
                       ))}
                     </tbody>
