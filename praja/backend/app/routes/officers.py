@@ -186,3 +186,108 @@ def department_performance(
         "priority_breakdown": priority_counts,
         "category_breakdown": categories,
     }
+
+
+# ── Analytics: 30-day Daily Trends ──────────────────────────────
+@router.get("/analytics/trends")
+def analytics_trends(
+    current: dict = Depends(require_officer),
+    sb: Any = Depends(get_supabase),
+):
+    """Daily created & resolved counts for the last 30 days."""
+    now = datetime.now(timezone.utc)
+    since = now - timedelta(days=30)
+    since_iso = since.isoformat()
+
+    rows = (
+        sb.table("grievances")
+        .select("created_at, resolved_at, status")
+        .gte("created_at", since_iso)
+        .execute()
+    ).data or []
+
+    # build day buckets
+    buckets: dict[str, dict] = {}
+    for d in range(31):
+        key = (now - timedelta(days=30 - d)).strftime("%Y-%m-%d")
+        buckets[key] = {"date": key, "created": 0, "resolved": 0}
+
+    for r in rows:
+        day = r["created_at"][:10]
+        if day in buckets:
+            buckets[day]["created"] += 1
+        res_at = r.get("resolved_at")
+        if res_at and r["status"] == "resolved":
+            res_day = res_at[:10]
+            if res_day in buckets:
+                buckets[res_day]["resolved"] += 1
+
+    return sorted(buckets.values(), key=lambda x: x["date"])
+
+
+# ── Analytics: Resolution Time Distribution ─────────────────────
+@router.get("/analytics/resolution-times")
+def analytics_resolution_times(
+    current: dict = Depends(require_officer),
+    sb: Any = Depends(get_supabase),
+):
+    """Histogram of resolution durations for resolved tickets."""
+    rows = (
+        sb.table("grievances")
+        .select("created_at, resolved_at, updated_at")
+        .eq("status", "resolved")
+        .execute()
+    ).data or []
+
+    labels = ["0-6h", "6-12h", "12-24h", "1-2d", "2-3d", "3-5d", "5d+"]
+    limits = [6, 12, 24, 48, 72, 120, float("inf")]
+    counts = [0] * len(labels)
+
+    for r in rows:
+        created = r.get("created_at")
+        resolved = r.get("resolved_at") or r.get("updated_at")
+        if not (created and resolved):
+            continue
+        c_dt = datetime.fromisoformat(created.replace("Z", "+00:00"))
+        r_dt = datetime.fromisoformat(resolved.replace("Z", "+00:00"))
+        hours = (r_dt - c_dt).total_seconds() / 3600
+        for i, lim in enumerate(limits):
+            if hours <= lim:
+                counts[i] += 1
+                break
+
+    return [{"bucket": labels[i], "count": counts[i]} for i in range(len(labels))]
+
+
+# ── Analytics: Hourly Heatmap ───────────────────────────────────
+@router.get("/analytics/hourly-heatmap")
+def analytics_hourly_heatmap(
+    current: dict = Depends(require_officer),
+    sb: Any = Depends(get_supabase),
+):
+    """7×24 matrix of submission counts (day-of-week × hour, IST)."""
+    rows = (
+        sb.table("grievances")
+        .select("created_at")
+        .execute()
+    ).data or []
+
+    ist = timezone(timedelta(hours=5, minutes=30))
+    day_names = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"]
+    matrix: list[dict] = []
+
+    grid: dict[tuple[int, int], int] = {}
+    for r in rows:
+        dt = datetime.fromisoformat(r["created_at"].replace("Z", "+00:00")).astimezone(ist)
+        key = (dt.weekday(), dt.hour)
+        grid[key] = grid.get(key, 0) + 1
+
+    for dow in range(7):
+        for hr in range(24):
+            matrix.append({
+                "day": day_names[dow],
+                "hour": hr,
+                "count": grid.get((dow, hr), 0),
+            })
+
+    return matrix

@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { useAuth } from '../context/AuthContext'
 import api from '../services/api'
 import SentinelHeatmap from '../components/SentinelHeatmap'
+import AnalyticsTab from '../components/AnalyticsTab'
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts'
 import './UnifiedDashboard.css'
 
@@ -1053,6 +1054,7 @@ export default function UnifiedDashboard() {
     { id: 'submit',   label: '📝 Submit',         roles: ['citizen','sarpanch','district_collector','mla','mp'] },
     { id: 'mine',     label: '📋 My Complaints',  roles: ['citizen','sarpanch','district_collector','mla','mp'] },
     { id: 'manage',   label: '🗂️ Manage Tickets', roles: ['sarpanch','district_collector','mla','mp'] },
+    { id: 'analytics',label: '📊 Analytics',       roles: ['sarpanch','district_collector','mla','mp'] },
     { id: 'nayak',    label: '🤖 NayakAI',         roles: ['sarpanch','district_collector','mla','mp'] },
     { id: 'sentinel', label: '🗺️ Sentinel',         roles: ['district_collector','mla','mp'] },
   ].filter(t => t.roles.includes(role))
@@ -1124,6 +1126,7 @@ export default function UnifiedDashboard() {
         {activeTab === 'submit'   && <SubmitTab onToast={(msg, type) => setToast({ message: msg, type })} />}
         {activeTab === 'mine'     && <MyComplaintsTab />}
         {activeTab === 'manage'   && <ManageTicketsTab onToast={(msg, type) => setToast({ message: msg, type })} />}
+        {activeTab === 'analytics' && <AnalyticsTab />}
         {activeTab === 'nayak'    && <NayakAITab />}
         {activeTab === 'sentinel' && <SentinelTab />}
       </main>
