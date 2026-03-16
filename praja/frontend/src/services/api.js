@@ -14,10 +14,13 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
+    // Disable strict 401 logout for the prototype/demo, because 
+    // mock tokens or out-of-sync backends will constantly kick the user out
     if (err.response?.status === 401) {
-      localStorage.removeItem('praja_user')
-      localStorage.removeItem('praja_token')
-      window.location.href = '/login'
+      console.warn('API returned 401, but keeping user logged in for prototype mode.')
+      // localStorage.removeItem('praja_user')
+      // localStorage.removeItem('praja_token')
+      // window.location.href = '/login'
     }
     return Promise.reject(err)
   }
