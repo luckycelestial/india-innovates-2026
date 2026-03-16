@@ -1,24 +1,32 @@
 import React from 'react';
 import './ui.css';
 
-export function Card({ children, className = '', ...props }) {
-  return (
-    <div className={`ud-ui-card ${className}`} {...props}>
-      {children}
-    </div>
-  );
+/**
+ * Card component
+ * @param {'default'|'glass'|'bordered'|'lift'} variant
+ */
+export function Card({ children, className = '', variant = 'default', style, ...rest }) {
+  const cls = [
+    'ud-ui-card',
+    variant === 'glass'   ? 'ud-ui-card-glass'   : '',
+    variant === 'bordered'? 'ud-ui-card-bordered' : '',
+    variant === 'lift'    ? 'ud-ui-card-lift'     : '',
+    className,
+  ].filter(Boolean).join(' ');
+  return <div className={cls} style={style} {...rest}>{children}</div>;
 }
 
 /**
- * @param {Object} props
- * @param {'success' | 'warning' | 'danger' | 'info' | 'neutral' | string} [props.variant='neutral']
+ * Badge component
+ * @param {string} variant - open|resolved|escalated|success|warning|danger|critical|high|medium|low etc.
  */
-export function Badge({ variant = 'neutral', children, className = '', ...props }) {
-  // We'll standardise the variants to specific classes
-  const variantClass = `ud-badge-${variant.toLowerCase()}`;
+export function Badge({ children, variant = 'default', className = '', ...rest }) {
   return (
-    <span className={`ud-ui-badge ${variantClass} ${className}`} {...props}>
+    <span className={`ud-ui-badge ud-badge-${variant} ${className}`} {...rest}>
       {children}
     </span>
   );
 }
+
+// Default export for convenience
+export default Card;

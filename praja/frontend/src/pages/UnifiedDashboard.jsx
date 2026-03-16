@@ -4,167 +4,240 @@ import api from '../services/api';
 import prajaIcon from '../assets/praja-logo-icon.svg';
 import './UnifiedDashboard.css';
 
-// Extracted Tab Components
-import SubmitTab from './dashboard/SubmitTab';
+import SubmitTab      from './dashboard/SubmitTab';
 import MyComplaintsTab from './dashboard/MyComplaintsTab';
 import ManageTicketsTab from './dashboard/ManageTicketsTab';
-import NayakAITab from './dashboard/NayakAITab';
-import SentinelTab from './dashboard/SentinelTab';
-import AnalyticsTab from '../components/AnalyticsTab';
+import NayakAITab     from './dashboard/NayakAITab';
+import SentinelTab    from './dashboard/SentinelTab';
+import AnalyticsTab   from '../components/AnalyticsTab';
 
-// ─── Toast ──────────────────────────────────────────────
-function Toast({ message, type, onClose }) {
+/* ── Toast ───────────────────────────────────────────────────── */
+function Toast({ message, type = 'success', onClose }) {
   useEffect(() => {
-    const t = setTimeout(onClose, 4000);
+    const t = setTimeout(onClose, 4500);
     return () => clearTimeout(t);
   }, [onClose]);
   return (
-    <div className={`ud-toast ${type === 'error' ? 'ud-toast-error' : 'ud-toast-success'}`} role="alert" aria-live="assertive">
-      <span className="flex-1">{message}</span>
-      <button className="text-xl ml-4 opacity-70 hover:opacity-100 focus:outline-none" onClick={onClose} aria-label="Close">×</button>
+    <div className={`ud-toast ud-toast-${type}`} role="alert" aria-live="assertive">
+      <span style={{ flex: 1 }}>{message}</span>
+      <button
+        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.1rem', color: 'inherit', opacity: 0.6, padding: '0 4px' }}
+        onClick={onClose}
+        aria-label="Close notification"
+      >
+        ×
+      </button>
     </div>
   );
 }
 
-// ─── Root Layout ─────────────────────────────────────────
+/* ── Role config ──────────────────────────────────────────────── */
+const ROLE_LABELS = {
+  citizen:            'Citizen',
+  sarpanch:           'Sarpanch',
+  district_collector: 'District Collector',
+  mla:                'MLA',
+  mp:                 'Member of Parliament',
+  officer:            'Officer',
+  leader:             'Leader',
+};
+
+const ROLE_COLORS = {
+  citizen:            'var(--color-info-text)',
+  sarpanch:           'var(--color-success-text)',
+  district_collector: 'var(--color-primary-light)',
+  mla:                '#c4b5fd',
+  mp:                 'var(--color-accent)',
+};
+
+const ALL_TABS = [
+  { id: 'submit',    label: '📝 Submit',          roles: ['citizen','sarpanch','district_collector','mla','mp'] },
+  { id: 'mine',      label: '📋 My Complaints',   roles: ['citizen','sarpanch','district_collector','mla','mp'] },
+  { id: 'manage',    label: '🗂 Manage',           roles: ['sarpanch','district_collector','mla','mp'] },
+  { id: 'analytics', label: '📊 Analytics',        roles: ['sarpanch','district_collector','mla','mp'] },
+  { id: 'nayak',     label: '🤖 NayakAI',          roles: ['sarpanch','district_collector','mla','mp'] },
+  { id: 'sentinel',  label: '🗺 Sentinel',          roles: ['district_collector','mla','mp'] },
+];
+
+/* ── Root Layout ──────────────────────────────────────────────── */
 export default function UnifiedDashboard() {
   const { user, logout } = useAuth();
-  const [toast, setToast] = useState(null);
-  const closeToast = useCallback(() => setToast(null), []);
-  
+  const [toast, setToast]     = useState(null);
   const [notifications, setNotifications] = useState([]);
-  const [showNotifs, setShowNotifs] = useState(false);
+  const [showNotifs,   setShowNotifs]     = useState(false);
 
-  const role = user?.role || 'citizen';
+  const closeToast  = useCallback(() => setToast(null), []);
+  const showToast   = useCallback((message, type = 'success') => setToast({ message, type }), []);
 
-  // Load priority notifications minimally
+  const role      = user?.role || 'citizen';
+  const roleLabel = ROLE_LABELS[role] || role;
+  const roleColor = ROLE_COLORS[role] || 'var(--text-secondary)';
+
+  const TABS = ALL_TABS.filter(t => t.roles.includes(role));
+  const [activeTab, setActiveTab] = useState(TABS[0]?.id || 'submit');
+
+  // Load priority alerts silently
   useEffect(() => {
     let alive = true;
     api.get('/sentinel/alerts')
-      .then(r => {
-        if (alive && Array.isArray(r.data)) setNotifications(r.data.slice(0, 5));
-      })
+      .then(r => { if (alive && Array.isArray(r.data)) setNotifications(r.data.slice(0, 5)); })
       .catch(() => {});
     return () => { alive = false; };
   }, []);
 
-  const TABS = [
-    { id: 'submit',   label: '📝 Submit',         roles: ['citizen','sarpanch','district_collector','mla','mp'] },
-    { id: 'mine',     label: '📋 My Complaints',  roles: ['citizen','sarpanch','district_collector','mla','mp'] },
-    { id: 'manage',   label: '🗂️ Manage Tickets', roles: ['sarpanch','district_collector','mla','mp'] },
-    { id: 'analytics',label: '📊 Analytics',      roles: ['sarpanch','district_collector','mla','mp'] },
-    { id: 'nayak',    label: '🤖 NayakAI',        roles: ['sarpanch','district_collector','mla','mp'] },
-    { id: 'sentinel', label: '🗺️ Sentinel',        roles: ['district_collector','mla','mp'] },
-  ].filter(t => t.roles.includes(role));
-
-  const [activeTab, setActiveTab] = useState(TABS[0]?.id || 'submit');
-
-  const roleLabel = {
-    citizen: 'Citizen',
-    sarpanch: 'Sarpanch',
-    district_collector: 'District Collector',
-    mla: 'MLA',
-    mp: 'Member of Parliament',
-    officer: 'Officer',
-    leader: 'Leader',
-  }[role] || role;
+  // Close notification popover when clicking outside
+  useEffect(() => {
+    if (!showNotifs) return;
+    const handler = () => setShowNotifs(false);
+    document.addEventListener('click', handler);
+    return () => document.removeEventListener('click', handler);
+  }, [showNotifs]);
 
   return (
     <div className="ud-root">
       {toast && <Toast message={toast.message} type={toast.type} onClose={closeToast} />}
 
-      {/* Tricolor decorative strip */}
-      <div style={{ height: 4, background: 'linear-gradient(to right, #FF9933 33.3%, #fff 33.3%, #fff 66.6%, #138808 66.6%)' }} />
+      {/* Tricolor strip */}
+      <div style={{ height: 3, background: 'var(--tricolor-gradient)', flexShrink: 0 }} aria-hidden="true" />
 
+      {/* ── Topbar ── */}
       <header className="ud-topbar">
         <div className="ud-logo">
-          <img src={prajaIcon} alt="PRAJA Seal" className="ud-logo-icon" style={{ width: 44, height: 44, objectFit: 'contain' }} />
+          <img src={prajaIcon} alt="PRAJA Seal" className="ud-logo-icon" />
           <div>
-            <div className="ud-logo-name text-2xl font-bold tracking-tight text-white">PRAJA</div>
-            <div className="ud-logo-sub text-xs text-orange-200">Citizen Grievance Platform</div>
+            <div className="ud-logo-name">PRAJA</div>
+            <div className="ud-logo-sub">Citizen Platform</div>
           </div>
         </div>
-        
-        <div className="flex items-center gap-6">
-          <div className="relative">
-            <button 
-              className="ud-notif-btn relative text-xl p-2 rounded-full hover:bg-white/10 transition-colors focus:outline-none focus:ring-2 focus:ring-orange-500"
-              onClick={() => setShowNotifs(!showNotifs)}
+
+        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+          {/* Notification bell */}
+          <div style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
+            <button
+              style={{
+                background: 'none', border: 'none', cursor: 'pointer',
+                fontSize: '1.25rem', position: 'relative', color: 'var(--text-secondary)',
+                padding: '6px', borderRadius: 'var(--radius-full)',
+                transition: 'background var(--transition-fast)',
+              }}
+              onClick={() => setShowNotifs(s => !s)}
               aria-label="Notifications"
               aria-expanded={showNotifs}
+              className="hover:bg-white/10"
             >
               🔔
               {notifications.length > 0 && (
-                <span className="absolute top-0 right-0 w-5 h-5 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full border border-[var(--bg-surface)]">
+                <span style={{
+                  position: 'absolute', top: 2, right: 2,
+                  width: 18, height: 18, borderRadius: '50%',
+                  background: 'var(--color-danger)',
+                  color: '#fff', fontSize: '0.65rem', fontWeight: 800,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  border: '2px solid var(--bg-surface)',
+                }}>
                   {notifications.length}
                 </span>
               )}
             </button>
             {showNotifs && (
-              <div className="absolute right-0 top-12 w-80 bg-white rounded-lg shadow-xl border border-gray-200 z-50 overflow-hidden">
-                <div className="bg-gray-50 px-4 py-3 border-b border-gray-200 font-bold text-gray-800 flex justify-between">
+              <div style={{
+                position: 'absolute', right: 0, top: 44,
+                width: 320, background: 'var(--bg-surface-2)',
+                border: '1px solid var(--border-color-hover)',
+                borderRadius: 'var(--radius-xl)',
+                boxShadow: 'var(--shadow-xl)',
+                overflow: 'hidden', zIndex: 200,
+              }}>
+                <div style={{
+                  padding: '12px 16px',
+                  borderBottom: '1px solid var(--border-color)',
+                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
+                  fontWeight: 700, fontSize: '0.875rem',
+                }}>
                   <span>Priority Alerts</span>
-                  <span className="text-xs font-normal text-gray-500 bg-gray-200 px-2 rounded-full leading-relaxed">{notifications.length}</span>
+                  <span style={{
+                    fontSize: '0.72rem', fontWeight: 600,
+                    background: 'var(--color-danger-bg)', color: 'var(--color-danger-text)',
+                    border: '1px solid var(--color-danger-border)',
+                    padding: '1px 8px', borderRadius: 'var(--radius-full)',
+                  }}>{notifications.length}</span>
                 </div>
-                <div className="max-h-96 overflow-y-auto">
+                <div style={{ maxHeight: 320, overflowY: 'auto' }}>
                   {notifications.length === 0 ? (
-                    <div className="p-6 text-center text-gray-500">No active alerts</div>
-                  ) : (
-                    notifications.map((n, i) => (
-                      <div key={i} className={`p-4 border-b border-gray-100 hover:bg-gray-50 cursor-default ${n.severity === 'critical' ? 'border-l-4 border-l-red-500' : 'border-l-4 border-l-yellow-500'}`}>
-                        <div className="font-bold text-sm text-gray-800 mb-1">{n.title || 'Alert'}</div>
-                        <div className="text-xs text-gray-600 line-clamp-2">{n.description || 'Action required immediately.'}</div>
+                    <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
+                      No active alerts
+                    </div>
+                  ) : notifications.map((n, i) => (
+                    <div key={i} style={{
+                      padding: '12px 16px',
+                      borderBottom: '1px solid var(--border-color)',
+                      borderLeft: `3px solid ${n.severity === 'critical' ? 'var(--color-danger)' : 'var(--color-warning)'}`,
+                    }}>
+                      <div style={{ fontWeight: 600, fontSize: '0.84rem', marginBottom: 3 }}>{n.title || 'Alert'}</div>
+                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
+                        {n.description || 'Action required immediately.'}
                       </div>
-                    ))
-                  )}
+                    </div>
+                  ))}
                 </div>
               </div>
             )}
           </div>
-          
-          <div className="hidden sm:block text-right">
-            <div className="text-sm font-medium text-white">Hello, {user?.name || 'User'}</div>
-            <div className={`text-xs font-bold uppercase tracking-wider ${
-              role === 'citizen' ? 'text-blue-300' : role === 'sarpanch' ? 'text-green-300' : 'text-orange-300'
-            }`}>
+
+          {/* User info */}
+          <div className="hidden sm:block" style={{ textAlign: 'right' }}>
+            <div style={{ fontSize: '0.84rem', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1 }}>
+              {user?.name || 'User'}
+            </div>
+            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: roleColor, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 3 }}>
               {roleLabel}
             </div>
           </div>
-          
-          <button 
-            className="text-sm font-medium text-gray-300 hover:text-white px-3 py-1.5 rounded-md hover:bg-white/10 transition-colors focus:ring-2 focus:ring-white border border-white/20"
+
+          {/* Sign out */}
+          <button
             onClick={logout}
+            style={{
+              background: 'var(--bg-surface-2)',
+              border: '1px solid var(--border-color-hover)',
+              color: 'var(--text-secondary)',
+              padding: '6px 14px',
+              borderRadius: 'var(--radius-md)',
+              fontSize: '0.8rem',
+              fontWeight: 600,
+              cursor: 'pointer',
+              fontFamily: 'inherit',
+              transition: 'all var(--transition-fast)',
+              letterSpacing: '0.02em',
+            }}
+            className="hover:text-white"
           >
             Sign Out
           </button>
         </div>
       </header>
 
-      <nav className="ud-tabnav flex overflow-x-auto bg-[var(--bg-surface)] border-b border-[var(--border-color)]">
+      {/* ── Tab Nav ── */}
+      <nav className="ud-tabnav" aria-label="Dashboard sections">
         {TABS.map(t => (
           <button
             key={t.id}
-            className={`
-              relative px-6 py-4 text-sm font-semibold whitespace-nowrap transition-colors outline-none
-              ${activeTab === t.id ? 'text-orange-500 bg-white/5' : 'text-gray-400 hover:text-gray-200 hover:bg-white/5'}
-            `}
+            className={`ud-tab-btn ${activeTab === t.id ? 'active' : ''}`}
             onClick={() => setActiveTab(t.id)}
             aria-selected={activeTab === t.id}
+            role="tab"
           >
             {t.label}
-            {activeTab === t.id && (
-              <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-orange-500 to-yellow-500" />
-            )}
           </button>
         ))}
       </nav>
 
-      <main className="ud-content relative">
-        <div className="absolute inset-0 bg-gradient-to-b from-white/5 to-transparent pointer-events-none" />
-        <div className="relative z-10 max-w-7xl mx-auto">
-          {activeTab === 'submit'    && <SubmitTab onToast={(msg, type) => setToast({ message: msg, type })} />}
+      {/* ── Content ── */}
+      <main className="ud-content" style={{ position: 'relative' }}>
+        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
+          {activeTab === 'submit'    && <SubmitTab onToast={showToast} />}
           {activeTab === 'mine'      && <MyComplaintsTab />}
-          {activeTab === 'manage'    && <ManageTicketsTab onToast={(msg, type) => setToast({ message: msg, type })} />}
+          {activeTab === 'manage'    && <ManageTicketsTab onToast={showToast} />}
           {activeTab === 'analytics' && <AnalyticsTab />}
           {activeTab === 'nayak'     && <NayakAITab />}
           {activeTab === 'sentinel'  && <SentinelTab />}

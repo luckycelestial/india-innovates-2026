@@ -1,52 +1,50 @@
-import React, { forwardRef } from 'react';
+import React from 'react';
 import './ui.css';
 
 /**
- * @typedef {Object} InputProps
- * @property {string} [label]
- * @property {string} [error]
- * @property {string} [hint]
- * @property {boolean} [isTextarea]
- * @property {string} [className]
- * @property {React.InputHTMLAttributes<HTMLInputElement | HTMLTextAreaElement>} [rest]
+ * Input / Textarea component
+ * @param {boolean} isTextarea
+ * @param {string} label
+ * @param {string} hint
+ * @param {string} error
+ * @param {boolean} required
  */
+export default function Input({
+  label,
+  id,
+  hint,
+  error,
+  isTextarea = false,
+  className = '',
+  required,
+  ...props
+}) {
+  const inputCls = [
+    'ud-input-base',
+    isTextarea ? 'ud-textarea' : 'ud-input',
+    error ? 'ud-input-error' : '',
+  ].filter(Boolean).join(' ');
 
-const Input = forwardRef(
-  /** @param {InputProps} props */
-  ({ label, error, hint, isTextarea = false, className = '', id, ...props }, ref) => {
-    const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
-    const Component = isTextarea ? 'textarea' : 'input';
+  const El = isTextarea ? 'textarea' : 'input';
 
-    return (
-      <div className={`ud-field-wrapper ${className}`}>
-        {label && (
-          <label htmlFor={inputId} className="ud-label">
-            {label}
-            {props.required && <span className="ud-required" aria-hidden="true">*</span>}
-          </label>
-        )}
-        <Component
-          id={inputId}
-          ref={ref}
-          className={`ud-input-base ${isTextarea ? 'ud-textarea' : 'ud-input'} ${error ? 'ud-input-error' : ''}`}
-          aria-invalid={!!error}
-          aria-describedby={error ? `${inputId}-error` : hint ? `${inputId}-hint` : undefined}
-          {...props}
-        />
-        {error && (
-          <div id={`${inputId}-error`} className="ud-field-error" role="alert">
-            {error}
-          </div>
-        )}
-        {hint && !error && (
-          <div id={`${inputId}-hint`} className="ud-field-hint">
-            {hint}
-          </div>
-        )}
-      </div>
-    );
-  }
-);
-
-Input.displayName = 'Input';
-export default Input;
+  return (
+    <div className={`ud-field-wrapper ${className}`}>
+      {label && (
+        <label htmlFor={id} className="ud-label">
+          {label}
+          {required && <span className="ud-required" aria-hidden="true">*</span>}
+        </label>
+      )}
+      <El
+        id={id}
+        className={inputCls}
+        required={required}
+        aria-describedby={hint ? `${id}-hint` : undefined}
+        aria-invalid={error ? 'true' : undefined}
+        {...props}
+      />
+      {error && <span id={`${id}-error`} className="ud-field-error" role="alert">{error}</span>}
+      {!error && hint && <span id={`${id}-hint`} className="ud-field-hint">{hint}</span>}
+    </div>
+  );
+}

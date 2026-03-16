@@ -2,46 +2,44 @@ import React from 'react';
 import './ui.css';
 
 /**
- * @typedef {Object} ButtonProps
- * @property {'primary' | 'secondary' | 'danger' | 'ghost'} [variant='primary']
- * @property {'sm' | 'md' | 'lg'} [size='md']
- * @property {boolean} [isLoading=false]
- * @property {boolean} [fullWidth=false]
- * @property {React.ReactNode} children
- * @property {string} [className]
- * @property {React.ButtonHTMLAttributes<HTMLButtonElement>} [rest]
- */
-
-/**
- * @param {ButtonProps} props
+ * Button component
+ * @param {'primary'|'secondary'|'danger'|'ghost'} variant
+ * @param {'xs'|'sm'|'md'|'lg'} size
+ * @param {boolean} isLoading
+ * @param {boolean} fullWidth
  */
 export default function Button({
+  children,
   variant = 'primary',
   size = 'md',
   isLoading = false,
   fullWidth = false,
   className = '',
-  children,
+  type = 'button',
   disabled,
-  ...props
+  ...rest
 }) {
-  const baseClass = 'ud-btn';
-  const variantClass = `ud-btn-${variant}`;
-  const sizeClass = `ud-btn-${size}`;
-  const widthClass = fullWidth ? 'ud-btn-full' : '';
-  const loadingClass = isLoading ? 'ud-btn-loading' : '';
+  const cls = [
+    'ud-btn',
+    `ud-btn-${variant}`,
+    `ud-btn-${size}`,
+    fullWidth ? 'ud-btn-full' : '',
+    className,
+  ].filter(Boolean).join(' ');
 
   return (
     <button
-      className={[baseClass, variantClass, sizeClass, widthClass, loadingClass, className].filter(Boolean).join(' ')}
+      type={type}
+      className={cls}
       disabled={isLoading || disabled}
-      {...props}
+      {...rest}
     >
       {isLoading ? (
-        <span className="ud-spinner mx-auto" aria-hidden="true" />
-      ) : (
-        children
-      )}
+        <>
+          <span className="ud-spinner" aria-hidden="true" />
+          <span>{typeof children === 'string' ? children : 'Loading…'}</span>
+        </>
+      ) : children}
     </button>
   );
 }
