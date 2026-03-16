@@ -4,7 +4,7 @@ import SentinelHeatmap from '../../components/SentinelHeatmap';
 import { useFetch } from '../../hooks/useFetch';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
-const CHART_COLORS = ['#ef4444','#f59e0b','#3b82f6','#10b981','#8b5cf6','#ec4899','#06b6d4','#f97316','#84cc16'];
+const CHART_COLORS = ['#06038D', '#FF9933', '#138808', '#0284C7', '#D97706', '#dc2626', '#eab308'];
 
 export default function SentinelTab() {
   const [subTab, setSubTab] = useState('map');

@@ -8,7 +8,7 @@ const STATUS_LABEL = {
   open: 'Open', assigned: 'Assigned', in_progress: 'In Progress',
   resolved: 'Resolved', escalated: 'Escalated', closed: 'Closed',
 };
-const CHART_COLORS = ['#ff6b00','#f59e0b','#22c55e','#ef4444','#8b5cf6','#38bdf8','#f97316','#84cc16','#ec4899'];
+const CHART_COLORS = ['#06038D', '#FF9933', '#138808', '#0284C7', '#D97706', '#dc2626', '#eab308'];
 
 const STAT_ITEMS = [
   { key: 'open',        label: 'Open',        color: 'var(--color-warning)' },

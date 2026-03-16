@@ -132,23 +132,23 @@ export default function NayakAITab() {
           <p className="ud-loading">Generating brief...</p>
         ) : brief ? (
           <div>
-            <Card className="bg-gradient-to-br from-indigo-900 to-blue-900 text-white border-0 shadow-lg mb-4">
-              <div className="text-xl font-bold mb-4 opacity-90">Morning Brief — {brief.date}</div>
+            <Card className="bg-gradient-to-br from-blue-50 to-white text-gray-900 border-t-4 border-t-[#06038D] shadow-sm mb-4">
+              <div className="text-xl font-bold mb-4">Morning Brief — {brief.date}</div>
               <div className="grid grid-cols-3 gap-4 mb-6">
-                <div className="bg-white/10 p-4 rounded-lg text-center backdrop-blur-sm">
-                  <div className="text-3xl font-bold text-orange-400">{brief.total_open}</div>
-                  <div className="text-sm opacity-80 uppercase tracking-widest mt-1">Open</div>
+                <div className="bg-white border border-gray-200 p-4 rounded-lg text-center shadow-sm">
+                  <div className="text-3xl font-bold text-orange-600">{brief.total_open}</div>
+                  <div className="text-sm text-gray-500 uppercase tracking-widest mt-1">Open</div>
                 </div>
-                <div className="bg-white/10 p-4 rounded-lg text-center backdrop-blur-sm">
-                  <div className="text-3xl font-bold text-red-400">{brief.critical_open}</div>
-                  <div className="text-sm opacity-80 uppercase tracking-widest mt-1">Critical</div>
+                <div className="bg-white border border-gray-200 p-4 rounded-lg text-center shadow-sm">
+                  <div className="text-3xl font-bold text-red-600">{brief.critical_open}</div>
+                  <div className="text-sm text-gray-500 uppercase tracking-widest mt-1">Critical</div>
                 </div>
-                <div className="bg-white/10 p-4 rounded-lg text-center backdrop-blur-sm">
-                  <div className="text-3xl font-bold text-yellow-400">{brief.sla_violations}</div>
-                  <div className="text-sm opacity-80 uppercase tracking-widest mt-1">SLA Breaches</div>
+                <div className="bg-white border border-gray-200 p-4 rounded-lg text-center shadow-sm">
+                  <div className="text-3xl font-bold text-yellow-600">{brief.sla_violations}</div>
+                  <div className="text-sm text-gray-500 uppercase tracking-widest mt-1">SLA Breaches</div>
                 </div>
               </div>
-              {brief.summary && <div className="bg-white/5 p-4 rounded-lg italic font-serif leading-relaxed">{brief.summary}</div>}
+              {brief.summary && <div className="bg-white border border-gray-100 p-4 rounded-lg italic text-gray-700 leading-relaxed">{brief.summary}</div>}
             </Card>
             <Button variant="secondary" onClick={loadBrief}>↻ Refresh</Button>
           </div>

@@ -1,6 +1,6 @@
 /* ═══════════════════════════════════════════════════
    PRAJA UI Kit — Base Component Styles
-   Premium Dark Civic · India Innovates 2026
+   Official Civic Theme · India Innovates 2026
    ═══════════════════════════════════════════════════ */
 
 /* ── Card ─────────────────────────────────────────── */
@@ -10,25 +10,25 @@
   border-radius: var(--radius-lg);
   padding: var(--spacing-6);
   box-shadow: var(--card-shadow);
-  transition: box-shadow var(--transition-fast), border-color var(--transition-fast), transform var(--transition-fast);
+  transition: box-shadow var(--transition-fast), transform var(--transition-fast);
   position: relative;
 }
 .ud-ui-card:hover {
-  box-shadow: 0 4px 24px rgba(0,0,0,0.45);
-  border-color: var(--border-color-hover);
+  box-shadow: var(--shadow-sm);
 }
 .ud-ui-card-glass {
   background: var(--bg-glass);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255,255,255,0.08);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--border-color);
 }
 .ud-ui-card-bordered {
-  border-color: var(--border-color-hover);
+  border-color: var(--border-color);
+  box-shadow: none;
 }
 .ud-ui-card-lift:hover {
   transform: translateY(-2px);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-md);
 }
 
 /* ── Badge ────────────────────────────────────────── */
@@ -39,18 +39,18 @@
   padding: 2px 10px;
   border-radius: var(--radius-full);
   font-size: 0.72rem;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.06em;
+  letter-spacing: 0.05em;
   white-space: nowrap;
   border: 1px solid transparent;
 }
 
-/* Badge Variants — all tuned for dark backgrounds */
+/* Badge Variants */
 .ud-badge-default    { background: var(--bg-surface-2); color: var(--text-secondary); border-color: var(--border-color); }
 .ud-badge-open       { background: var(--color-warning-bg); color: var(--color-warning-text); border-color: var(--color-warning-border); }
-.ud-badge-assigned   { background: var(--color-info-bg); color: var(--color-info-text); border-color: rgba(56,189,248,0.2); }
-.ud-badge-in_progress{ background: var(--color-info-bg); color: var(--color-info-text); border-color: rgba(56,189,248,0.2); }
+.ud-badge-assigned   { background: var(--color-info-bg); color: var(--color-info-text); border-color: rgba(2, 132, 199, 0.2); }
+.ud-badge-in_progress{ background: var(--color-info-bg); color: var(--color-info-text); border-color: rgba(2, 132, 199, 0.2); }
 .ud-badge-resolved   { background: var(--color-success-bg); color: var(--color-success-text); border-color: var(--color-success-border); }
 .ud-badge-escalated  { background: var(--color-danger-bg); color: var(--color-danger-text); border-color: var(--color-danger-border); }
 .ud-badge-closed     { background: var(--bg-surface-2); color: var(--text-muted); border-color: var(--border-color); }
@@ -58,9 +58,10 @@
 .ud-badge-warning    { background: var(--color-warning-bg); color: var(--color-warning-text); border-color: var(--color-warning-border); }
 .ud-badge-danger     { background: var(--color-danger-bg); color: var(--color-danger-text); border-color: var(--color-danger-border); }
 .ud-badge-critical   { background: var(--color-danger); color: #fff; border-color: var(--color-danger-dark); }
-.ud-badge-high       { background: var(--color-primary-glow); color: var(--color-primary-light); border-color: rgba(255,107,0,0.3); }
+.ud-badge-high       { background: var(--color-primary-bg); color: var(--color-primary); border-color: var(--border-color-card); }
 .ud-badge-medium     { background: var(--color-warning-bg); color: var(--color-warning-text); border-color: var(--color-warning-border); }
 .ud-badge-low        { background: var(--color-success-bg); color: var(--color-success-text); border-color: var(--color-success-border); }
+.ud-badge-neutral    { background: var(--bg-surface-2); color: var(--text-secondary); border-color: var(--border-color); }
 
 /* ── Button ───────────────────────────────────────── */
 .ud-btn {
@@ -81,19 +82,8 @@
   position: relative;
   overflow: hidden;
 }
-.ud-btn::after {
-  content: '';
-  position: absolute;
-  inset: 0;
-  background: rgba(255,255,255,0);
-  transition: background var(--transition-fast);
-  border-radius: inherit;
-  pointer-events: none;
-}
-.ud-btn:hover::after  { background: rgba(255,255,255,0.06); }
-.ud-btn:active::after { background: rgba(0,0,0,0.08); }
 
-.ud-btn:disabled { opacity: 0.45; cursor: not-allowed; pointer-events: none; }
+.ud-btn:disabled { opacity: 0.6; cursor: not-allowed; pointer-events: none; }
 .ud-btn:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
 .ud-btn-full { width: 100%; }
 
@@ -101,36 +91,38 @@
 .ud-btn-xs { height: 28px; font-size: 0.78rem; padding: 0 var(--spacing-3); border-radius: var(--radius-sm); }
 .ud-btn-sm { height: 34px; font-size: 0.85rem; padding: 0 var(--spacing-4); }
 .ud-btn-md { height: 42px; font-size: 0.9375rem; padding: 0 var(--spacing-5); }
-.ud-btn-lg { height: 52px; font-size: 1.05rem; padding: 0 var(--spacing-6); letter-spacing: 0.02em; }
+.ud-btn-lg { height: 48px; font-size: 1.05rem; padding: 0 var(--spacing-6); letter-spacing: 0.02em; }
 
 /* Variants */
 .ud-btn-primary {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  background: var(--color-primary);
   color: #fff;
   border-color: var(--color-primary-dark);
-  box-shadow: 0 2px 8px var(--color-primary-glow);
+  box-shadow: 0 1px 2px rgba(6, 3, 141, 0.2);
 }
 .ud-btn-primary:hover:not(:disabled) {
-  background: linear-gradient(135deg, var(--color-primary-light) 0%, var(--color-primary) 100%);
-  box-shadow: 0 4px 16px var(--color-primary-glow), 0 0 0 1px var(--color-primary);
+  background: var(--color-primary-light);
+  box-shadow: 0 4px 6px rgba(6, 3, 141, 0.25);
   transform: translateY(-1px);
 }
 .ud-btn-primary:active:not(:disabled) { transform: translateY(0); }
 
 .ud-btn-secondary {
-  background: var(--bg-surface-2);
+  background: white;
   color: var(--text-primary);
-  border-color: var(--border-color-hover);
+  border-color: var(--border-color);
+  box-shadow: 0 1px 2px rgba(0,0,0,0.05);
 }
 .ud-btn-secondary:hover:not(:disabled) {
-  background: var(--bg-surface-hover);
-  border-color: rgba(255,255,255,0.25);
+  background: var(--bg-surface-2);
+  border-color: var(--border-color-hover);
 }
 
 .ud-btn-danger {
   background: var(--color-danger);
   color: #fff;
   border-color: var(--color-danger-dark);
+  box-shadow: 0 1px 2px rgba(220, 38, 38, 0.2);
 }
 .ud-btn-danger:hover:not(:disabled) {
   background: var(--color-danger-dark);
@@ -143,28 +135,27 @@
   border-color: transparent;
 }
 .ud-btn-ghost:hover:not(:disabled) {
-  background: var(--bg-glass-light);
+  background: var(--bg-surface-2);
   color: var(--text-primary);
-  border-color: var(--border-color);
 }
 
 /* ── Inputs & Form Fields ─────────────────────────── */
 .ud-field-wrapper {
   display: flex;
   flex-direction: column;
-  gap: var(--spacing-2);
+  gap: var(--spacing-1);
   margin-bottom: var(--spacing-4);
 }
 .ud-label {
-  font-size: 0.84rem;
-  font-weight: 500;
-  color: var(--text-secondary);
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-primary);
   letter-spacing: 0.01em;
 }
 .ud-required { color: var(--color-danger); margin-left: 0.2rem; }
 
 .ud-input-base {
-  background: var(--bg-surface-sunken);
+  background: var(--bg-surface);
   border: 1px solid var(--border-color-hover);
   border-radius: var(--radius-md);
   color: var(--text-primary);
@@ -176,20 +167,21 @@
 }
 .ud-input-base::placeholder { color: var(--text-muted); }
 .ud-input-base:hover {
-  border-color: rgba(255,255,255,0.18);
+  border-color: var(--color-gray-400);
 }
 .ud-input-base:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-glow);
+  box-shadow: 0 0 0 2px var(--color-primary-glow);
 }
 .ud-input-base:disabled {
-  opacity: 0.5;
+  opacity: 0.6;
+  background: var(--bg-surface-2);
   cursor: not-allowed;
 }
 .ud-input-error { border-color: var(--color-danger) !important; }
-.ud-input       { height: 42px; padding: 0 var(--spacing-4); }
-.ud-textarea    { min-height: 110px; padding: var(--spacing-3) var(--spacing-4); resize: vertical; }
+.ud-input       { height: 42px; padding: 0 var(--spacing-3); }
+.ud-textarea    { min-height: 110px; padding: var(--spacing-3); resize: vertical; }
 
 .ud-field-error { font-size: 0.8rem; color: var(--color-danger-text); margin-top: 2px; }
 .ud-field-hint  { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
@@ -209,22 +201,25 @@
 
 /* ── Status select ────────────────────────────────── */
 .ud-status-select {
-  background: var(--bg-surface-2);
+  background: var(--bg-surface);
   border: 1px solid var(--border-color-hover);
   color: var(--text-primary);
   border-radius: var(--radius-md);
   font-family: var(--font-primary);
   font-size: 0.875rem;
-  font-weight: 500;
+  font-weight: 600;
   padding: 0 var(--spacing-3);
   height: 38px;
   cursor: pointer;
-  transition: border-color var(--transition-fast);
+  transition: all var(--transition-fast);
   appearance: none;
-  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%237a98c2' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23475569' stroke-width='2'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");
   background-repeat: no-repeat;
   background-position: right 10px center;
   padding-right: 28px;
+}
+.ud-status-select:hover {
+  border-color: var(--color-gray-400);
 }
 .ud-status-select:focus {
   outline: none;

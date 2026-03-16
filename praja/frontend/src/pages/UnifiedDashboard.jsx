@@ -21,7 +21,7 @@ function Toast({ message, type = 'success', onClose }) {
     <div className={`ud-toast ud-toast-${type}`} role="alert" aria-live="assertive">
       <span style={{ flex: 1 }}>{message}</span>
       <button
-        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.1rem', color: 'inherit', opacity: 0.6, padding: '0 4px' }}
+        style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.2rem', color: 'inherit', opacity: 0.6, padding: '0 4px', lineHeight: 1 }}
         onClick={onClose}
         aria-label="Close notification"
       >
@@ -42,21 +42,13 @@ const ROLE_LABELS = {
   leader:             'Leader',
 };
 
-const ROLE_COLORS = {
-  citizen:            'var(--color-info-text)',
-  sarpanch:           'var(--color-success-text)',
-  district_collector: 'var(--color-primary-light)',
-  mla:                '#c4b5fd',
-  mp:                 'var(--color-accent)',
-};
-
 const ALL_TABS = [
-  { id: 'submit',    label: '📝 Submit',          roles: ['citizen','sarpanch','district_collector','mla','mp'] },
-  { id: 'mine',      label: '📋 My Complaints',   roles: ['citizen','sarpanch','district_collector','mla','mp'] },
-  { id: 'manage',    label: '🗂 Manage',           roles: ['sarpanch','district_collector','mla','mp'] },
-  { id: 'analytics', label: '📊 Analytics',        roles: ['sarpanch','district_collector','mla','mp'] },
-  { id: 'nayak',     label: '🤖 NayakAI',          roles: ['sarpanch','district_collector','mla','mp'] },
-  { id: 'sentinel',  label: '🗺 Sentinel',          roles: ['district_collector','mla','mp'] },
+  { id: 'submit',    label: '📝 Submit Grievance', roles: ['citizen','sarpanch','district_collector','mla','mp'] },
+  { id: 'mine',      label: '📋 My Complaints',    roles: ['citizen','sarpanch','district_collector','mla','mp'] },
+  { id: 'manage',    label: '🗂 Manage Tickets',  roles: ['sarpanch','district_collector','mla','mp'] },
+  { id: 'analytics', label: '📊 Analytics',         roles: ['sarpanch','district_collector','mla','mp'] },
+  { id: 'nayak',     label: '🤖 NayakAI Assistant',roles: ['sarpanch','district_collector','mla','mp'] },
+  { id: 'sentinel',  label: '🗺 Sentinel Pulse',    roles: ['district_collector','mla','mp'] },
 ];
 
 /* ── Root Layout ──────────────────────────────────────────────── */
@@ -65,16 +57,54 @@ export default function UnifiedDashboard() {
   const [toast, setToast]     = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [showNotifs,   setShowNotifs]     = useState(false);
+  
+  // Sidebar State (persisted for desktop)
+  const [isSidebarOpen, setIsSidebarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('praja_sidebar_state');
+      // Default to open on larger screens, closed on mobile
+      if (stored !== null) return stored === 'true';
+      return window.innerWidth > 768;
+    }
+    return true;
+  });
+
+  // Automatically close sidebar on route change if on mobile
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+      if (window.innerWidth > 768) {
+        setIsSidebarOpen(localStorage.getItem('praja_sidebar_state') !== 'false');
+      }
+    };
+    handleResize(); // Init
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const closeToast  = useCallback(() => setToast(null), []);
   const showToast   = useCallback((message, type = 'success') => setToast({ message, type }), []);
 
+  const toggleSidebar = () => {
+    setIsSidebarOpen(prev => {
+      const next = !prev;
+      if (!isMobile) localStorage.setItem('praja_sidebar_state', next);
+      return next;
+    });
+  };
+
   const role      = user?.role || 'citizen';
   const roleLabel = ROLE_LABELS[role] || role;
-  const roleColor = ROLE_COLORS[role] || 'var(--text-secondary)';
 
   const TABS = ALL_TABS.filter(t => t.roles.includes(role));
   const [activeTab, setActiveTab] = useState(TABS[0]?.id || 'submit');
+
+  const selectTab = (id) => {
+    setActiveTab(id);
+    if (isMobile) setIsSidebarOpen(false); // Auto-close on strictly mobile
+  };
 
   // Load priority alerts silently
   useEffect(() => {
@@ -94,155 +124,127 @@ export default function UnifiedDashboard() {
   }, [showNotifs]);
 
   return (
-    <div className="ud-root">
+    <div className="ud-layout">
       {toast && <Toast message={toast.message} type={toast.type} onClose={closeToast} />}
 
-      {/* Tricolor strip */}
-      <div style={{ height: 3, background: 'var(--tricolor-gradient)', flexShrink: 0 }} aria-hidden="true" />
-
-      {/* ── Topbar ── */}
-      <header className="ud-topbar">
-        <div className="ud-logo">
+      {/* ── Sidebar ── */}
+      <aside className={`ud-sidebar ${isSidebarOpen ? 'open' : ''}`} aria-label="Sidebar Navigation">
+        <div className="ud-sidebar-header">
           <img src={prajaIcon} alt="PRAJA Seal" className="ud-logo-icon" />
-          <div>
+          <div className="ud-logo-text">
             <div className="ud-logo-name">PRAJA</div>
-            <div className="ud-logo-sub">Citizen Platform</div>
+            <div className="ud-logo-sub">Citizen Portal</div>
           </div>
         </div>
 
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-          {/* Notification bell */}
-          <div style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
+        <nav className="ud-sidebar-nav">
+          <div className="ud-nav-group">Menu</div>
+          {TABS.map(t => (
             <button
-              style={{
-                background: 'none', border: 'none', cursor: 'pointer',
-                fontSize: '1.25rem', position: 'relative', color: 'var(--text-secondary)',
-                padding: '6px', borderRadius: 'var(--radius-full)',
-                transition: 'background var(--transition-fast)',
-              }}
-              onClick={() => setShowNotifs(s => !s)}
-              aria-label="Notifications"
-              aria-expanded={showNotifs}
-              className="hover:bg-white/10"
+              key={t.id}
+              className={`ud-nav-item ${activeTab === t.id ? 'active' : ''}`}
+              onClick={() => selectTab(t.id)}
+              aria-selected={activeTab === t.id}
             >
-              🔔
-              {notifications.length > 0 && (
-                <span style={{
-                  position: 'absolute', top: 2, right: 2,
-                  width: 18, height: 18, borderRadius: '50%',
-                  background: 'var(--color-danger)',
-                  color: '#fff', fontSize: '0.65rem', fontWeight: 800,
-                  display: 'flex', alignItems: 'center', justifyContent: 'center',
-                  border: '2px solid var(--bg-surface)',
-                }}>
-                  {notifications.length}
-                </span>
-              )}
+              {t.label}
             </button>
-            {showNotifs && (
-              <div style={{
-                position: 'absolute', right: 0, top: 44,
-                width: 320, background: 'var(--bg-surface-2)',
-                border: '1px solid var(--border-color-hover)',
-                borderRadius: 'var(--radius-xl)',
-                boxShadow: 'var(--shadow-xl)',
-                overflow: 'hidden', zIndex: 200,
-              }}>
-                <div style={{
-                  padding: '12px 16px',
-                  borderBottom: '1px solid var(--border-color)',
-                  display: 'flex', justifyContent: 'space-between', alignItems: 'center',
-                  fontWeight: 700, fontSize: '0.875rem',
-                }}>
-                  <span>Priority Alerts</span>
-                  <span style={{
-                    fontSize: '0.72rem', fontWeight: 600,
-                    background: 'var(--color-danger-bg)', color: 'var(--color-danger-text)',
-                    border: '1px solid var(--color-danger-border)',
-                    padding: '1px 8px', borderRadius: 'var(--radius-full)',
-                  }}>{notifications.length}</span>
-                </div>
-                <div style={{ maxHeight: 320, overflowY: 'auto' }}>
-                  {notifications.length === 0 ? (
-                    <div style={{ padding: '24px', textAlign: 'center', color: 'var(--text-muted)', fontSize: '0.875rem' }}>
-                      No active alerts
-                    </div>
-                  ) : notifications.map((n, i) => (
-                    <div key={i} style={{
-                      padding: '12px 16px',
-                      borderBottom: '1px solid var(--border-color)',
-                      borderLeft: `3px solid ${n.severity === 'critical' ? 'var(--color-danger)' : 'var(--color-warning)'}`,
-                    }}>
-                      <div style={{ fontWeight: 600, fontSize: '0.84rem', marginBottom: 3 }}>{n.title || 'Alert'}</div>
-                      <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', lineHeight: 1.45 }}>
-                        {n.description || 'Action required immediately.'}
+          ))}
+        </nav>
+        
+        <div className="ud-sidebar-footer">
+          <div style={{ fontSize: '0.72rem', color: 'rgba(255,255,255,0.6)', textAlign: 'center' }}>
+            Govt. of India Initiative<br />
+            &copy; 2026 PRAJA
+          </div>
+        </div>
+      </aside>
+
+      {/* Mobile Sidebar Backdrop */}
+      {isMobile && isSidebarOpen && (
+        <div className="ud-sidebar-backdrop" onClick={() => setIsSidebarOpen(false)} aria-hidden="true" />
+      )}
+
+      {/* ── Main Content Area ── */}
+      <div className="ud-main-col">
+        {/* Tricolor top border strip across whole header area */}
+        <div className="ud-tricolor-strip" aria-hidden="true" />
+        
+        {/* ── Topbar ── */}
+        <header className="ud-topbar">
+          <div className="ud-topbar-left">
+            <button 
+              className="ud-menu-toggle" 
+              onClick={toggleSidebar}
+              aria-label="Toggle Menu"
+            >
+              ☰
+            </button>
+            <h1 className="ud-topbar-title">{TABS.find(t => t.id === activeTab)?.label || 'Dashboard'}</h1>
+          </div>
+
+          <div className="ud-topbar-right">
+            {/* Notification bell */}
+            <div style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
+              <button
+                className="ud-notif-btn"
+                onClick={() => setShowNotifs(s => !s)}
+                aria-label="Notifications"
+                aria-expanded={showNotifs}
+              >
+                🔔
+                {notifications.length > 0 && (
+                  <span className="ud-notif-badge">{notifications.length}</span>
+                )}
+              </button>
+              
+              {showNotifs && (
+                <div className="ud-notif-dropdown">
+                  <div className="ud-notif-header">
+                    <span>Priority Alerts</span>
+                    <span className="ud-notif-count">{notifications.length}</span>
+                  </div>
+                  <div className="ud-notif-body">
+                    {notifications.length === 0 ? (
+                      <div className="ud-notif-empty">No active alerts</div>
+                    ) : notifications.map((n, i) => (
+                      <div key={i} className={`ud-notif-item ${n.severity === 'critical' ? 'critical' : 'warning'}`}>
+                        <div className="title">{n.title || 'Alert'}</div>
+                        <div className="desc">{n.description || 'Action required immediately.'}</div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
-            )}
-          </div>
-
-          {/* User info */}
-          <div className="hidden sm:block" style={{ textAlign: 'right' }}>
-            <div style={{ fontSize: '0.84rem', fontWeight: 500, color: 'var(--text-primary)', lineHeight: 1 }}>
-              {user?.name || 'User'}
+              )}
             </div>
-            <div style={{ fontSize: '0.7rem', fontWeight: 700, color: roleColor, textTransform: 'uppercase', letterSpacing: '0.06em', marginTop: 3 }}>
-              {roleLabel}
+
+            {/* Vertical Divider */}
+            <div className="ud-topbar-divider" />
+
+            {/* User info */}
+            <div className="ud-user-info hidden sm:block">
+              <div className="name">{user?.name || 'User'}</div>
+              <div className="role">{roleLabel}</div>
             </div>
+
+            {/* Sign out */}
+            <button className="ud-signout-btn" onClick={logout}>
+              Sign Out
+            </button>
           </div>
+        </header>
 
-          {/* Sign out */}
-          <button
-            onClick={logout}
-            style={{
-              background: 'var(--bg-surface-2)',
-              border: '1px solid var(--border-color-hover)',
-              color: 'var(--text-secondary)',
-              padding: '6px 14px',
-              borderRadius: 'var(--radius-md)',
-              fontSize: '0.8rem',
-              fontWeight: 600,
-              cursor: 'pointer',
-              fontFamily: 'inherit',
-              transition: 'all var(--transition-fast)',
-              letterSpacing: '0.02em',
-            }}
-            className="hover:text-white"
-          >
-            Sign Out
-          </button>
-        </div>
-      </header>
-
-      {/* ── Tab Nav ── */}
-      <nav className="ud-tabnav" aria-label="Dashboard sections">
-        {TABS.map(t => (
-          <button
-            key={t.id}
-            className={`ud-tab-btn ${activeTab === t.id ? 'active' : ''}`}
-            onClick={() => setActiveTab(t.id)}
-            aria-selected={activeTab === t.id}
-            role="tab"
-          >
-            {t.label}
-          </button>
-        ))}
-      </nav>
-
-      {/* ── Content ── */}
-      <main className="ud-content" style={{ position: 'relative' }}>
-        <div style={{ maxWidth: 1200, margin: '0 auto' }}>
-          {activeTab === 'submit'    && <SubmitTab onToast={showToast} />}
-          {activeTab === 'mine'      && <MyComplaintsTab />}
-          {activeTab === 'manage'    && <ManageTicketsTab onToast={showToast} />}
-          {activeTab === 'analytics' && <AnalyticsTab />}
-          {activeTab === 'nayak'     && <NayakAITab />}
-          {activeTab === 'sentinel'  && <SentinelTab />}
-        </div>
-      </main>
+        {/* ── Content Body ── */}
+        <main className="ud-content-body">
+          <div className="ud-content-container">
+            {activeTab === 'submit'    && <SubmitTab onToast={showToast} />}
+            {activeTab === 'mine'      && <MyComplaintsTab />}
+            {activeTab === 'manage'    && <ManageTicketsTab onToast={showToast} />}
+            {activeTab === 'analytics' && <AnalyticsTab />}
+            {activeTab === 'nayak'     && <NayakAITab />}
+            {activeTab === 'sentinel'  && <SentinelTab />}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
