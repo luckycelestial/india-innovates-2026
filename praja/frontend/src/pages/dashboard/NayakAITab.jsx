@@ -24,8 +24,11 @@ export default function NayakAITab() {
 
   // Queries
   const { data: brief, execute: loadBrief, loading: briefLoading } = useFetch('/nayakai/morning-brief', { method: 'post' }, false);
-  const { data: schedules = [], execute: loadSchedules } = useFetch('/nayakai/schedule', {}, false);
-  const { data: actionAlerts = [], execute: loadActionAlerts, loading: alertsLoading } = useFetch('/nayakai/action-alerts', { method: 'post' }, false);
+  const { data: _schedules, execute: loadSchedules } = useFetch('/nayakai/schedule', {}, false);
+  const { data: _actionAlerts, execute: loadActionAlerts, loading: alertsLoading } = useFetch('/nayakai/action-alerts', { method: 'post' }, false);
+
+  const schedules = _schedules || [];
+  const actionAlerts = _actionAlerts || [];
 
   // Mutations
   const { mutate: callAiApi, loading: aiLoading } = useMutation('post');

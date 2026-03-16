@@ -65,9 +65,9 @@ export default function AnalyticsTab() {
     .filter(d => d.value > 0)
 
   // Shorten trend dates for x-axis
-  const trendData = trends.map(d => ({
+  const trendData = (trends || []).map(d => ({
     ...d,
-    label: d.date.slice(5), // "MM-DD"
+    label: (d.date || '').slice(5), // "MM-DD"
   }))
 
   return (
@@ -161,7 +161,7 @@ export default function AnalyticsTab() {
               <YAxis allowDecimals={false} tick={{ fontSize: 11 }} />
               <Tooltip contentStyle={{ background: '#fff', border: '1px solid #dde3ef', borderRadius: 8 }} />
               <Bar dataKey="count" name="Tickets" radius={[4, 4, 0, 0]}>
-                {resTimes.map((_, i) => (
+                {(resTimes || []).map((_, i) => (
                   <Cell key={i} fill={i < 3 ? COLORS.green : i < 5 ? COLORS.gold : COLORS.red} />
                 ))}
               </Bar>

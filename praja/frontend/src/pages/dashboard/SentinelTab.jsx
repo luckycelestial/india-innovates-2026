@@ -9,10 +9,15 @@ const CHART_COLORS = ['#ef4444','#f59e0b','#3b82f6','#10b981','#8b5cf6','#ec4899
 export default function SentinelTab() {
   const [subTab, setSubTab] = useState('map');
   
-  const { data: topics = [], loading: topicsLoading, execute: loadTopics } = useFetch('/sentinel/topics', {}, false);
-  const { data: trends = [], loading: trendsLoading, execute: loadTrends } = useFetch('/sentinel/trends', {}, false);
-  const { data: comparison = [], loading: compareLoading, execute: loadCompare } = useFetch('/sentinel/comparison', {}, false);
-  const { data: alerts = [], loading: alertsLoading, execute: loadAlerts } = useFetch('/sentinel/alerts', {}, false);
+  const { data: _topics, loading: topicsLoading, execute: loadTopics } = useFetch('/sentinel/topics', {}, false);
+  const { data: _trends, loading: trendsLoading, execute: loadTrends } = useFetch('/sentinel/trends', {}, false);
+  const { data: _comparison, loading: compareLoading, execute: loadCompare } = useFetch('/sentinel/comparison', {}, false);
+  const { data: _alerts, loading: alertsLoading, execute: loadAlerts } = useFetch('/sentinel/alerts', {}, false);
+
+  const topics = _topics || [];
+  const trends = _trends || [];
+  const comparison = _comparison || [];
+  const alerts = _alerts || [];
 
   useEffect(() => {
     if (subTab === 'topics') loadTopics();

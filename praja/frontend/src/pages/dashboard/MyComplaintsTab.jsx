@@ -23,9 +23,12 @@ const getSlaStatus = (sla_deadline) => {
 };
 
 export default function MyComplaintsTab() {
-  const { data: tickets = [], loading } = useFetch('/grievances/');
+  const { data: _tickets, loading } = useFetch('/grievances/');
   const [showSchemes, setShowSchemes] = useState(false);
-  const { data: schemes = [], execute: loadSchemes } = useFetch('/grievances/schemes', {}, false);
+  const { data: _schemes, execute: loadSchemes } = useFetch('/grievances/schemes', {}, false);
+
+  const tickets = _tickets || [];
+  const schemes = _schemes || [];
 
   const handleToggleSchemes = () => {
     if (!showSchemes && schemes.length === 0) loadSchemes();
