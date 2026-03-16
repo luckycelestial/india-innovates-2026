@@ -88,7 +88,7 @@ export default function SentinelHeatmap() {
       const enriched = DELHI_WARDS.map((w, i) => ({
         ...w,
         count: grievanceCounts[i] ?? 0,
-        critical: i < 3 ? Math.min(criticalOpen, Math.max(0, Math.round(criticalOpen * [0.4, 0.3, 0.2][i] ?? 0))) : 0,
+        critical: i < 3 ? Math.min(criticalOpen, Math.max(0, Math.round(criticalOpen * [0.4, 0.3, 0.2][i]))) : 0,
       }))
       setWardData(enriched)
     } catch (e) {

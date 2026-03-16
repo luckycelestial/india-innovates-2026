@@ -1,0 +1,169 @@
+/* Base UI components styling */
+
+.ud-ui-card {
+  background: var(--bg-surface);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-lg);
+  padding: var(--spacing-6);
+  box-shadow: var(--shadow-sm);
+  transition: box-shadow var(--transition-fast);
+}
+.ud-ui-card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+.ud-ui-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  white-space: nowrap;
+}
+
+/* Badge Variants */
+.ud-badge-open { background: var(--color-warning-bg); color: var(--color-warning-dark); border: 1px solid var(--color-warning); }
+.ud-badge-assigned { background: var(--bg-surface-hover); color: var(--text-primary); border: 1px solid var(--border-color); }
+.ud-badge-in_progress { background: var(--color-gray-100); color: var(--color-gray-800); border: 1px solid var(--color-gray-300); }
+.ud-badge-resolved { background: var(--color-success-bg); color: var(--color-success-dark); border: 1px solid var(--color-success); }
+.ud-badge-escalated { background: var(--color-danger-bg); color: var(--color-danger-dark); border: 1px solid var(--color-danger); }
+.ud-badge-critical { background: var(--color-danger); color: white; }
+.ud-badge-high { background: var(--color-primary); color: white; }
+.ud-badge-medium { background: var(--color-warning); color: white; }
+.ud-badge-low { background: var(--color-success); color: white; }
+
+/* Buttons */
+.ud-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--spacing-2);
+  border-radius: var(--radius-md);
+  font-weight: 600;
+  transition: all var(--transition-fast);
+  cursor: pointer;
+  border: 1px solid transparent;
+  padding: 0 var(--spacing-4);
+  font-family: inherit;
+}
+.ud-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+.ud-btn-full {
+  width: 100%;
+}
+.ud-btn-sm { height: 32px; font-size: 0.875rem; padding: 0 var(--spacing-3); }
+.ud-btn-md { height: 42px; font-size: 1rem; }
+.ud-btn-lg { height: 50px; font-size: 1.125rem; padding: 0 var(--spacing-6); }
+
+/* Button Variants */
+.ud-btn-primary {
+  background: var(--color-primary);
+  color: white;
+  box-shadow: var(--shadow-sm);
+}
+.ud-btn-primary:hover:not(:disabled) {
+  background: var(--color-primary-dark);
+}
+.ud-btn-secondary {
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  border-color: var(--border-color);
+}
+.ud-btn-secondary:hover:not(:disabled) {
+  background: var(--bg-surface-hover);
+  border-color: var(--color-gray-600);
+}
+.ud-btn-danger {
+  background: var(--color-danger);
+  color: white;
+}
+.ud-btn-danger:hover:not(:disabled) {
+  background: var(--color-danger-dark);
+}
+.ud-btn-ghost {
+  background: transparent;
+  color: var(--text-secondary);
+}
+.ud-btn-ghost:hover:not(:disabled) {
+  background: var(--bg-surface-hover);
+  color: var(--text-primary);
+}
+
+/* Inputs & Form Fields */
+.ud-field-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: var(--spacing-2);
+  margin-bottom: var(--spacing-4);
+}
+.ud-label {
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--text-primary);
+}
+.ud-required {
+  color: var(--color-danger);
+  margin-left: 0.25rem;
+}
+.ud-input-base {
+  background: var(--bg-body);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 1rem;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  width: 100%;
+  box-sizing: border-box;
+}
+.ud-input-base:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px rgba(255, 107, 0, 0.15);
+}
+.ud-input-base:disabled {
+  background: var(--bg-surface);
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+.ud-input {
+  height: 42px;
+  padding: 0 var(--spacing-3);
+}
+.ud-textarea {
+  min-height: 100px;
+  padding: var(--spacing-3);
+  resize: vertical;
+}
+.ud-input-error {
+  border-color: var(--color-danger) !important;
+}
+.ud-field-error {
+  font-size: 0.8125rem;
+  color: var(--color-danger);
+  margin-top: 2px;
+}
+.ud-field-hint {
+  font-size: 0.8125rem;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+/* Spinner */
+.ud-spinner {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  border: 2px solid currentColor;
+  border-right-color: transparent;
+  border-radius: 50%;
+  animation: ud-spin 0.75s linear infinite;
+}
+@keyframes ud-spin {
+  to { transform: rotate(360deg); }
+}
