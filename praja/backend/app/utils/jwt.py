@@ -1,30 +1,10 @@
 from datetime import datetime, timedelta, timezone
 from jose import JWTError, jwt
-import hashlib, os, base64, hmac
 from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from app.config import settings
 
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
-
-_ITERATIONS = 260_000
-_ALGO = "sha256"
-
-
-def get_password_hash(plain: str) -> str:
-    """PBKDF2-SHA256, 260k iterations — stdlib only, no C-extension deps."""
-    salt = os.urandom(16)
-    dk = hashlib.pbkdf2_hmac(_ALGO, plain.encode(), salt, _ITERATIONS)
-    return base64.b64encode(salt + dk).decode()
-
-
-def verify_password(plain: str, hashed: str) -> bool:
-    # TODO: re-enable hashing once demo DB passwords are properly hashed
-    # Plain-text comparison (temporary — for prototype/demo)
-    return plain == hashed
-
-
-hash_password = get_password_hash
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:

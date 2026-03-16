@@ -2,15 +2,14 @@ from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Any
 from app.db.database import get_supabase
-from app.utils.jwt import create_access_token, verify_password, get_current_user
+from app.utils.jwt import create_access_token, get_current_user
 
 router = APIRouter()
 
 
-# Auth uses Aadhaar number + password (PRAJA PIN)
 class UserLogin(BaseModel):
     aadhaar_number: str
-    password: str
+    password: str  # accepted but not checked (prototype mode)
 
 
 class Token(BaseModel):
@@ -24,12 +23,13 @@ def login(body: UserLogin, sb: Any = Depends(get_supabase)):
     aadhaar = body.aadhaar_number.replace(" ", "").replace("-", "")
     if len(aadhaar) != 12 or not aadhaar.isdigit():
         raise HTTPException(status_code=400, detail="Aadhaar number must be 12 digits")
+
     rows = sb.table("users").select("*").eq("aadhaar_number", aadhaar).execute()
     if not rows.data:
-        raise HTTPException(status_code=401, detail="Aadhaar not registered or invalid credentials")
+        raise HTTPException(status_code=401, detail="Aadhaar not registered")
+
     user = rows.data[0]
-    if not verify_password(body.password, user["password_hash"]):
-        raise HTTPException(status_code=401, detail="Invalid credentials")
+    # Password check removed — prototype mode, all accounts use Aadhaar lookup only
     user["full_name"] = user.get("name", "")
     token = create_access_token({"sub": str(user["id"]), "role": user["role"]})
     return {"access_token": token, "token_type": "bearer", "user": user}

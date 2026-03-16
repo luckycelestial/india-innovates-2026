@@ -7,11 +7,11 @@ import Input from '../components/ui/Input';
 import './Login.css';
 
 const DEMO_USERS = [
-  { role: 'Citizen',            level: 'Public',   aadhaar: '2345 6789 0123', password: 'Demo1234', name: 'Ramesh Kumar',    color: '#ff7a2f', levelBg: 'rgba(255,107,0,0.12)' },
-  { role: 'Sarpanch',           level: 'Local',    aadhaar: '1111 2222 3333', password: 'Demo1234', name: 'Lakshmi Devi',    color: '#22c55e', levelBg: 'rgba(34,197,94,0.12)' },
-  { role: 'District Collector', level: 'District', aadhaar: '7890 1234 5678', password: 'Demo1234', name: 'Vikram Singh',    color: '#38bdf8', levelBg: 'rgba(56,189,248,0.12)' },
-  { role: 'MLA',                level: 'State',    aadhaar: '9012 3456 7890', password: 'Demo1234', name: 'Arjun Mehta',     color: '#a78bfa', levelBg: 'rgba(167,139,250,0.12)' },
-  { role: 'MP',                 level: 'Union',    aadhaar: '4444 5555 6666', password: 'Demo1234', name: 'Rajendra Prasad', color: '#fbbf24', levelBg: 'rgba(251,191,36,0.12)' },
+  { role: 'Citizen',            level: 'Public',   aadhaar: '2345 6789 0123', password: 'Demo', name: 'Ramesh Kumar',    color: '#ff7a2f', levelBg: 'rgba(255,107,0,0.12)' },
+  { role: 'Sarpanch',           level: 'Local',    aadhaar: '1111 2222 3333', password: 'Demo', name: 'Lakshmi Devi',    color: '#22c55e', levelBg: 'rgba(34,197,94,0.12)' },
+  { role: 'District Collector', level: 'District', aadhaar: '7890 1234 5678', password: 'Demo', name: 'Vikram Singh',    color: '#38bdf8', levelBg: 'rgba(56,189,248,0.12)' },
+  { role: 'MLA',                level: 'State',    aadhaar: '9012 3456 7890', password: 'Demo', name: 'Arjun Mehta',     color: '#a78bfa', levelBg: 'rgba(167,139,250,0.12)' },
+  { role: 'MP',                 level: 'Union',    aadhaar: '4444 5555 6666', password: 'Demo', name: 'Rajendra Prasad', color: '#fbbf24', levelBg: 'rgba(251,191,36,0.12)' },
 ];
 
 const HERO_STATS = [
