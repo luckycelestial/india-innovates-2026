@@ -39,15 +39,11 @@ export default function SentinelTab() {
       <p className="ud-title">🗺️ SentinelPulse — Ward Sentiment Intelligence</p>
       <p className="ud-subtitle">Real-time ward-level grievance density, topic clusters, and trend analysis.</p>
 
-      <div className="flex gap-2 mb-6 overflow-x-auto pb-2 border-b border-gray-200">
+      <div className="ud-subtab-nav">
         {SP_TABS.map(t => (
           <button 
             key={t.id} 
-            className={`px-4 py-2 font-medium text-sm whitespace-nowrap border-b-2 transition-colors ${
-              subTab === t.id 
-                ? 'border-blue-500 text-blue-600' 
-                : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
-            }`}
+            className={`ud-subtab-btn ${subTab === t.id ? 'active' : ''}`}
             onClick={() => setSubTab(t.id)}
           >
             {t.label}

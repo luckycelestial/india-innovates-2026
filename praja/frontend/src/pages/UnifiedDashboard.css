@@ -24,7 +24,7 @@
   top: 0;
   left: 0;
   bottom: 0;
-  z-index: 200;
+  z-index: 2000;
   transition: transform var(--transition-base);
   box-shadow: 4px 0 15px rgba(0,0,0,0.05); /* Slight shadow over main content */
 }
@@ -147,7 +147,7 @@
   inset: 0;
   background: rgba(15, 23, 42, 0.4);
   backdrop-filter: blur(2px);
-  z-index: 199;
+  z-index: 1999;
   animation: fadeIn 0.2s ease;
 }
 
@@ -185,7 +185,7 @@
   flex-shrink: 0;
   position: sticky;
   top: 0;
-  z-index: 100;
+  z-index: 1000;
 }
 
 .ud-topbar-left {
@@ -270,7 +270,7 @@
   border: 1px solid var(--border-color);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
-  z-index: 200;
+  z-index: 2000;
   overflow: hidden;
 }
 .ud-notif-header {
@@ -405,6 +405,45 @@
   font-size: 0.9rem;
   margin: 0 0 24px;
   line-height: 1.5;
+}
+
+/* ── Sub Navigation Tabs (replaces Tailwind) ──────────────────── */
+.ud-subtab-nav {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 24px;
+  overflow-x: auto;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--border-color);
+  scrollbar-width: thin;
+}
+.ud-subtab-btn {
+  padding: 8px 16px;
+  font-weight: 600;
+  font-size: 0.85rem;
+  white-space: nowrap;
+  background: transparent;
+  border: none;
+  border-bottom: 2px solid transparent;
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+  margin-bottom: -9px; /* Overlap border-bottom */
+  font-family: inherit;
+  outline: none;
+}
+.ud-subtab-btn:hover {
+  color: var(--text-primary);
+  border-bottom-color: var(--border-color-hover);
+}
+.ud-subtab-btn.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-accent);
+}
+.ud-subtab-btn:focus-visible {
+  border-radius: var(--radius-sm);
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
 }
 
 /* ── Alerts / Empty / Loading ─────────────────────────────────── */
