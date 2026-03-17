@@ -9,10 +9,10 @@ const CHART_COLORS = ['#06038D', '#FF9933', '#138808', '#0284C7', '#D97706', '#d
 export default function SentinelTab() {
   const [subTab, setSubTab] = useState('map');
   
-  const { data: _topics, loading: topicsLoading, execute: loadTopics } = useFetch('/sentinel/topics', {}, false);
-  const { data: _trends, loading: trendsLoading, execute: loadTrends } = useFetch('/sentinel/trends', {}, false);
-  const { data: _comparison, loading: compareLoading, execute: loadCompare } = useFetch('/sentinel/comparison', {}, false);
-  const { data: _alerts, loading: alertsLoading, execute: loadAlerts } = useFetch('/sentinel/alerts', {}, false);
+  const { data: _topics, loading: topicsLoading, error: topicsError, execute: loadTopics } = useFetch('/sentinel/topics', {}, false);
+  const { data: _trends, loading: trendsLoading, error: trendsError, execute: loadTrends } = useFetch('/sentinel/trends', {}, false);
+  const { data: _comparison, loading: compareLoading, error: compareError, execute: loadCompare } = useFetch('/sentinel/comparison', {}, false);
+  const { data: _alerts, loading: alertsLoading, error: alertsError, execute: loadAlerts } = useFetch('/sentinel/alerts', {}, false);
 
   const topics = _topics || [];
   const trends = _trends || [];
@@ -54,7 +54,7 @@ export default function SentinelTab() {
       {subTab === 'map' && <SentinelHeatmap />}
 
       {subTab === 'topics' && (
-        topicsLoading ? <p className="ud-loading">Loading topics...</p> : (
+        topicsLoading ? <p className="ud-loading">Loading topics...</p> : topicsError ? <div className="ud-alert-empty">⚠️ {topicsError}</div> : (
           <div>
             <p className="ud-subtitle mb-4">Open grievances grouped by AI-classified category</p>
             {topics.length > 0 ? (
@@ -95,7 +95,7 @@ export default function SentinelTab() {
       )}
 
       {subTab === 'trends' && (
-        trendsLoading ? <p className="ud-loading">Loading trends...</p> : (
+        trendsLoading ? <p className="ud-loading">Loading trends...</p> : trendsError ? <div className="ud-alert-empty">⚠️ {trendsError}</div> : (
           <div>
             <p className="ud-subtitle mb-4">Daily grievance volume over the last 7 days</p>
             {trends.length > 0 ? (
@@ -117,7 +117,7 @@ export default function SentinelTab() {
       )}
 
       {subTab === 'compare' && (
-        compareLoading ? <p className="ud-loading">Loading comparison...</p> : (
+        compareLoading ? <p className="ud-loading">Loading comparison...</p> : compareError ? <div className="ud-alert-empty">⚠️ {compareError}</div> : (
           <div>
             <p className="ud-subtitle mb-4">Category-wise resolution rates and satisfaction scores</p>
             {comparison.length > 0 ? (
@@ -179,7 +179,7 @@ export default function SentinelTab() {
       )}
 
       {subTab === 'alerts' && (
-        alertsLoading ? <p className="ud-loading">Loading alerts...</p> : (
+        alertsLoading ? <p className="ud-loading">Loading alerts...</p> : alertsError ? <div className="ud-alert-empty">⚠️ {alertsError}</div> : (
           <div>
             <p className="ud-subtitle mb-4">Critical and SLA-breached grievances requiring immediate attention</p>
             {alerts.length === 0 ? <div className="ud-alert-empty">No critical alerts. All wards are stable.</div> : (

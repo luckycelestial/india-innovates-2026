@@ -23,7 +23,7 @@ const getSlaStatus = (sla_deadline) => {
 };
 
 export default function MyComplaintsTab() {
-  const { data: _tickets, loading } = useFetch('/grievances/');
+  const { data: _tickets, loading, error } = useFetch('/grievances/');
   const [showSchemes, setShowSchemes] = useState(false);
   const { data: _schemes, execute: loadSchemes } = useFetch('/grievances/schemes', {}, false);
 
@@ -36,6 +36,15 @@ export default function MyComplaintsTab() {
   };
 
   if (loading) return <p className="ud-loading" />;
+  if (error) return (
+    <Card>
+      <div style={{ padding: '40px 0', textAlign: 'center' }}>
+        <div style={{ fontSize: '2rem', marginBottom: 12 }}>⚠️</div>
+        <div style={{ color: 'var(--color-danger-text, #dc2626)', fontWeight: 600, marginBottom: 6 }}>Unable to load complaints</div>
+        <div style={{ color: 'var(--text-muted)', fontSize: '0.84rem' }}>{error}</div>
+      </div>
+    </Card>
+  );
 
   return (
     <div>

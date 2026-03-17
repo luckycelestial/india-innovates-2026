@@ -12,12 +12,15 @@ export function useFetch(url, options = {}, immediate = true) {
   const [loading, setLoading] = useState(immediate && !!url);
   const [error, setError] = useState(null);
 
+  // Stabilize options reference to prevent infinite re-render loops
+  const optionsRef = useState(options)[0];
+
   const execute = useCallback(async (overrideOptions = {}) => {
     if (!url) return null;
     setLoading(true);
     setError(null);
     try {
-      const response = await api.get(url, { ...options, ...overrideOptions });
+      const response = await api.get(url, { ...optionsRef, ...overrideOptions });
       const responseData = response.data;
       
       // Some endpoints return { items: [] }, normalize it or return directly
@@ -34,18 +37,17 @@ export function useFetch(url, options = {}, immediate = true) {
           : String(err.response.data.detail)
         : err.message || 'Fetch failed';
       setError(msg);
-      throw new Error(msg);
+      setData(null);
+      return null;
     } finally {
       setLoading(false);
     }
-  }, [url, options]);
+  }, [url, optionsRef]);
 
   useEffect(() => {
-    let alive = true;
     if (immediate && url) {
-      execute().catch(() => {}); // catch handled in execute, suppress uncaught promise rejection
+      execute();
     }
-    return () => { alive = false; };
   }, [execute, immediate, url]);
 
   return { data, setData, loading, error, execute };
