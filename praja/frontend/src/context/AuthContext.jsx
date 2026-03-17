@@ -26,15 +26,31 @@ async function fetchUserByAadhaar(aadhaar) {
  * Get a backend JWT token using the Supabase user.
  * Falls back to a mock token if backend is unreachable.
  */
+// Legacy Mapping: The old Vercel backend requires emails instead of Aadhaar numbers.
+const AADHAAR_TO_EMAIL = {
+  "234567890123": "ramesh@praja.demo",
+  "345678901234": "priya@praja.demo",
+  "456789012345": "suresh@praja.demo",
+  "567890123456": "fatima@praja.demo",
+  "678901234567": "anita@praja.demo",
+  "890123456789": "kavitha@praja.demo",
+  "789012345678": "vikram@praja.demo",
+  "901234567890": "arjun@praja.demo",
+  "111122223333": "lakshmi@praja.demo",
+  "444455556666": "rajendra@praja.demo"
+};
+
 async function getToken(aadhaarNumber) {
   // Try the real backend first
   try {
     const backendUrl = import.meta.env.VITE_API_URL || 'https://prajavox-backend.vercel.app'
     if (backendUrl) {
+      const email = AADHAAR_TO_EMAIL[aadhaarNumber] || `${aadhaarNumber}@praja.demo`;
+      
       const resp = await fetch(`${backendUrl}/api/auth/login`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ aadhaar_number: aadhaarNumber, password: 'Demo' }),
+        body: JSON.stringify({ email: email, password: 'Demo' }), // Override params with legacy requirements
         signal: AbortSignal.timeout(5000),
       })
       if (resp.ok) {

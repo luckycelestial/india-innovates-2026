@@ -53,17 +53,97 @@ export default function AnalyticsTab() {
     let alive = true
     async function load() {
       try {
-        const [p, t, r] = await Promise.all([
-          api.get('/officers/performance'),
-          api.get('/officers/analytics/trends'),
-          api.get('/officers/analytics/resolution-times'),
-        ])
+        const resp = await api.get('/officers/tickets?limit=1000')
         if (!alive) return
-        setPerf(p.data)
-        setTrends(t.data)
-        setRes(r.data)
+        const rows = resp.data || []
+        
+        const now = new Date()
+        const resolved = rows.filter(r => r.status === 'resolved')
+        const openTickets = rows.filter(r => !['resolved', 'closed'].includes(r.status))
+        const escalated = rows.filter(r => r.status === 'escalated')
+
+        // 1. SLA & Resolution
+        let slaMet = 0
+        let resHoursSum = 0
+        resolved.forEach(r => {
+          const cDate = new Date(r.created_at)
+          const rDate = new Date(r.resolved_at || r.updated_at)
+          const sDate = new Date(r.sla_deadline)
+          if (rDate <= sDate) slaMet++
+          resHoursSum += (rDate - cDate) / 3600000
+        })
+        const sla_compliance_pct = resolved.length ? Math.round((slaMet / resolved.length) * 100) : 100
+        const avg_resolution_hours = resolved.length ? Math.round((resHoursSum / resolved.length) * 10) / 10 : 0
+        const sla_breached = openTickets.filter(r => r.sla_deadline && new Date(r.sla_deadline) < now).length
+
+        // 2. Categories
+        const catMap = {}
+        rows.forEach(r => {
+          const cat = r.ai_category || 'General'
+          if (!catMap[cat]) catMap[cat] = { total: 0, resolved: 0, open: 0, escalated: 0 }
+          catMap[cat].total++
+          if (r.status === 'resolved') catMap[cat].resolved++
+          else if (r.status === 'escalated') catMap[cat].escalated++
+          else catMap[cat].open++
+        })
+        const category_breakdown = Object.entries(catMap)
+          .map(([category, stats]) => ({ category, ...stats }))
+          .sort((a, b) => b.total - a.total).slice(0, 8)
+
+        // 3. Priorities
+        const priority_breakdown = { critical: 0, high: 0, medium: 0, low: 0 }
+        openTickets.forEach(r => {
+          const p = r.priority || 'medium'
+          if (priority_breakdown[p] !== undefined) priority_breakdown[p]++
+        })
+
+        setPerf({
+          total_grievances: rows.length,
+          total_resolved: resolved.length,
+          total_open: openTickets.length,
+          total_escalated: escalated.length,
+          sla_compliance_pct,
+          avg_resolution_hours,
+          sla_breached,
+          priority_breakdown,
+          category_breakdown
+        })
+
+        // 4. Trends (30 Days)
+        const buckets = {}
+        for (let i = 30; i >= 0; i--) {
+          const d = new Date()
+          d.setDate(now.getDate() - i)
+          const key = d.toISOString().split('T')[0]
+          buckets[key] = { date: key, created: 0, resolved: 0 }
+        }
+        rows.forEach(r => {
+          const cDay = (r.created_at || '').split('T')[0]
+          if (buckets[cDay]) buckets[cDay].created++
+          if (r.status === 'resolved' && r.resolved_at) {
+            const rDay = r.resolved_at.split('T')[0]
+            if (buckets[rDay]) buckets[rDay].resolved++
+          }
+        })
+        const tData = Object.values(buckets).map(d => ({ ...d, label: d.date.slice(5) }))
+        setTrends(tData)
+
+        // 5. Resolution Times
+        const limits = [6, 12, 24, 48, 72, 120, Infinity]
+        const labels = ['0-6h', '6-12h', '12-24h', '1-2d', '2-3d', '3-5d', '5d+']
+        const counts = [0, 0, 0, 0, 0, 0, 0]
+        resolved.forEach(r => {
+          const c = new Date(r.created_at)
+          const rs = new Date(r.resolved_at || r.updated_at)
+          const hrs = (rs - c) / 3600000
+          for (let i = 0; i < limits.length; i++) {
+            if (hrs <= limits[i]) { counts[i]++; break; }
+          }
+        })
+        setRes(labels.map((bucket, i) => ({ bucket, count: counts[i] })))
+
       } catch (e) {
-        if (alive) setError(e.response?.data?.detail || 'Failed to load analytics')
+        if (alive) setError(e.response?.data?.detail || 'Failed to fetch tickets')
       } finally {
         if (alive) setLoading(false)
       }
@@ -72,20 +152,15 @@ export default function AnalyticsTab() {
     return () => { alive = false }
   }, [])
 
-  if (loading) return <div className="an-loading">Loading analytics…</div>
-  if (error)   return <div className="an-error">{error}</div>
+  if (loading) return <div className="an-loading" style={{ padding: '40px', textAlign: 'center' }}>Loading robust analytics...</div>
+  if (error)   return <div className="an-error" style={{ color: 'var(--color-danger)', padding: '40px' }}>{error}</div>
   if (!perf)   return null
 
-  const catData  = (perf.category_breakdown || []).slice(0, 8)
+  const catData  = perf.category_breakdown
   const priData  = Object.entries(perf.priority_breakdown || {})
     .map(([name, value]) => ({ name: name.charAt(0).toUpperCase() + name.slice(1), value }))
     .filter(d => d.value > 0)
-
-  // Shorten trend dates for x-axis
-  const trendData = (trends || []).map(d => ({
-    ...d,
-    label: (d.date || '').slice(5), // "MM-DD"
-  }))
+  const trendData = trends
 
   return (
     <div style={{ padding: '24px 0' }}>
