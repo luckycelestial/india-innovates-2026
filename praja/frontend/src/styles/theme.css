@@ -6,20 +6,23 @@
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 :root {
-  /* ── Brand Colors (India Flag Inspired) ────────── */
-  --color-primary:        #06038D;   /* Chakra Navy Blue */
-  --color-primary-dark:   #040266;
-  --color-primary-light:  #2926A6;
-  --color-primary-glow:   rgba(6, 3, 141, 0.12);
+  /* ── 1. Brand Tokens (India Official Palette Refactored) ── */
+  /* Primary: Saffron (Energetic but tuned for UI) */
+  --color-primary:        #f97316; /* Tailwind Orange-500 */
+  --color-primary-dark:   #ea580c; /* Tailwind Orange-600 */
+  --color-primary-light:  #fdba74; /* Tailwind Orange-300 */
+  --color-primary-glow:   rgba(249, 115, 22, 0.2);
 
-  --color-secondary:      #475569;   /* Slate Gray for secondary text/icons */
-  --color-secondary-dark: #334155;
-  --color-secondary-light:#64748B;
-
-  --color-accent:         #FF9933;   /* Saffron */
-  --color-accent-light:   #FFB366;
+  /* Accent: India Green */
+  --color-accent:         #16a34a; /* Tailwind Green-600 */
+  --color-accent-dark:    #15803d; /* Tailwind Green-700 */
+  --color-accent-light:   #86efac; /* Tailwind Green-300 */
   
-  --color-india-green:    #138808;   /* True India Green */
+  /* Secondary: Chakra Navy (Moved to secondary to reduce blue dominance) */
+  --color-secondary:      #1e3a8a; /* Tailwind Blue-900 */
+  --color-secondary-dark: #172554; /* Tailwind Blue-950 */
+  
+  --tricolor-gradient: linear-gradient(90deg, #f97316 0%, #ffffff 50%, #16a34a 100%);   /* True India Green */
 
   /* ── Status Colors ────────────────────────────── */
   --color-success:        #138808;   /* Using India Green for positive/success */
@@ -69,22 +72,6 @@
   --border-color:       #E2E8F0;
   --border-color-hover: #CBD5E1;
   --border-color-focus: var(--color-primary);
-  --border-color-card:  rgba(6, 3, 141, 0.08); /* 8% Chakra Navy */
-
-  /* ── Text (WCAG AA/AAA Compliant) ───────────────── */
-  --text-primary:   #0F172A;  /* Slate-900 */
-  --text-secondary: #475569;  /* Slate-600 */
-  --text-muted:     #64748B;  /* Slate-500 */
-  --text-inverse:   #FFFFFF;  /* White on dark backgrounds */
-
-  /* ── Tricolor ─────────────────────────────────── */
-  --tricolor-gradient: linear-gradient(
-    to right,
-    #FF9933 0%, #FF9933 33.33%,
-    #ffffff 33.33%, #ffffff 66.66%,
-    #138808 66.66%, #138808 100%
-  );
-
   /* ── Typography ───────────────────────────────── */
   --font-primary: 'Inter', system-ui, -apple-system, sans-serif;
   --font-sans:    'Inter', system-ui, -apple-system, sans-serif;

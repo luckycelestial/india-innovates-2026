@@ -29,7 +29,7 @@ async function fetchUserByAadhaar(aadhaar) {
 async function getToken(aadhaarNumber) {
   // Try the real backend first
   try {
-    const backendUrl = import.meta.env.VITE_API_URL || ''
+    const backendUrl = import.meta.env.VITE_API_URL || 'https://prajavox-backend.vercel.app'
     if (backendUrl) {
       const resp = await fetch(`${backendUrl}/api/auth/login`, {
         method: 'POST',

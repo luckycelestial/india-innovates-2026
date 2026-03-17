@@ -16,8 +16,8 @@
 /* ── Sidebar ──────────────────────────────────────────────────── */
 .ud-sidebar {
   width: 260px;
-  background: var(--color-primary); /* Chakra Navy */
-  color: #fff;
+  background: var(--bg-surface); /* White */
+  color: var(--text-primary);
   display: flex;
   flex-direction: column;
   position: fixed;
@@ -60,15 +60,13 @@
   align-items: center;
   gap: 12px;
   padding: 0 20px;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-  background: var(--color-primary-dark);
+  border-bottom: 1px solid var(--border-color);
+  background: var(--bg-surface);
 }
 .ud-sidebar-header .ud-logo-icon {
-  width: 34px;
-  height: 34px;
-  background: #fff;
-  border-radius: var(--radius-sm);
-  padding: 4px;
+  width: auto;
+  height: 38px;
+  /* Removed white background wrap, assuming SVG is self-contained */
 }
 .ud-logo-text {
   display: flex;
@@ -78,7 +76,7 @@
   font-weight: 800;
   font-size: 1.1rem;
   letter-spacing: 2px;
-  color: #fff;
+  color: var(--text-primary);
   line-height: 1;
 }
 .ud-sidebar-header .ud-logo-sub {
@@ -104,7 +102,7 @@
   font-size: 0.65rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: rgba(255,255,255,0.4);
+  color: var(--text-muted);
   font-weight: 700;
   margin-bottom: 8px;
   padding-left: 12px;
@@ -115,7 +113,7 @@
   align-items: center;
   padding: 10px 14px;
   background: transparent;
-  color: rgba(255,255,255,0.7);
+  color: var(--text-secondary);
   border: none;
   text-align: left;
   font-size: 0.9rem;
@@ -126,19 +124,19 @@
   width: 100%;
 }
 .ud-nav-item:hover {
-  background: rgba(255,255,255,0.06);
-  color: #fff;
+  background: var(--bg-surface-2);
+  color: var(--color-primary);
 }
 .ud-nav-item.active {
-  background: rgba(255,255,255,0.1);
-  color: #fff;
+  background: var(--color-primary-glow);
+  color: var(--color-primary-dark);
   font-weight: 700;
-  border-left: 4px solid var(--color-accent); /* Saffron indicator */
+  border-left: 4px solid var(--color-primary); 
 }
 
 .ud-sidebar-footer {
   padding: 20px;
-  border-top: 1px solid rgba(255,255,255,0.1);
+  border-top: 1px solid var(--border-color);
 }
 
 /* ── Mobile Backdrop ──────────────────────────────────────────── */

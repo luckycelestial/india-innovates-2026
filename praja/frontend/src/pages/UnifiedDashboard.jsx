@@ -1,13 +1,12 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import prajaIcon from '../assets/praja-logo-icon.svg';
+import prajaIcon from '../assets/praja-logo.svg';
 import './UnifiedDashboard.css';
 
 import SubmitTab      from './dashboard/SubmitTab';
 import MyComplaintsTab from './dashboard/MyComplaintsTab';
 import ManageTicketsTab from './dashboard/ManageTicketsTab';
-import NayakAITab     from './dashboard/NayakAITab';
 import SentinelTab    from './dashboard/SentinelTab';
 import AnalyticsTab   from '../components/AnalyticsTab';
 
@@ -47,7 +46,6 @@ const ALL_TABS = [
   { id: 'mine',      label: '📋 My Complaints',    roles: ['citizen','sarpanch','district_collector','mla','mp'] },
   { id: 'manage',    label: '🗂 Manage Tickets',  roles: ['sarpanch','district_collector','mla','mp'] },
   { id: 'analytics', label: '📊 Analytics',         roles: ['sarpanch','district_collector','mla','mp'] },
-  { id: 'nayak',     label: '🤖 NayakAI Assistant',roles: ['sarpanch','district_collector','mla','mp'] },
   { id: 'sentinel',  label: '🗺 Sentinel Pulse',    roles: ['district_collector','mla','mp'] },
 ];
 
@@ -130,11 +128,7 @@ export default function UnifiedDashboard() {
       {/* ── Sidebar ── */}
       <aside className={`ud-sidebar ${isSidebarOpen ? 'open' : ''}`} aria-label="Sidebar Navigation">
         <div className="ud-sidebar-header">
-          <img src={prajaIcon} alt="PRAJA Seal" className="ud-logo-icon" />
-          <div className="ud-logo-text">
-            <div className="ud-logo-name">PRAJA</div>
-            <div className="ud-logo-sub">Citizen Portal</div>
-          </div>
+          <img src={prajaIcon} alt="PRAJA Seal" style={{ height: '38px', width: 'auto' }} />
         </div>
 
         <nav className="ud-sidebar-nav">
@@ -240,7 +234,6 @@ export default function UnifiedDashboard() {
             {activeTab === 'mine'      && <MyComplaintsTab />}
             {activeTab === 'manage'    && <ManageTicketsTab onToast={showToast} />}
             {activeTab === 'analytics' && <AnalyticsTab />}
-            {activeTab === 'nayak'     && <NayakAITab />}
             {activeTab === 'sentinel'  && <SentinelTab />}
           </div>
         </main>
