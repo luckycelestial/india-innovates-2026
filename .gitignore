@@ -30,3 +30,10 @@ Thumbs.db
 cloudflared.exe
 *.exe
 tunnel-url.txt
+vercel_out.txt
+vercel_deployments.txt
+result.json
+val.txt
+chunk.js
+index.html
+.env.vercel
