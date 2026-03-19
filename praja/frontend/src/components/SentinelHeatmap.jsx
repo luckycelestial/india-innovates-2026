@@ -75,14 +75,17 @@ export default function SentinelHeatmap() {
     setLoading(true)
     setError(null)
     try {
-      // Fetch brief for totals
-      let totalOpen = 55, criticalOpen = 10
+      // Fetch stats for totals
+      let totalOpen = 55, criticalOpen = 10, slaViolations = 5
       try {
-        const { data: brief } = await api.post('/nayakai/morning-brief', {})
-        totalOpen = brief.total_open ?? 55
-        criticalOpen = brief.critical_open ?? 10
-        setStats({ totalOpen, criticalOpen, slaViolations: brief.sla_violations ?? 0 })
-      } catch {}
+        const { data: stats } = await api.get('/officers/performance')
+        totalOpen = stats.total_open ?? 55
+        criticalOpen = stats.total_escalated ?? 10
+        slaViolations = stats.sla_breached ?? 0
+        setStats({ totalOpen, criticalOpen, slaViolations })
+      } catch (e) {
+        console.error("Stats fetch failed, using defaults", e)
+      }
 
       const grievanceCounts = distributeGrievances(totalOpen, criticalOpen)
       const enriched = DELHI_WARDS.map((w, i) => ({
