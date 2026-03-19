@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import prajaIcon from '../assets/praja-logo.svg';
+import prajaIcon from '../assets/SS.jpg';
 import './UnifiedDashboard.css';
 
 import SubmitTab      from './dashboard/SubmitTab';
@@ -128,7 +128,7 @@ export default function UnifiedDashboard() {
       {/* ── Sidebar ── */}
       <aside className={`ud-sidebar ${isSidebarOpen ? 'open' : ''}`} aria-label="Sidebar Navigation">
         <div className="ud-sidebar-header">
-          <img src={prajaIcon} alt="PRAJA Seal" style={{ height: '38px', width: 'auto' }} />
+          <img src={prajaIcon} alt="PRAJA Icon" style={{ height: '36px', width: 'auto', borderRadius: '4px' }} />
         </div>
 
         <nav className="ud-sidebar-nav">

@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import prajaIcon from '../assets/praja-logo.svg';
+import prajaLogo   from '../assets/RR.jpg';
 import Button from '../components/ui/Button';
 import Input from '../components/ui/Input';
 import './Login.css';
@@ -125,7 +125,7 @@ export default function Login() {
         {/* ── Form panel ── */}
         <section className="login-form-panel" aria-label="Sign in form">
           <div className="portal-logo" style={{ display: 'flex', justifyContent: 'center', marginBottom: '20px' }}>
-            <img src={prajaIcon} alt="PRAJA Seal" style={{ height: '48px', width: 'auto' }} />
+            <img src={prajaLogo} alt="PRAJA Seal" style={{ height: '64px', width: 'auto' }} />
           </div>
 
           <div className="login-form-panel-header">
