@@ -11,7 +11,7 @@ class Settings(BaseSettings):
     SUPABASE_SERVICE_KEY: str = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJiYWt4dG9mdXhreHpmYmV4bGxsIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc3MjU0OTk4OCwiZXhwIjoyMDg4MTI1OTg4fQ.kZyjDiimKO39YPoXzrG3Sgz6Np34TV8pxXE-wmEgG1Q"
     SECRET_KEY: str = "praja-hackathon-2026-secret-key-india-innovates"
     ALGORITHM:  str = "HS256"
-    ACCESS_TOKEN_EXPIRE_MINUTES: int = 60
+    ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
     TWILIO_ACCOUNT_SID:     str = ""
     TWILIO_AUTH_TOKEN:      str = ""
     TWILIO_WHATSAPP_NUMBER: str = "whatsapp:+14155238886"

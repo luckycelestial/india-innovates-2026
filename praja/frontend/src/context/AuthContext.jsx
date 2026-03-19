@@ -42,11 +42,12 @@ async function getToken(aadhaarNumber) {
         return data.access_token
       }
     }
-  } catch {
-    // Backend unreachable — use Supabase anon key as session token for prototype
+  } catch (err) {
+    console.error('Backend authentication failed:', err)
+    throw new Error('Backend is currently unavailable. Please try again in 30 seconds.')
   }
-  // Prototype fallback: encode user info in a simple base64 token
-  return `proto_${btoa(aadhaarNumber + ':' + Date.now())}`
+  
+  throw new Error('Backend authentication failed. Invalid response.')
 }
 
 export function AuthProvider({ children }) {
