@@ -82,15 +82,16 @@ def _download_and_transcribe(media_url: str) -> tuple[str, str]:
         return "", ""
 
 def classify_with_groq(text: str) -> dict:
-    prompt = f"""You are a smart classifier for Indian citizen grievances. The complaint may be in English, Tamil, Telugu, Hindi, Marathi, or Tanglish/Hinglish (regional languages typed with English letters). 
-Understand the true contextual meaning (do not just translate literally) before classifying.
+    prompt = f"""You are a smart classifier for Indian citizen grievances. 
+Assess the following complaint text.
 
 Respond with ONLY valid JSON (no markdown):
 {{
   "category": "<Water Supply|Roads|Electricity|Sanitation|Drainage|Parks|Health|Education|General>",
   "priority": "<low|medium|high|critical>",
   "title": "<accurate 5-8 word English title capturing the true meaning>",
-  "sentiment": "<negative|neutral|positive>"
+  "sentiment": "<negative|neutral|positive>",
+  "clean_description": "<If the text contains Urdu/Arabic script like میرا پرس, strictly transliterate it to Hindi Devanagari script. Otherwise, just output the exact text provided.>"
 }}
 
 Rules:
@@ -98,12 +99,12 @@ Rules:
 - Any death threat or threat to public figure -> priority=critical, category=General
 - Sexual assault / abduction -> priority=critical, category=General
 
-Original Complaint: {text[:500]}"""
+Original Complaint: {text[:800]}"""
     try:
         response = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
-            max_tokens=150,
+            max_tokens=250,
             temperature=0.1,
         )
         raw = (response.choices[0].message.content or "").strip()
@@ -114,8 +115,9 @@ Original Complaint: {text[:500]}"""
         if data.get("priority") not in ["low", "medium", "high", "critical"]:
             data["priority"] = "medium"
         return data
-    except Exception:
-        return {"category": "General", "priority": "medium", "title": text[:50], "sentiment": "negative"}
+    except Exception as e:
+        print("Groq Error:", e)
+        return {"category": "General", "priority": "medium", "title": text[:50], "sentiment": "negative", "clean_description": text}
 
 
 def get_or_create_user(phone: str, sb) -> str:
@@ -255,17 +257,20 @@ async def _handle_message(Body: str, From: str, resp: MessagingResponse) -> None
         return
 
     user_id = get_or_create_user(sender, sb)
-    lang = detect_language(text)
     classification = classify_with_groq(text)
+    
+    final_text = classification.get("clean_description", text)
+    lang = detect_language(final_text)
+
     tracking_id = f"PRJ-{datetime.now(timezone.utc).strftime('%y%m%d')}-{secrets.token_hex(3).upper()}"
     row = sb.table("grievances").insert({
         "tracking_id":  tracking_id,
         "citizen_id":   user_id,
-        "title":        classification.get("title", text[:80]),
-        "description":  text,
-        "ai_category":  classification["category"],
+        "title":        classification.get("title", final_text[:80]),
+        "description":  final_text,
+        "ai_category":  classification.get("category", "General"),
         "ai_sentiment": classification.get("sentiment", "negative"),
-        "priority":     classification["priority"],
+        "priority":     classification.get("priority", "medium"),
         "status":       "open",
         "channel":      "whatsapp",
     }).execute()
