@@ -82,7 +82,7 @@ def _download_and_transcribe(media_url: str) -> tuple[str, str]:
         return "", ""
 
 def classify_with_groq(text: str) -> dict:
-    prompt = f"""You are a smart classifier for Indian citizen grievances. 
+    prompt = f"""You are a smart classifier for Indian citizen grievances.
 Assess the following complaint text.
 
 Respond with ONLY valid JSON (no markdown):
@@ -91,7 +91,7 @@ Respond with ONLY valid JSON (no markdown):
   "priority": "<low|medium|high|critical>",
   "title": "<accurate 5-8 word English title capturing the true meaning>",
   "sentiment": "<negative|neutral|positive>",
-  "clean_description": "<If the text contains Urdu/Arabic script like میرا پرس, strictly transliterate it to Hindi Devanagari script. Otherwise, just output the exact text provided.>"
+  "clean_description": "<1. Correct any phonetic voice-to-text typos (e.g., 'perse story' -> 'purse chori'). 2. If it's a regional language written in English script or Urdu script, convert it to the accurate native script (e.g. Devanagari). 3. Combine it with the accurate English translation like so: [Native script] (English: [Translation]).>"
 }}
 
 Rules:
