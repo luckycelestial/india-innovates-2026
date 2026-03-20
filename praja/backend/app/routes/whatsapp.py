@@ -85,7 +85,13 @@ Respond with ONLY valid JSON (no markdown):
   "priority": "<low|medium|high|critical>",
   "title": "<accurate 5-8 word English title capturing the true meaning>",
   "sentiment": "<negative|neutral|positive>",
-    "clean_description": "<1. Correct any phonetic voice-to-text typos (e.g., 'perse story' -> 'purse chori', 'varas chori' -> 'purse chori'). Watch out for common loan words like 'purse', 'road', 'current'. 2. If it's a regional language written in English/Urdu script, convert it to the accurate native script (e.g. Devanagari for Marathi/Hindi). 3. Combine it with the accurate English translation like so: [Native script] (English: [Translation]).>"
+  "clean_description": "<1. Correct any phonetic voice-to-text typos. 2. If it's a regional language written in English/Urdu script, convert it to the accurate native script. 3. If input is regional, combine it like so: [Native script] (English: [Translation]). 4. IMPORTANT: If original input is ALREADY entirely in English, just return the exact English text. Do NOT translate English into Hindi.>"
+}}
+
+Rules:
+- Any mention of suicide, severe domestic abuse/toxicity, or self-harm -> priority=critical, category=Health or General
+- Any death threat or threat to public figure -> priority=critical, category=General
+- Sexual assault / abduction -> priority=critical, category=General
 
 Original Complaint: {text[:800]}"""
     try:
