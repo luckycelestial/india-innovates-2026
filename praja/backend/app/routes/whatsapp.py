@@ -44,8 +44,8 @@ import os
 import httpx
 import tempfile
 
-def _download_and_transcribe(media_url: str) -> str:
-    """Download a Twilio voice note and transcribe using Groq Whisper API"""
+def _download_and_transcribe(media_url: str) -> tuple[str, str]:
+    """Download a Twilio voice note and transcribe + translate using Groq Whisper API"""
     try:
         auth = None
         if settings.TWILIO_ACCOUNT_SID and settings.TWILIO_AUTH_TOKEN:
@@ -60,17 +60,26 @@ def _download_and_transcribe(media_url: str) -> str:
             tmp_path = tmp.name
             
         with open(tmp_path, "rb") as f:
-            transcription = groq_client.audio.transcriptions.create(
-                file=("audio.ogg", f.read()),
-                model="whisper-large-v3",
-                prompt="हिंदी, தமிழ், తెలుగు, ಕನ್ನಡ, മലയാളം, ગુજરાતી, मराठी, English. नमस्ते, क्या हाल है?"
-            )
+            audio_data = f.read()
+
+        # 1. Get original Indic/Hindi text
+        transcription = groq_client.audio.transcriptions.create(
+            file=("audio.ogg", audio_data),
+            model="whisper-large-v3",
+            prompt="हिंदी, தமிழ், తెలుగు, ಕನ್ನಡ, മലയാളം, ગુજરાતી, मराठी, English. नमस्ते, क्या हाल है?"
+        )
+        
+        # 2. Get English translation directly from the audio
+        translation = groq_client.audio.translations.create(
+            file=("audio.ogg", audio_data),
+            model="whisper-large-v3",
+        )
             
         os.remove(tmp_path)
-        return transcription.text
+        return transcription.text, translation.text
     except Exception as e:
         print(f"Transcription error: {e}")
-        return ""
+        return "", ""
 
 def classify_with_groq(text: str) -> dict:
     prompt = f"""You are a smart classifier for Indian citizen grievances. The complaint may be in English, Tamil, Telugu, Hindi, Marathi, or Tanglish/Hinglish (regional languages typed with English letters). 
@@ -147,9 +156,13 @@ async def whatsapp_webhook(
         # If user sent a voice note, transcribe it
         if NumMedia > 0 and MediaUrl0:
             if "audio" in MediaContentType0 or "video" in MediaContentType0:
-                transcription = _download_and_transcribe(MediaUrl0)
-                if transcription:
-                    text_body = transcription
+                original_text, english_text = _download_and_transcribe(MediaUrl0)
+                if original_text and english_text:
+                    if original_text.strip() != english_text.strip():
+                        # Save both native script and english explicitly
+                        text_body = f"{original_text}\n\n(English Translation: {english_text})"
+                    else:
+                        text_body = original_text
                 else:
                     resp.message("⚠️ Apologies, I could not transcribe your audio message. Please send a text message or try again.")
                     return xml_response(resp)
