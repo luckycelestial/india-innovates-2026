@@ -236,6 +236,37 @@ export default function Login() {
         </section>
       </main>
 
+      {/* Info Sections */}
+      <section id="about" className="login-info-section" style={{ padding: '60px 20px', maxWidth: '1000px', margin: '0 auto', borderBottom: '1px solid var(--border-color)' }}>
+        <h2 style={{ fontSize: '1.8rem', color: 'var(--color-primary)', marginBottom: '15px' }}>About PRAJA</h2>
+        <p style={{ lineHeight: 1.6, color: 'var(--text-secondary)' }}>
+          Public Grievance Redressal and Joint Action (PRAJA) is an AI-powered Citizen Grievance & Constituency Intelligence Platform. Built for the citizens of India, it leverages multi-lingual AI to categorize, translate, and prioritize complaints, seamlessly bridging the gap between local citizens and elected officials.
+        </p>
+      </section>
+
+      <section id="help" className="login-info-section" style={{ padding: '60px 20px', maxWidth: '1000px', margin: '0 auto', borderBottom: '1px solid var(--border-color)' }}>
+        <h2 style={{ fontSize: '1.8rem', color: 'var(--color-primary)', marginBottom: '15px' }}>Help &amp; Support</h2>
+        <p style={{ lineHeight: 1.6, color: 'var(--text-secondary)' }}>
+          Need assistance? You can submit your grievance instantly via our automated WhatsApp bot or log in to the portal using your Aadhaar number. For technical issues with the portal, contact your local administrative office. Note: For emergencies, always contact local authorities directly.
+        </p>
+      </section>
+
+      <section id="sitemap" className="login-info-section" style={{ padding: '60px 20px', maxWidth: '1000px', margin: '0 auto', borderBottom: '1px solid var(--border-color)' }}>
+        <h2 style={{ fontSize: '1.8rem', color: 'var(--color-primary)', marginBottom: '15px' }}>Site Map</h2>
+        <ul style={{ lineHeight: 1.6, color: 'var(--text-secondary)', paddingLeft: '20px' }}>
+          <li><span style={{ fontWeight: 'bold' }}>Citizen Portal:</span> Submit Grievance, Track Status, View History</li>
+          <li><span style={{ fontWeight: 'bold' }}>Officer Dashboard:</span> Manage SLA, Resolve Tickets, Escalate Issues</li>
+          <li><span style={{ fontWeight: 'bold' }}>Leader Dashboard:</span> NayakAI Briefings, SentinelPulse Heatmap, Constituency Analytics</li>
+        </ul>
+      </section>
+
+      <section id="accessibility" className="login-info-section" style={{ padding: '60px 20px', maxWidth: '1000px', margin: '0 auto' }}>
+        <h2 style={{ fontSize: '1.8rem', color: 'var(--color-primary)', marginBottom: '15px' }}>Accessibility</h2>
+        <p style={{ lineHeight: 1.6, color: 'var(--text-secondary)' }}>
+          The PRAJA portal is committed to ensuring web accessibility for all citizens. It supports voice-based inputs via WhatsApp for illiterate citizens, accommodates code-mixed languages (Tanglish, Hinglish), and follows standard WCAG guidelines for high contrast, semantic HTML, and screen reader support.
+        </p>
+      </section>
+
       {/* Footer */}
       <footer className="login-footer">
         <div className="login-footer-links">
