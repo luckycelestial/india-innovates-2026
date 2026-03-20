@@ -53,22 +53,23 @@ def detect_language(text: str) -> str:
 
 
 def classify_with_groq(text: str) -> dict:
-    # Translate to English first so classification is language-agnostic
-    text_en = _translate(text)
-    prompt = f"""Classify this Indian citizen grievance. Respond with ONLY valid JSON (no markdown):
+    prompt = f"""You are a smart classifier for Indian citizen grievances. The complaint may be in English, Tamil, Telugu, Hindi, Marathi, or Tanglish/Hinglish (regional languages typed with English letters). 
+Understand the true contextual meaning (do not just translate literally) before classifying.
+
+Respond with ONLY valid JSON (no markdown):
 {{
   "category": "<Water Supply|Roads|Electricity|Sanitation|Drainage|Parks|Health|Education|General>",
   "priority": "<low|medium|high|critical>",
-  "title": "<accurate 5-8 word English title>",
+  "title": "<accurate 5-8 word English title capturing the true meaning>",
   "sentiment": "<negative|neutral|positive>"
 }}
 
 Rules:
-- Suicide/self-harm ? critical, Health
-- Death threat or threat to public figure ? critical, General
-- Sexual assault / abduction ? critical, General
+- Any mention of suicide, severe domestic abuse/toxicity, or self-harm -> priority=critical, category=Health or General
+- Any death threat or threat to public figure -> priority=critical, category=General
+- Sexual assault / abduction -> priority=critical, category=General
 
-Complaint (translated to English): {text_en[:500]}"""
+Original Complaint: {text[:500]}"""
     try:
         response = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
