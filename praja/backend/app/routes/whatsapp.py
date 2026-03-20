@@ -30,6 +30,47 @@ HELP_MSG = (
     "\u2022 *help* \u2014 Show this message"
 )
 
+def detect_language(text: str) -> str:
+    """Detect language using Unicode script ranges."""
+    if any('\u0900' <= c <= '\u097F' for c in text): return "Hindi"
+    if any('\u0B80' <= c <= '\u0BFF' for c in text): return "Tamil"
+    if any('\u0C00' <= c <= '\u0C7F' for c in text): return "Telugu"
+    if any('\u0C80' <= c <= '\u0CFF' for c in text): return "Kannada"
+    if any('\u0D00' <= c <= '\u0D7F' for c in text): return "Malayalam"
+    if any('\u0980' <= c <= '\u09FF' for c in text): return "Bengali"
+    return "English"
+
+import os
+import httpx
+import tempfile
+
+def _download_and_transcribe(media_url: str) -> str:
+    """Download a Twilio voice note and transcribe using Groq Whisper API"""
+    try:
+        auth = None
+        if settings.TWILIO_ACCOUNT_SID and settings.TWILIO_AUTH_TOKEN:
+            auth = (settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+            
+        with httpx.Client() as client:
+            resp = client.get(media_url, auth=auth, follow_redirects=True)
+            resp.raise_for_status()
+            
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".ogg") as tmp:
+            tmp.write(resp.content)
+            tmp_path = tmp.name
+            
+        with open(tmp_path, "rb") as f:
+            transcription = groq_client.audio.transcriptions.create(
+                file=("audio.ogg", f.read()),
+                model="whisper-large-v3",
+            )
+            
+        os.remove(tmp_path)
+        return transcription.text
+    except Exception as e:
+        print(f"Transcription error: {e}")
+        return ""
+
 def classify_with_groq(text: str) -> dict:
     prompt = f"""You are a smart classifier for Indian citizen grievances. The complaint may be in English, Tamil, Telugu, Hindi, Marathi, or Tanglish/Hinglish (regional languages typed with English letters). 
 Understand the true contextual meaning (do not just translate literally) before classifying.
@@ -92,12 +133,31 @@ def xml_response(resp: MessagingResponse) -> Response:
 
 @router.post("/webhook")
 async def whatsapp_webhook(
-    Body: str = Form(...),
+    Body: str = Form(""),
     From: str = Form(...),
+    NumMedia: int = Form(0),
+    MediaUrl0: str = Form(""),
+    MediaContentType0: str = Form(""),
 ):
     resp = MessagingResponse()
     try:
-        await _handle_message(Body, From, resp)
+        text_body = Body.strip()
+        
+        # If user sent a voice note, transcribe it
+        if NumMedia > 0 and MediaUrl0:
+            if "audio" in MediaContentType0 or "video" in MediaContentType0:
+                transcription = _download_and_transcribe(MediaUrl0)
+                if transcription:
+                    text_body = transcription
+                else:
+                    resp.message("⚠️ Apologies, I could not transcribe your audio message. Please send a text message or try again.")
+                    return xml_response(resp)
+
+        if not text_body:
+            resp.message("⚠️ It seems you sent a message I couldn't process. Please send a text or voice note.")
+            return xml_response(resp)
+
+        await _handle_message(text_body, From, resp)
     except Exception as exc:
         import traceback
         traceback.print_exc()
