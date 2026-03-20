@@ -89,7 +89,6 @@ Complaint (translated to English): {text_en[:500]}"""
 
 
 def get_or_create_user(phone: str, sb) -> str:
-    from app.utils.jwt import get_password_hash
     clean_phone = phone.replace("whatsapp:", "")
     rows = sb.table("users").select("id").eq("phone", clean_phone).execute()
     if rows.data:
@@ -99,7 +98,7 @@ def get_or_create_user(phone: str, sb) -> str:
         "email":         f"wa_{clean_phone.replace('+', '')}@praja.local",
         "phone":         clean_phone,
         "role":          "citizen",
-        "password_hash": get_password_hash(secrets.token_urlsafe(16)),
+        "password_hash": "dummy_hash_no_login_needed",
     }).execute()
     return new_user.data[0]["id"]
 

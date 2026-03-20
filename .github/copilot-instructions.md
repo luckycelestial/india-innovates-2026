@@ -49,7 +49,7 @@ India Innovates 2026 hackathon entry.
 | Frontend | React 18 + Vite | Self-hosted |
 | Auth | Custom JWT (python-jose + bcrypt) | Self-hosted |
 | WhatsApp | Twilio Sandbox | Free (demo/testing only) |
-| Hosting | Vercel (frontend) + Render free tier (backend) | Free |
+| Hosting | Vercel (frontend & backend) | Free |
 
 ---
 
