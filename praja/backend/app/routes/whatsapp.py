@@ -85,7 +85,7 @@ Respond with ONLY valid JSON (no markdown):
   "priority": "<low|medium|high|critical>",
   "title": "<accurate 5-8 word English title capturing the true meaning>",
   "sentiment": "<negative|neutral|positive>",
-  "clean_description": "<1. Correct any phonetic voice-to-text typos. 2. If it's a regional language written in English/Urdu script, convert it to the accurate native script. 3. If input is regional, combine it like so: [Native script] (English: [Translation]). 4. IMPORTANT: If original input is ALREADY entirely in English, just return the exact English text. Do NOT translate English into Hindi.>"
+  "clean_description": "<Strict Formatting Rules: 1. If English: return ONLY the English text. 2. If ANY other language: return exactly '[Native Script] (English: [Translation])'. 3. Correct any phonetic typos. 4. Convert mixed scripts (e.g. Hinglish/Tanglish/Urdu) into proper native scripts (e.g. Devanagari) before returning.>"
 }}
 
 Rules:
