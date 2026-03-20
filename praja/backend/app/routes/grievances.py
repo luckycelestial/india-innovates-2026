@@ -5,11 +5,6 @@ from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from typing import Optional, Any
-try:
-    from deep_translator import GoogleTranslator
-    _translate = lambda text: GoogleTranslator(source='auto', target='en').translate(text[:500])
-except ImportError:
-    _translate = lambda text: text
 from groq import Groq
 from app.config import settings
 from app.db.database import get_supabase

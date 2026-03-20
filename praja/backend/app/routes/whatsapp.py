@@ -30,28 +30,6 @@ HELP_MSG = (
     "\u2022 *help* \u2014 Show this message"
 )
 
-
-def _translate(text: str) -> str:
-    """Translate any Indic language / Tanglish text to English via Google Translate."""
-    try:
-        from deep_translator import GoogleTranslator
-        result = GoogleTranslator(source='auto', target='en').translate(text[:500])
-        return result or text
-    except Exception:
-        return text
-
-
-def detect_language(text: str) -> str:
-    """Detect language using Unicode script ranges — no network call."""
-    if any('\u0900' <= c <= '\u097F' for c in text): return "Hindi"
-    if any('\u0B80' <= c <= '\u0BFF' for c in text): return "Tamil"
-    if any('\u0C00' <= c <= '\u0C7F' for c in text): return "Telugu"
-    if any('\u0C80' <= c <= '\u0CFF' for c in text): return "Kannada"
-    if any('\u0D00' <= c <= '\u0D7F' for c in text): return "Malayalam"
-    if any('\u0980' <= c <= '\u09FF' for c in text): return "Bengali"
-    return "English"
-
-
 def classify_with_groq(text: str) -> dict:
     prompt = f"""You are a smart classifier for Indian citizen grievances. The complaint may be in English, Tamil, Telugu, Hindi, Marathi, or Tanglish/Hinglish (regional languages typed with English letters). 
 Understand the true contextual meaning (do not just translate literally) before classifying.

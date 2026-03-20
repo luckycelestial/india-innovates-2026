@@ -33,7 +33,7 @@
 - [x] Citizen can submit grievance via web UI
 - [x] `POST /api/grievances/submit` returns `tracking_id` (format: `PRJ-YYMMDD-XXXXXX`)
 - [x] AI auto-classifies department + priority (Groq `llama-3.3-70b-versatile`)
-- [x] Tamil / Hindi / Tanglish translation via `deep-translator` (Google Translate) before classification
+- [x] Tamil / Hindi / Tanglish intelligent intent-based translation via Groq natively before classification
 - [x] Critical auto-flag: suicide/threats → `priority=critical`
 - [x] WhatsApp bot (Twilio sandbox) — receive complaint, save to DB, reply with tracking ID
 - [x] WhatsApp `track PRJ-...` command to check status
