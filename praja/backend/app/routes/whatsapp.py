@@ -63,6 +63,7 @@ def _download_and_transcribe(media_url: str) -> str:
             transcription = groq_client.audio.transcriptions.create(
                 file=("audio.ogg", f.read()),
                 model="whisper-large-v3",
+                prompt="हिंदी, தமிழ், తెలుగు, ಕನ್ನಡ, മലയാളം, ગુજરાતી, मराठी, English. नमस्ते, क्या हाल है?"
             )
             
         os.remove(tmp_path)
