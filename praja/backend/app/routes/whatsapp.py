@@ -76,19 +76,20 @@ def _download_and_transcribe(media_url: str) -> str:
         print(f"Transcription error: {e}")
         return ""
 
-def agentic_chat_with_groq(history: list) -> dict:
-    prompt = """You are PRAJA Bot, an official WhatsApp Assistant for Indian Citizens to register grievances.
+def agentic_chat_with_groq(history: list, user_name: str = "Citizen") -> dict:
+    prompt = f"""You are PRAJA Bot, an official WhatsApp Assistant for Indian Citizens to register grievances.
+The citizen's name is {user_name}.
 Your goal is to collect enough information to file a complete ticket.
 
 Required Info:
 1. Core Issue / Complaint (What is the problem?)
 2. Exact Location / Landmark (Where is it? -> Must be a SPECIFIC area, street name, ward, or public landmark. Vague locations like "my home", "near me", "here" are NOT acceptable).
-3. Name of the person reporting (Who is reporting?)
 
 Instructions:
+- Do NOT ask for their name, as you already know it is {user_name}.
 - If ANY of the required info is missing or ambiguous, ask a polite, short question in the language the user is speaking to get the missing info. Respond with ONLY normal text (NO JSON).
 - If the user gives a vague location (like 'mera ghar', 'near my house', 'here'), DO NOT accept it. Specifically ask them to name the colony, street, or a famous landmark nearby.
-- Only when you have ALL 3 pieces of information explicitly, and feel ready to file the ticket, you must respond with ONLY a valid JSON block and absolutely no other text.
+- Only when you have BOTH pieces of information explicitly, and feel ready to file the ticket, you must respond with ONLY a valid JSON block and absolutely no other text.
 
 JSON FORMAT:
 {
@@ -170,12 +171,12 @@ def get_or_create_user(phone: str, sb) -> str:
         "password_hash": "dummy_hash_no_login_needed",
     }).execute()
     return new_user.data[0]["id"]
-def check_registration_and_get_user(phone: str, text: str, sb, resp) -> str:
+def check_registration_and_get_user(phone: str, text: str, sb, resp):
     clean_phone = phone.replace("whatsapp:", "")
     rows = sb.table("users").select("*").eq("phone", clean_phone).execute()
     if rows.data:
-        return rows.data[0]["id"]
-    
+        return rows.data[0]["id"], rows.data[0].get("name", "Citizen")
+
     if text.strip().upper() == "YES":
         fake_aadhar = "XXXXXXXX" + str(secrets.randbelow(9000)+1000)
         fake_name = "Rahul Sharma"
@@ -188,7 +189,7 @@ def check_registration_and_get_user(phone: str, text: str, sb, resp) -> str:
             "password_hash": "dummy_hash_no_login_needed",
             "aadhaar_number": fake_aadhar
         }).execute()
-        
+
         resp.message(
             f"✅ *Successfully Registered!*\n\n"
             f"👤 Name: {fake_name}\n"
@@ -196,7 +197,7 @@ def check_registration_and_get_user(phone: str, text: str, sb, resp) -> str:
             f"🪪 Aadhaar: XXXX XXXX {fake_aadhar[-4:]}\n\n"
             f"You can now describe your problem. Please include what the issue is and the exact location."
         )
-        return None
+        return None, None
         
     toy_aadhar = "XXXX XXXX " + str(secrets.randbelow(9000)+1000)
     resp.message(
@@ -205,7 +206,7 @@ def check_registration_and_get_user(phone: str, text: str, sb, resp) -> str:
         f"Linked aadhaar : {toy_aadhar}\n\n"
         f"Reply *YES* to register with PRAJA on this number. Only then you can file a complaint."
     )
-    return None
+    return None, None
 
 
 def priority_emoji(p: str) -> str:
