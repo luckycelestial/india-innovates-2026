@@ -229,15 +229,32 @@ export default function UnifiedDashboard() {
 
         {/* ── Content Body ── */}
         <main className="ud-content-body">
-          <div className="ud-content-container">
-            {activeTab === 'submit'    && <SubmitTab onToast={showToast} />}
-            {activeTab === 'mine'      && <MyComplaintsTab />}
-            {activeTab === 'manage'    && <ManageTicketsTab onToast={showToast} />}
-            {activeTab === 'analytics' && <AnalyticsTab />}
-            {activeTab === 'sentinel'  && <SentinelTab />}
+                    <div className="ud-content-container">
+            <div style={{ display: activeTab === 'submit' ? 'block' : 'none' }}>
+              <SubmitTab onToast={showToast} />
+            </div>
+            <div style={{ display: activeTab === 'mine' ? 'block' : 'none' }}>
+              <MyComplaintsTab />
+            </div>
+            {TABS.some(t => t.id === 'manage') && (
+              <div style={{ display: activeTab === 'manage' ? 'block' : 'none' }}>
+                <ManageTicketsTab onToast={showToast} />
+              </div>
+            )}
+            {TABS.some(t => t.id === 'analytics') && (
+              <div style={{ display: activeTab === 'analytics' ? 'block' : 'none' }}>
+                <AnalyticsTab />
+              </div>
+            )}
+            {TABS.some(t => t.id === 'sentinel') && (
+              <div style={{ display: activeTab === 'sentinel' ? 'block' : 'none' }}>
+                <SentinelTab />
+              </div>
+            )}
           </div>
         </main>
       </div>
     </div>
   );
 }
+
