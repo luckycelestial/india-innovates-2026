@@ -75,43 +75,64 @@ def _download_and_transcribe(media_url: str) -> str:
         print(f"Transcription error: {e}")
         return ""
 
-def classify_with_groq(text: str) -> dict:
-    prompt = f"""You are a smart classifier for Indian citizen grievances.
-Assess the following complaint text.
+def agentic_chat_with_groq(history: list) -> dict:
+    prompt = """You are PRAJA Bot, an official WhatsApp Assistant for Indian Citizens to register grievances.
+Your goal is to collect enough information to file a complete ticket.
 
-Respond with ONLY valid JSON (no markdown):
-{{
-  "category": "<Water Supply|Roads|Electricity|Sanitation|Drainage|Parks|Health|Education|General>",
-  "priority": "<low|medium|high|critical>",
-  "title": "<accurate 5-8 word English title capturing the true meaning>",
-  "sentiment": "<negative|neutral|positive>",
-  "clean_description": "<Strict Formatting Rules: 1. If English: return ONLY the English text. 2. If ANY other language: return exactly '[Native Script] (English: [Translation])'. 3. Correct any phonetic typos. 4. Convert mixed scripts (e.g. Hinglish/Tanglish/Urdu) into proper native scripts (e.g. Devanagari) before returning.>"
-}}
+Required Info:
+1. Core Issue / Complaint (What is the problem?)
+2. Exact Location / Landmark (Where is it?)
+3. Name of the person reporting (Who is reporting?)
 
-Rules:
+Instructions:
+- If ANY of the required info is missing or ambiguous, ask a polite, short question in the language the user is speaking to get the missing info. Respond with ONLY normal text (NO JSON).
+- Only when you have ALL 3 pieces of information, and feel ready to file the ticket, you must respond with ONLY a valid JSON block and absolutely no other text.
+
+JSON FORMAT:
+{
+  "status": "complete",
+  "data": {
+    "category": "<Water Supply|Roads|Electricity|Sanitation|Drainage|Parks|Health|Education|General>",
+    "priority": "<low|medium|high|critical>",
+    "title": "<accurate 5-8 word English title capturing the true meaning>",
+    "sentiment": "<negative|neutral|positive>",
+    "location": "<Extracted location>",
+    "clean_description": "<Include FULL details of issue, name, and location. Formatting Rules: 1. If English: return ONLY the English text. 2. If ANY other language: return exactly '[Native Script] (English: [Translation])'. 3. Correct any phonetic typos.>"
+  }
+}
+
+Rules for Classification:
 - Any mention of suicide, severe domestic abuse/toxicity, or self-harm -> priority=critical, category=Health or General
 - Any death threat or threat to public figure -> priority=critical, category=General
 - Sexual assault / abduction -> priority=critical, category=General
-
-Original Complaint: {text[:800]}"""
+"""
+    messages = [{"role": "system", "content": prompt}] + history
     try:
         response = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=250,
-            temperature=0.1,
+            messages=messages,
+            max_tokens=350,
+            temperature=0.2,
         )
-        raw = (response.choices[0].message.content or "").strip()
-        raw = re.sub(r"^```json\s*|^```\s*|```$", "", raw, flags=re.MULTILINE).strip()
-        data = json.loads(raw)
-        if data.get("category") not in CATEGORIES:
-            data["category"] = "General"
-        if data.get("priority") not in ["low", "medium", "high", "critical"]:
-            data["priority"] = "medium"
-        return data
+        content = (response.choices[0].message.content or "").strip()
+        
+        if "{" in content and "category" in content and "clean_description" in content:
+            raw = re.sub(r"^```json\s*|^```\s*|```$", "", content, flags=re.MULTILINE).strip()
+            match = re.search(r"\{.*\}", raw, flags=re.DOTALL)
+            if match:
+                raw = match.group(0)
+            data = json.loads(raw)
+            res_data = data.get("data", data)
+            if res_data.get("category") not in CATEGORIES:
+                res_data["category"] = "General"
+            if res_data.get("priority") not in ["low", "medium", "high", "critical"]:
+                res_data["priority"] = "medium"
+            return {"type": "complete", "data": res_data}
+        else:
+            return {"type": "question", "text": content}
     except Exception as e:
         print("Groq Error:", e)
-        return {"category": "General", "priority": "medium", "title": text[:50], "sentiment": "negative", "clean_description": text}
+        return {"type": "question", "text": "I'm having trouble processing that. Could you please state your issue, name, and location clearly?"}
 
 
 def get_or_create_user(phone: str, sb) -> str:
@@ -227,62 +248,128 @@ async def _handle_message(Body: str, From: str, resp: MessagingResponse) -> None
 
     if text.lower() == "status":
         user_id = get_or_create_user(sender, sb)
-        rows = (
-            sb.table("grievances")
-            .select("id,tracking_id,title,status,priority,ai_category")
-            .eq("citizen_id", user_id)
-            .order("created_at", desc=True)
-            .limit(3)
-            .execute()
-        )
-        if not rows.data:
-            resp.message("You have no complaints yet. Send me your issue to get started!")
-            return
-        lines = ["\U0001f4cb *Your Recent Complaints:*\n"]
-        for g in rows.data:
-            st = g["status"].replace("_", " ").title()
-            lines.append(f"\u2022 {g.get('tracking_id', g['id'][:8])} | {g.get('ai_category','General')} | {st}")
-        lines.append("\nSend *track <full_id>* to see full details.")
-        resp.message("\n".join(lines))
-        return
 
-    user_id = get_or_create_user(sender, sb)
-    classification = classify_with_groq(text)
+    # Check if user has an ongoing draft ticket
+    drafts = sb.table("grievances").select("id, resolution_note").eq("citizen_id", user_id).eq("status", "draft").execute()
     
-    final_text = classification.get("clean_description", text)
-    lang = detect_language(final_text)
+    if drafts.data:
+        draft = drafts.data[0]
+        history_str = draft.get("resolution_note")
+        try:
+            history = json.loads(history_str) if history_str else []
+        except:
+            history = []
+        
+        history.append({"role": "user", "content": text})
+        groq_resp = agentic_chat_with_groq(history)
+        
+        if groq_resp["type"] == "question":
+            ans = groq_resp["text"]
+            history.append({"role": "assistant", "content": ans})
+            sb.table("grievances").update({"resolution_note": json.dumps(history)}).eq("id", draft["id"]).execute()
+            resp.message(ans)
+            return
+        elif groq_resp["type"] == "complete":
+            classification = groq_resp["data"]
+            final_text = classification.get("clean_description", text)
+            location_text = classification.get("location", "Not specified")
+            lang = detect_language(final_text)
+            
+            sb.table("grievances").update({
+                "title":        classification.get("title", final_text[:80]),
+                "description":  final_text,
+                "ai_category":  classification.get("category", "General"),
+                "ai_sentiment": classification.get("sentiment", "negative"),
+                "priority":     classification.get("priority", "medium"),
+                "status":       "open",
+                "resolution_note": None
+            }).eq("id", draft["id"]).execute()
+            
+            g_rows = sb.table("grievances").select("tracking_id").eq("id", draft["id"]).execute()
+            tracking_id = g_rows.data[0]["tracking_id"] if g_rows.data else "Unknown"
+            
+            prio = classification['priority']
+            prio_label = {"low": "P3", "medium": "P2", "high": "P1", "critical": "P0"}.get(prio, "P2")
+            sentiment = classification.get('sentiment', 'negative').title()
+            sentiment_emoji = {"Negative": "😡", "Positive": "😄", "Neutral": "😐"}.get(sentiment, "💬")
+            
+            reply = (
+                f"🤖 *AI Processing Complete*\n"
+                f"───────────────────\n\n"
+                f"✅ Language: *{lang}*\n"
+                f"🏷️ Department: *{classification.get('category', 'General')}*\n"
+                f"⚡ Priority: *{prio.title()} ({prio_label})*\n"
+                f"📍 Location: *{location_text}*\n"
+                f"{sentiment_emoji} Sentiment: *{sentiment}*\n\n"
+                f"───────────────────\n"
+                f"🆔 Ticket *{tracking_id}* created.\n"
+                f"📤 Routed to *{classification.get('category', 'General')} Department*.\n"
+                f"📲 Officer notified.\n\n"
+                f"🎯 *SLA Timeline:* 72 hours to resolve\n\n"
+                f"Track: reply *track {tracking_id}*"
+            )
+            resp.message(reply)
+            return
 
-    tracking_id = f"PRJ-{datetime.now(timezone.utc).strftime('%y%m%d')}-{secrets.token_hex(3).upper()}"
-    row = sb.table("grievances").insert({
-        "tracking_id":  tracking_id,
-        "citizen_id":   user_id,
-        "title":        classification.get("title", final_text[:80]),
-        "description":  final_text,
-        "ai_category":  classification.get("category", "General"),
-        "ai_sentiment": classification.get("sentiment", "negative"),
-        "priority":     classification.get("priority", "medium"),
-        "status":       "open",
-        "channel":      "whatsapp",
-    }).execute()
-    g = row.data[0]
-    prio = classification['priority']
-    prio_label = {"low": "P3", "medium": "P2", "high": "P1", "critical": "P0"}.get(prio, "P2")
-    sentiment = classification.get('sentiment', 'negative').title()
-    sentiment_emoji = {"Negative": "\U0001f621", "Positive": "\U0001f604", "Neutral": "\U0001f610"}.get(sentiment, "\U0001f4ac")
-    reply = (
-        f"\U0001f916 *AI Processing Complete*\n"
-        f"\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n\n"
-        f"\u2705 Language: *{lang}*\n"
-        f"\U0001f3f7 Department: *{classification['category']}*\n"
-        f"\u26a1 Priority: *{prio.title()} ({prio_label})*\n"
-        f"\U0001f4cd Location: Delhi North Ward\n"
-        f"{sentiment_emoji} Sentiment: *{sentiment}*\n\n"
-        f"\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\u2500\n"
-        f"\U0001f194 Ticket *{g['tracking_id']}* created.\n"
-        f"\U0001f4e4 Routed to *{classification['category']}* Department.\n"
-        f"\U0001f4f2 Officer notified.\n\n"
-        f"\U0001f3af *SLA Timeline:* 72 hours to resolve\n\n"
-        f"Track: reply *track {g['tracking_id']}*"
-    )
-    resp.message(reply)
-    return
+    else:
+        # No draft exists, start fresh
+        history = [{"role": "user", "content": text}]
+        groq_resp = agentic_chat_with_groq(history)
+        
+        if groq_resp["type"] == "question":
+            ans = groq_resp["text"]
+            history.append({"role": "assistant", "content": ans})
+            
+            tracking_id = f"PRJ-{datetime.now(timezone.utc).strftime('%y%m%d')}-{secrets.token_hex(3).upper()}"
+            sb.table("grievances").insert({
+                "tracking_id":  tracking_id,
+                "citizen_id":   user_id,
+                "title":        "Draft Ticket",
+                "description":  text,
+                "status":       "draft",
+                "channel":      "whatsapp",
+                "resolution_note": json.dumps(history)
+            }).execute()
+            resp.message(ans)
+            return
+        elif groq_resp["type"] == "complete":
+            classification = groq_resp["data"]
+            final_text = classification.get("clean_description", text)
+            location_text = classification.get("location", "Not specified")
+            lang = detect_language(final_text)
+      
+            tracking_id = f"PRJ-{datetime.now(timezone.utc).strftime('%y%m%d')}-{secrets.token_hex(3).upper()}"
+            sb.table("grievances").insert({
+                "tracking_id":  tracking_id,
+                "citizen_id":   user_id,
+                "title":        classification.get("title", final_text[:80]),
+                "description":  final_text,
+                "ai_category":  classification.get("category", "General"),
+                "ai_sentiment": classification.get("sentiment", "negative"),
+                "priority":     classification.get("priority", "medium"),
+                "status":       "open",
+                "channel":      "whatsapp",
+            }).execute()
+            
+            prio = classification['priority']
+            prio_label = {"low": "P3", "medium": "P2", "high": "P1", "critical": "P0"}.get(prio, "P2")
+            sentiment = classification.get('sentiment', 'negative').title()
+            sentiment_emoji = {"Negative": "😡", "Positive": "😄", "Neutral": "😐"}.get(sentiment, "💬")
+            
+            reply = (
+                f"🤖 *AI Processing Complete*\n"
+                f"───────────────────\n\n"
+                f"✅ Language: *{lang}*\n"
+                f"🏷️ Department: *{classification.get('category', 'General')}*\n"
+                f"⚡ Priority: *{prio.title()} ({prio_label})*\n"
+                f"📍 Location: *{location_text}*\n"
+                f"{sentiment_emoji} Sentiment: *{sentiment}*\n\n"
+                f"───────────────────\n"
+                f"🆔 Ticket *{tracking_id}* created.\n"
+                f"📤 Routed to *{classification.get('category', 'General')} Department*.\n"
+                f"📲 Officer notified.\n\n"
+                f"🎯 *SLA Timeline:* 72 hours to resolve\n\n"
+                f"Track: reply *track {tracking_id}*"
+            )
+            resp.message(reply)
+            return
