@@ -291,3 +291,44 @@ def analytics_hourly_heatmap(
             })
 
     return matrix
+
+# ?? AI Morning Briefing ??
+@router.get("/briefing")
+def get_ai_briefing(
+    current: dict = Depends(require_officer),
+    sb: Any = Depends(get_supabase),
+):
+    "\""Generate an AI morning briefing based on recent grievances."\""
+    from groq import Groq
+    from app.config import settings
+    _groq = Groq(api_key=settings.GROQ_API_KEY)
+    
+    # Fetch recent open or escalated tickets
+    res = sb.table("grievances").select("title, ai_category, priority, status").neq("status", "resolved").order("created_at", desc=True).limit(50).execute()
+    tickets = res.data or []
+    
+    if not tickets:
+        return {"briefing": "Good morning. There are no pending critical issues. Your ward is clear."}
+        
+    summary_text = "\n".join([f"- {t['title']} ({t.get('ai_category', 'General')}, Priority: {t.get('priority', 'medium')}, Status: {t.get('status', 'open')})" for t in tickets[:20]])
+    
+    prompt = f"\""You are an AI Chief of Staff for a government official. Write a short, punchy morning briefing based on these active citizen grievances. 
+Format it nicely in Markdown. Include:
+1. A quick executive summary.
+2. The Top 3 critical issues requiring immediate attention.
+3. A suggested action item for today.
+
+Here is the raw grievance data:
+{summary_text}"\""
+
+    try:
+        r = _groq.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=400,
+            temperature=0.3,
+        )
+        briefing = r.choices[0].message.content
+        return {"briefing": briefing}
+    except Exception as e:
+        return {"briefing": f"Failed to generate briefing. Raw data shows {len(tickets)} open issues."}
