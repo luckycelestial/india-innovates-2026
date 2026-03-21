@@ -54,10 +54,23 @@ export default function Login() {
     }
   };
 
-  const quickFill = (u) => {
+    const handleDemoLogin = async (u) => {
     setAadhaar(u.aadhaar);
     setPassword(u.password);
     setError('');
+    setLoading(true);
+    try {
+      await login(u.aadhaar.replace(/\s/g, ''), u.password);
+      navigate('/dashboard');
+    } catch (err) {
+      const detail = err.response?.data?.detail;
+      const msg = Array.isArray(detail)
+        ? detail.map(d => (typeof d === 'object' ? (d.msg || JSON.stringify(d)) : String(d))).join('; ')
+        : (typeof detail === 'string' ? detail : 'Invalid Aadhaar or password. Please try again.');
+      setError(msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -210,7 +223,7 @@ export default function Login() {
                     key={u.role}
                     type="button"
                     className="login-demo-btn"
-                    onClick={() => quickFill(u)}
+                    onClick={() => handleDemoLogin(u)}
                   >
                     <div>
                       <div>
@@ -285,3 +298,4 @@ export default function Login() {
     </div>
   );
 }
+
