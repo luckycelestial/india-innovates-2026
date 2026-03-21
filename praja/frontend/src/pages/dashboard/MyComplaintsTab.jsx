@@ -24,15 +24,36 @@ const getSlaStatus = (sla_deadline) => {
 
 export default function MyComplaintsTab() {
   const { data: _tickets, loading, error } = useFetch('/grievances/');
-  const [showSchemes, setShowSchemes] = useState(false);
-  const { data: _schemes, execute: loadSchemes } = useFetch('/grievances/schemes', {}, false);
+  const { data: _schemes } = useFetch('/grievances/schemes');
+  const [expandedTicketId, setExpandedTicketId] = useState(null);
 
   const tickets = _tickets || [];
   const schemes = _schemes || [];
 
-  const handleToggleSchemes = () => {
-    if (!showSchemes && schemes.length === 0) loadSchemes();
-    setShowSchemes(!showSchemes);
+  const handleToggleTicket = (id) => {
+    setExpandedTicketId(expandedTicketId === id ? null : id);
+  };
+
+  const getRelatedSchemes = (ticket) => {
+    if (!ticket.ai_category) return [];
+    const cat = ticket.ai_category.toLowerCase();
+    const map = {
+      "water supply": ["water", "sanitation"],
+      "sanitation": ["sanitation", "health"],
+      "health": ["health"],
+      "roads": ["technology", "infrastructure", "transport"],
+      "electricity": ["energy", "power"],
+      "education": ["education", "school"],
+      "housing": ["housing", "shelter"],
+      "agriculture": ["agriculture", "farmer"],
+    };
+    const tags = map[cat] || [cat];
+    
+    return schemes.filter(s => {
+      const dept = (s.department || "").toLowerCase();
+      const name = (s.name || "").toLowerCase();
+      return tags.some(tag => dept.includes(tag) || name.includes(tag));
+    });
   };
 
   if (loading) return <p className="ud-loading" />;
@@ -56,33 +77,7 @@ export default function MyComplaintsTab() {
             {tickets.length} complaint{tickets.length !== 1 ? 's' : ''} on record
           </p>
         </div>
-        <Button variant="secondary" size="sm" onClick={handleToggleSchemes}>
-          {showSchemes ? '📋 Hide Schemes' : '🏛️ Government Schemes'}
-        </Button>
       </div>
-
-      {/* Schemes section */}
-      {showSchemes && schemes.length > 0 && (
-        <div style={{ marginBottom: 24 }}>
-          <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 12 }}>
-            Eligible Schemes {schemes.some(s => s.is_matched) && <Badge variant="success" style={{ marginLeft: 6 }}>✓ Matched</Badge>}
-          </div>
-          <div className="ud-schemes-grid">
-            {schemes.map(s => (
-              <Card key={s.id} className={s.is_matched ? 'border-success' : ''}>
-                <div style={{ fontWeight: 700, marginBottom: 4, display: 'flex', alignItems: 'center', gap: 8 }}>
-                  {s.name}
-                  {s.is_matched && <Badge variant="warning">Recommended</Badge>}
-                </div>
-                <div style={{ fontSize: '0.78rem', color: 'var(--text-muted)', marginBottom: 8 }}>{s.department}</div>
-                <div style={{ fontSize: '0.84rem', color: 'var(--text-secondary)' }}>{s.description}</div>
-                {s.benefits && <div style={{ marginTop: 8, fontSize: '0.84rem', color: 'var(--color-success-text)' }}>💰 {s.benefits}</div>}
-                {s.eligibility_criteria && <div style={{ marginTop: 4, fontSize: '0.78rem', color: 'var(--text-muted)' }}>📋 {s.eligibility_criteria}</div>}
-              </Card>
-            ))}
-          </div>
-        </div>
-      )}
 
       {/* Ticket list */}
       {tickets.length === 0 ? (
@@ -99,10 +94,15 @@ export default function MyComplaintsTab() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
           {tickets.map(t => {
             const sla = getSlaStatus(t.sla_deadline);
+            const isExpanded = expandedTicketId === t.id;
+            const relatedSchemes = isExpanded ? getRelatedSchemes(t) : [];
+
             return (
-              <Card key={t.id}>
+              <Card key={t.id} style={{ cursor: 'pointer' }} onClick={() => handleToggleTicket(t.id)}>
                 <div className="ud-ticket-header">
-                  <span style={{ fontWeight: 700, fontSize: '0.95rem', flex: 1, lineHeight: 1.35 }}>{t.title || '—'}</span>
+                  <span style={{ fontWeight: 700, fontSize: '0.95rem', flex: 1, lineHeight: 1.35 }}>
+                    {isExpanded ? '🔽 ' : '▶️ '}{t.title || '—'}
+                  </span>
                   <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexShrink: 0, flexWrap: 'wrap', justifyContent: 'flex-end' }}>
                     {sla && t.status !== 'resolved' && (
                       <Badge variant={sla.variant}>⏱ {sla.text}</Badge>
@@ -126,26 +126,56 @@ export default function MyComplaintsTab() {
                   )}
                 </div>
 
-                {t.description && (
-                  <div style={{ marginTop: 10, fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
-                    {String(t.description).length > 160
-                      ? `${String(t.description).slice(0, 160)}…`
-                      : String(t.description)}
-                  </div>
-                )}
-                {t.photo_url && (
-                  <img src={t.photo_url} alt="Evidence" style={{ marginTop: 10, maxWidth: 220, maxHeight: 160, borderRadius: 'var(--radius-md)', objectFit: 'cover', border: '1px solid var(--border-color)' }} />
-                )}
-                {t.status === 'resolved' && t.resolution_note && (
-                  <div style={{
-                    marginTop: 12, padding: '10px 14px',
-                    background: 'var(--color-success-bg)',
-                    border: '1px solid var(--color-success-border)',
-                    borderLeft: '3px solid var(--color-success)',
-                    borderRadius: 'var(--radius-md)',
-                    fontSize: '0.84rem', color: 'var(--color-success-text)',
-                  }}>
-                    ✅ {t.resolution_note}
+                {isExpanded && (
+                  <div style={{ marginTop: 16, borderTop: '1px solid var(--border-color)', paddingTop: 16 }}>
+                    {t.description && (
+                      <div style={{ fontSize: '0.84rem', color: 'var(--text-secondary)', lineHeight: 1.55 }}>
+                        {String(t.description)}
+                      </div>
+                    )}
+                    {t.photo_url && (
+                      <img src={t.photo_url} alt="Evidence" style={{ marginTop: 10, maxWidth: 220, maxHeight: 160, borderRadius: 'var(--radius-md)', objectFit: 'cover', border: '1px solid var(--border-color)' }} />
+                    )}
+                    {t.status === 'resolved' && t.resolution_note && (
+                      <div style={{
+                        marginTop: 12, padding: '10px 14px',
+                        background: 'var(--color-success-bg)',
+                        border: '1px solid var(--color-success-border)',
+                        borderLeft: '3px solid var(--color-success)',
+                        borderRadius: 'var(--radius-md)',
+                        fontSize: '0.84rem', color: 'var(--color-success-text)',
+                      }}>
+                        ✅ {t.resolution_note}
+                      </div>
+                    )}
+                    
+                    {relatedSchemes.length > 0 && (
+                      <div style={{ marginTop: 24, padding: '12px 16px', background: 'var(--bg-card)', borderRadius: 'var(--radius-md)', border: '1px dashed var(--border-color)' }}>
+                        <div style={{ fontSize: '0.8rem', fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em', marginBottom: 12 }}>
+                          🏦 Recommended Government Schemes
+                        </div>
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+                          {relatedSchemes.map(s => (
+                            <div key={s.id} style={{ padding: 12, border: '1px solid var(--color-success-border)', background: 'var(--color-success-bg)', borderRadius: 'var(--radius-sm)' }}>
+                              <div style={{ fontWeight: 600, fontSize: '0.88rem', color: 'var(--text-primary)', marginBottom: 4 }}>
+                                {s.name}
+                              </div>
+                              <div style={{ fontSize: '0.78rem', color: 'var(--text-secondary)' }}>
+                                {s.description}
+                              </div>
+                              {s.benefits && (
+                                <div style={{ marginTop: 6, fontSize: '0.8rem', color: 'var(--color-success-text)' }}>
+                                  💰 <strong>Benefits:</strong> {s.benefits}
+                                </div>
+                              )}
+                              <Button variant="outline" size="sm" style={{ marginTop: 8 }} onClick={(e) => { e.stopPropagation(); alert('Redirecting to application portal...') }}>
+                                Apply Now
+                              </Button>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </div>
                 )}
               </Card>
