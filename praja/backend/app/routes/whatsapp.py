@@ -135,19 +135,42 @@ Rules for Classification:
         return {"type": "question", "text": "I'm having trouble processing that. Could you please state your issue, name, and location clearly?"}
 
 
-def get_or_create_user(phone: str, sb) -> str:
+def check_registration_and_get_user(phone: str, text: str, sb, resp) -> str:
     clean_phone = phone.replace("whatsapp:", "")
-    rows = sb.table("users").select("id").eq("phone", clean_phone).execute()
+    rows = sb.table("users").select("*").eq("phone", clean_phone).execute()
     if rows.data:
         return rows.data[0]["id"]
-    new_user = sb.table("users").insert({
-        "name":          f"WhatsApp User {clean_phone[-4:]}",
-        "email":         f"wa_{clean_phone.replace('+', '')}@praja.local",
-        "phone":         clean_phone,
-        "role":          "citizen",
-        "password_hash": "dummy_hash_no_login_needed",
-    }).execute()
-    return new_user.data[0]["id"]
+    
+    if text.strip().upper() == "YES":
+        fake_aadhar = "XXXXXXXX" + str(secrets.randbelow(9000)+1000)
+        fake_name = "Rahul Sharma"
+        fake_address = "MG Road, Ward 4"
+        new_user = sb.table("users").insert({
+            "name":          fake_name,
+            "email":         f"wa_{clean_phone.replace('+', '')}@praja.local",
+            "phone":         clean_phone,
+            "role":          "citizen",
+            "password_hash": "dummy_hash_no_login_needed",
+            "aadhaar_number": fake_aadhar
+        }).execute()
+        
+        resp.message(
+            f"✅ *Successfully Registered!*\n\n"
+            f"👤 Name: {fake_name}\n"
+            f"🏠 Address: {fake_address}\n"
+            f"🪪 Aadhaar: XXXX XXXX {fake_aadhar[-4:]}\n\n"
+            f"You can now describe your problem. Please include what the issue is and the exact location."
+        )
+        return None
+        
+    toy_aadhar = "XXXX XXXX " + str(secrets.randbelow(9000)+1000)
+    resp.message(
+        f"👋 Welcome to PRAJA!\n\n"
+        f"To ensure accountability, please link your Aadhaar.\n"
+        f"Linked aadhaar : {toy_aadhar}\n\n"
+        f"Reply *YES* to register with PRAJA on this number. Only then you can file a complaint."
+    )
+    return None
 
 
 def priority_emoji(p: str) -> str:
@@ -246,8 +269,21 @@ async def _handle_message(Body: str, From: str, resp: MessagingResponse) -> None
         resp.message(reply)
         return
 
+    # Check Registration and get User ID
+    user_id = check_registration_and_get_user(sender, text, sb, resp)
+    if not user_id:
+        return
+
     if text.lower() == "status":
-        user_id = get_or_create_user(sender, sb)
+        rows = sb.table("grievances").select("tracking_id, status, title").eq("citizen_id", user_id).order("created_at", desc=True).limit(3).execute()
+        if not rows.data:
+            resp.message("You have no recently filed complaints.")
+        else:
+            msg = "📊 *Your Recent Complaints*\n\n"
+            for g in rows.data:
+                msg += f"🔹 *{g['tracking_id']}* - {g['status'].title()}\n   {g.get('title', 'No title')[:30]}...\n\n"
+            resp.message(msg)
+        return
 
     # Check if user has an ongoing draft ticket
     drafts = sb.table("grievances").select("id, resolution_note").eq("citizen_id", user_id).eq("status", "draft").execute()
