@@ -27,6 +27,7 @@ HELP_MSG = (
     "Commands:\n"
     "\u2022 *track <id>* \u2014 Check status of a complaint\n"
     "\u2022 *status* \u2014 See your last 3 complaints\n"
+    "\u2022 *reset* \u2014 Clear demo data & unlink Aadhaar\n"
     "\u2022 *help* \u2014 Show this message"
 )
 
@@ -81,12 +82,13 @@ Your goal is to collect enough information to file a complete ticket.
 
 Required Info:
 1. Core Issue / Complaint (What is the problem?)
-2. Exact Location / Landmark (Where is it?)
+2. Exact Location / Landmark (Where is it? -> Must be a SPECIFIC area, street name, ward, or public landmark. Vague locations like "my home", "near me", "here" are NOT acceptable).
 3. Name of the person reporting (Who is reporting?)
 
 Instructions:
 - If ANY of the required info is missing or ambiguous, ask a polite, short question in the language the user is speaking to get the missing info. Respond with ONLY normal text (NO JSON).
-- Only when you have ALL 3 pieces of information, and feel ready to file the ticket, you must respond with ONLY a valid JSON block and absolutely no other text.
+- If the user gives a vague location (like 'mera ghar', 'near my house', 'here'), DO NOT accept it. Specifically ask them to name the colony, street, or a famous landmark nearby.
+- Only when you have ALL 3 pieces of information explicitly, and feel ready to file the ticket, you must respond with ONLY a valid JSON block and absolutely no other text.
 
 JSON FORMAT:
 {
