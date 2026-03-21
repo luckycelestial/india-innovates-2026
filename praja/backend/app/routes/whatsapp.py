@@ -319,7 +319,7 @@ async def _handle_message(Body: str, From: str, resp: MessagingResponse) -> None
         return
 
     # Check Registration and get User ID
-    user_id = check_registration_and_get_user(sender, text, sb, resp)
+    user_id, user_name = check_registration_and_get_user(sender, text, sb, resp)
     if not user_id:
         return
 
@@ -346,8 +346,8 @@ async def _handle_message(Body: str, From: str, resp: MessagingResponse) -> None
             history = []
         
         history.append({"role": "user", "content": text})
-        groq_resp = agentic_chat_with_groq(history)
-        
+        groq_resp = agentic_chat_with_groq(history, user_name)
+
         if groq_resp["type"] == "question":
             ans = groq_resp["text"]
             history.append({"role": "assistant", "content": ans})
@@ -399,8 +399,8 @@ async def _handle_message(Body: str, From: str, resp: MessagingResponse) -> None
     else:
         # No draft exists, start fresh
         history = [{"role": "user", "content": text}]
-        groq_resp = agentic_chat_with_groq(history)
-        
+        groq_resp = agentic_chat_with_groq(history, user_name)
+
         if groq_resp["type"] == "question":
             ans = groq_resp["text"]
             history.append({"role": "assistant", "content": ans})
