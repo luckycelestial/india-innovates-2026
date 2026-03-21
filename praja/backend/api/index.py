@@ -15,18 +15,19 @@ except BaseException as e:
     app = FastAPI()
     _error = traceback.format_exc()
     _etype = type(e).__name__
+    _emsg = str(e)
 
     @app.get("/health")
     @app.get("/")
     async def error_health():
         return JSONResponse(
             status_code=500,
-            content={"error": str(e), "type": _etype, "traceback": _error},
+            content={"error": _emsg, "type": _etype, "traceback": _error},
         )
 
     @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
     async def error_catch_all(path: str = ""):
         return JSONResponse(
             status_code=500,
-            content={"error": str(e), "type": _etype, "traceback": _error, "path": path},
+            content={"error": _emsg, "type": _etype, "traceback": _error, "path": path},
         )

@@ -134,7 +134,40 @@ Rules for Classification:
         print("Groq Error:", e)
         return {"type": "question", "text": "I'm having trouble processing that. Could you please state your issue, name, and location clearly?"}
 
-
+def classify_with_groq(text: str) -> dict:
+    """Legacy one-shot classification for SMS and Voice endpoints."""
+    try:
+        prompt = f"""Classify this grievance, responding ONLY with valid JSON.
+Text: "{text}"
+JSON Format:
+{{"category": "Water Supply|Roads|Electricity|Sanitation|General", "priority": "low|medium|high|critical", "sentiment": "negative|neutral|positive", "title": "...", "clean_description": "..."}}
+"""
+        response = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            temperature=0.1
+        )
+        content = (response.choices[0].message.content or "").strip()
+        raw = re.sub(r"^```json\s*|^```\s*|```$", "", content, flags=re.MULTILINE).strip()
+        match = re.search(r"\{.*\}", raw, flags=re.DOTALL)
+        if match:
+            return json.loads(match.group(0))
+        raise Exception("No JSON found")
+    except Exception:
+        return {"category": "General", "priority": "medium", "sentiment": "neutral", "title": text[:40], "clean_description": text}
+def get_or_create_user(phone: str, sb) -> str:
+    clean_phone = phone.replace("whatsapp:", "")
+    rows = sb.table("users").select("id").eq("phone", clean_phone).execute()
+    if rows.data:
+        return rows.data[0]["id"]
+    new_user = sb.table("users").insert({
+        "name":          f"Phone User {clean_phone[-4:]}",
+        "email":         f"tel_{clean_phone.replace('+', '')}@praja.local",
+        "phone":         clean_phone,
+        "role":          "citizen",
+        "password_hash": "dummy_hash_no_login_needed",
+    }).execute()
+    return new_user.data[0]["id"]
 def check_registration_and_get_user(phone: str, text: str, sb, resp) -> str:
     clean_phone = phone.replace("whatsapp:", "")
     rows = sb.table("users").select("*").eq("phone", clean_phone).execute()
