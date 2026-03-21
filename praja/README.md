@@ -26,7 +26,7 @@ PRAJA is an end-to-end Grievance Operating System designed to bridge the gap bet
 - **Backend**: Python 3.11, FastAPI
 - **Database & Auth**: Supabase (PostgreSQL with Row Level Security)
 - **AI & Integrations**: Groq (LLaMA-3.3-70B), Twilio (Messaging API)
-- **Deployment**: Vercel (Frontend), Render (Backend)
+- **Deployment**: Vercel (Frontend), Vercel (Backend)
 
 ## ⚙️ Local Setup
 
@@ -66,3 +66,4 @@ npm run dev
 ## 🛡️ Architecture & Security
 - **Role-Based Access Control (RBAC)** ensures that officials only see data relevant to their specific ward or jurisdiction.
 - **Hierarchical Escalation**: If an SLA breaches, the ticket automatically flags to the next level of management.
+
