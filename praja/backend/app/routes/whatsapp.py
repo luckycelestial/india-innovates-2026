@@ -286,7 +286,7 @@ async def _handle_message(Body: str, From: str, resp: MessagingResponse) -> None
         return
 
     # Check if user has an ongoing draft ticket
-    drafts = sb.table("grievances").select("id, resolution_note").eq("citizen_id", user_id).eq("status", "draft").execute()
+    drafts = sb.table("grievances").select("id, resolution_note").eq("citizen_id", user_id).eq("status", "closed").eq("title", "Draft Ticket").execute()
     
     if drafts.data:
         draft = drafts.data[0]
@@ -362,7 +362,7 @@ async def _handle_message(Body: str, From: str, resp: MessagingResponse) -> None
                 "citizen_id":   user_id,
                 "title":        "Draft Ticket",
                 "description":  text,
-                "status":       "draft",
+                "status":       "closed",
                 "channel":      "whatsapp",
                 "resolution_note": json.dumps(history)
             }).execute()
