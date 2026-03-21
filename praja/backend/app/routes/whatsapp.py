@@ -261,6 +261,19 @@ async def _handle_message(Body: str, From: str, resp: MessagingResponse) -> None
         resp.message(HELP_MSG)
         return
 
+    if text.lower() == "reset":
+        clean_phone = sender.replace("whatsapp:", "")
+        # First find the user
+        u = sb.table("users").select("id").eq("phone", clean_phone).execute()
+        if u.data:
+            uid = u.data[0]["id"]
+            # Delete their grievances first
+            sb.table("grievances").delete().eq("citizen_id", uid).execute()
+            # Then delete the user
+            sb.table("users").delete().eq("id", uid).execute()
+        resp.message("🔄 *Demo Reset Successful*\nYour Aadhaar linkage and all complaints have been permanently deleted.\n\nSend any message to start the registration flow again.")
+        return
+
     track_match = re.match(r"^track\s+(\S+)", text, re.IGNORECASE)
     if track_match:
         ticket_id = track_match.group(1).strip()
