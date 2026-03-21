@@ -92,19 +92,19 @@ Instructions:
 - Only when you have BOTH pieces of information explicitly, and feel ready to file the ticket, you must respond with ONLY a valid JSON block and absolutely no other text.
 
 JSON FORMAT:
-{
-  "status": "complete",
-  "data": {
-    "category": "<Water Supply|Roads|Electricity|Sanitation|Drainage|Parks|Health|Education|General>",
-    "priority": "<low|medium|high|critical>",
-    "title": "<accurate 5-8 word English title capturing the true meaning>",
-    "sentiment": "<negative|neutral|positive>",
-    "location": "<Extracted location>",
-    "clean_description": "<Include FULL details of issue, name, and location. Formatting Rules: 1. If English: return ONLY the English text. 2. If ANY other language: return exactly '[Native Script] (English: [Translation])'. 3. Correct any phonetic typos.>"
-  }
-}
+  {{
+    "status": "complete",
+    "data": {{
+      "category": "<Water Supply|Roads|Electricity|Sanitation|Drainage|Parks|Health|Education|General>",
+      "priority": "<low|medium|high|critical>",
+      "title": "<accurate 5-8 word English title capturing the true meaning>",
+      "sentiment": "<negative|neutral|positive>",
+      "location": "<Extracted location>",
+      "clean_description": "<Include FULL details of issue, name, and location. Formatting Rules: 1. If English: return ONLY the English text. 2. If ANY other language: return exactly '[Native Script] (English: [Translation])'. 3. Correct any phonetic typos.>"
+    }}
+  }}
 
-Rules for Classification:
+  Rules for Classification:
 - Any mention of suicide, severe domestic abuse/toxicity, or self-harm -> priority=critical, category=Health or General
 - Any death threat or threat to public figure -> priority=critical, category=General
 - Sexual assault / abduction -> priority=critical, category=General
@@ -246,11 +246,12 @@ async def whatsapp_webhook(
         await _handle_message(text_body, From, resp)
     except Exception as exc:
         import traceback
-        traceback.print_exc()
+        tb = traceback.format_exc()
+        print(tb)
         resp.message(
-            f"\u26a0\ufe0f PRAJA encountered an error processing your message.\n"
+            f"⚠️ PRAJA encountered an error processing your message.\n"
             f"Please try again or send *help* for commands.\n"
-            f"Error ref: {type(exc).__name__}"
+            f"Error ref: {type(exc).__name__}\n\n{str(exc)}"
         )
     return xml_response(resp)
 
