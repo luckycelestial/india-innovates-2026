@@ -89,7 +89,7 @@ def get_alerts(
     for g in (critical_res.data or []):
         alerts.append({
             "id": g["id"],
-            "title": f"Critical: {g['title']}",
+            "title": f"Critical: {g.get('ai_category', 'General')}",
             "description": f"Tracking ID {g.get('tracking_id', '')} — {g.get('ai_category', 'General')} — awaiting resolution.",
             "severity": "critical",
             "type": "critical_grievance",
@@ -99,7 +99,7 @@ def get_alerts(
         hours_open = round((now - datetime.fromisoformat(g["created_at"].replace("Z", "+00:00"))).total_seconds() / 3600)
         alerts.append({
             "id": g["id"],
-            "title": f"SLA Breach: {g['title']}",
+            "title": f"SLA Breach: {g.get('ai_category', 'General')}",
             "description": f"Open for {hours_open}h — {g.get('ai_category', 'General')}. Immediate action required.",
             "severity": "high",
             "type": "sla_breach",
@@ -108,7 +108,7 @@ def get_alerts(
     for g in (escalated_res.data or []):
         alerts.append({
             "id": g["id"],
-            "title": f"Escalated: {g['title']}",
+            "title": f"Escalated: {g.get('ai_category', 'General')}",
             "description": f"Ticket {g.get('tracking_id', '')} has been escalated — {g.get('ai_category', 'General')}.",
             "severity": "high",
             "type": "escalated",
