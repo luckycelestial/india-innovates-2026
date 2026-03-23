@@ -43,11 +43,11 @@ const ROLE_LABELS = {
 };
 
 const ALL_TABS = [
-  { id: 'submit',    label: '📝 Submit Grievance', roles: ['citizen','sarpanch','district_collector','mla','mp'] },
-  { id: 'mine',      label: '📋 My Complaints',    roles: ['citizen','sarpanch','district_collector','mla','mp'] },
-  { id: 'manage',    label: '🗂 Manage Tickets',  roles: ['sarpanch','district_collector','mla','mp'] },
-  { id: 'analytics', label: '📊 Analytics',         roles: ['sarpanch','district_collector','mla','mp'] },
-  { id: 'sentinel',  label: '🗺 Sentinel Pulse',    roles: ['district_collector','mla','mp'] },
+  { id: 'submit',    label: 'Submit Grievance', icon: 'FileText', roles: ['citizen','sarpanch','district_collector','mla','mp'] },
+  { id: 'mine',      label: 'My Complaints', icon: 'ListIcon', roles: ['citizen','sarpanch','district_collector','mla','mp'] },
+  { id: 'manage',    label: 'Manage Tickets', icon: 'Ticket', roles: ['sarpanch','district_collector','mla','mp'] },
+  { id: 'analytics', label: 'Analytics', icon: 'BarChart3', roles: ['sarpanch','district_collector','mla','mp'] },
+  { id: 'sentinel',  label: 'Sentinel Pulse', icon: 'MapIcon', roles: ['district_collector','mla','mp'] },
 ];
 
 /* ── Root Layout ──────────────────────────────────────────────── */
@@ -266,5 +266,6 @@ export default function UnifiedDashboard() {
     </div>
   );
 }
+
 
 
