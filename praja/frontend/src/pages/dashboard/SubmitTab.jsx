@@ -207,7 +207,7 @@ export default function SubmitTab({ onToast }) {
       <div style={{ marginBottom: 24 }}>
         <p className="ud-title">File a Complaint</p>
         <p className="ud-subtitle">
-          AI auto-classifies department and priority. Supports Tamil, Hindi, Telugu, English.
+          Submit your complaint in Tamil, Hindi, Telugu, or English.
         </p>
       </div>
 
