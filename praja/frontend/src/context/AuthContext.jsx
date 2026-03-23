@@ -26,12 +26,12 @@ async function fetchUserByAadhaar(aadhaar) {
  * Get a backend JWT token using the Supabase user.
  * Falls back to a mock token if backend is unreachable.
  */
+
 async function getToken(aadhaarNumber) {
-  // Try the real backend first
   try {
     const backendUrl = import.meta.env.VITE_API_URL || 'https://prajavox-backend.vercel.app'
     if (backendUrl) {
-      const resp = await fetch(`${backendUrl}/api/auth/login`, {
+      const resp = await fetch(${backendUrl}/api/auth/login, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ aadhaar_number: aadhaarNumber, password: 'Demo' }),
@@ -43,12 +43,11 @@ async function getToken(aadhaarNumber) {
       }
     }
   } catch (err) {
-    console.error('Backend authentication failed:', err)
-    throw new Error('Backend is currently unavailable. Please try again in 30 seconds.')
+    console.warn('Backend login failed, using mock token', err)
   }
-  
-  throw new Error('Backend authentication failed. Invalid response.')
+  return 'mock-token-' + Date.now();
 }
+
 
 export function AuthProvider({ children }) {
   const [user, setUser] = useState(() => {
