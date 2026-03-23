@@ -3,6 +3,7 @@ import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import prajaIcon from '../assets/SS.jpg';
 import './UnifiedDashboard.css';
+import { FileText, List as ListIcon, Ticket, BarChart3, Map as MapIcon, Bell, Menu } from 'lucide-react';
 
 import SubmitTab      from './dashboard/SubmitTab';
 import MyComplaintsTab from './dashboard/MyComplaintsTab';
@@ -96,6 +97,13 @@ export default function UnifiedDashboard() {
   const role      = user?.role || 'citizen';
   const roleLabel = ROLE_LABELS[role] || role;
 
+    const IconMap = {
+    FileText: <FileText size={20} />,
+    ListIcon: <ListIcon size={20} />,
+    Ticket: <Ticket size={20} />,
+    BarChart3: <BarChart3 size={20} />,
+    MapIcon: <MapIcon size={20} />
+  };
   const TABS = ALL_TABS.filter(t => t.roles.includes(role));
   const [activeTab, setActiveTab] = useState(TABS[0]?.id || 'submit');
 
@@ -140,7 +148,8 @@ export default function UnifiedDashboard() {
               onClick={() => selectTab(t.id)}
               aria-selected={activeTab === t.id}
             >
-              {t.label}
+              <span className='ud-nav-icon'>{IconMap[t.icon]}</span>
+              <span className='ud-nav-label'>{t.label}</span>
             </button>
           ))}
         </nav>
@@ -257,4 +266,5 @@ export default function UnifiedDashboard() {
     </div>
   );
 }
+
 
