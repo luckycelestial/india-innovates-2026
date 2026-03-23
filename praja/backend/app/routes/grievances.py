@@ -1,4 +1,4 @@
-import re
+﻿import re
 import json
 import secrets
 from datetime import datetime, timezone, timedelta
@@ -23,9 +23,9 @@ def _classify(title: str, desc: str) -> dict:
     prompt = f"""You are a classifier for Indian citizen grievances. Inputs may be in English, Tamil, Telugu, Hindi, Marathi, or Tanglish (Indian language written in English letters). Understand the ACTUAL meaning before classifying.
 
 CRITICAL RULES:
-- Any mention of suicide, self-harm, or killing oneself → priority=critical, category=Health
-- Any death threat or threat to a public figure → priority=critical, category=General
-- Any sexual assault or abduction → priority=critical, category=General
+- Any mention of suicide, self-harm, or killing oneself â†’ priority=critical, category=Health
+- Any death threat or threat to a public figure â†’ priority=critical, category=General
+- Any sexual assault or abduction â†’ priority=critical, category=General
 - Otherwise: water/drainage issues=Water Supply, road/pothole=Roads, power cut=Electricity, garbage/sewage=Sanitation, hospital/disease=Health, school=Education
 
 Respond with ONLY valid JSON, no explanation:
@@ -73,7 +73,7 @@ def create_grievance(
     sla_deadline = (now + timedelta(hours=hours)).isoformat()
     insert_data = {
         "tracking_id":  _gen_tracking_id(),
-        "citizen_id":   current["sub"],
+        "citizen_id":   current["sub"] if current["sub"] != "00000000-0000-0000-0000-000000000000" else "89c0b080-3fc0-469e-af06-b57a9b1e55f9",
         "title":        body.title,
         "description":  body.description,
         "ai_category":  cls["category"],
@@ -110,7 +110,7 @@ def list_grievances(
     return result.data
 
 
-# ── Beneficiary Scheme Linkage (MUST be before /{grievance_id}) ─
+# â”€â”€ Beneficiary Scheme Linkage (MUST be before /{grievance_id}) â”€
 @router.get("/schemes")
 def get_matching_schemes(
     sb: Any = Depends(get_supabase),
@@ -191,14 +191,14 @@ def update_status(
     return {"ok": True}
 
 
-# ── Auto-Escalation Engine ──────────────────────────────────────
+# â”€â”€ Auto-Escalation Engine â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @router.post("/check-escalation")
 def check_escalation(
     sb: Any = Depends(get_supabase),
     current: dict = Depends(get_current_user),
 ):
     """Auto-escalate grievances that have breached SLA deadlines.
-    Level 0→1 at SLA breach, 1→2 at 2× SLA, 2→3 at 3× SLA."""
+    Level 0â†’1 at SLA breach, 1â†’2 at 2Ã— SLA, 2â†’3 at 3Ã— SLA."""
     if current["role"] == "citizen":
         raise HTTPException(status_code=403, detail="Forbidden")
 
@@ -237,7 +237,7 @@ def check_escalation(
                 sb.table("ticket_logs").insert({
                     "grievance_id": g["id"],
                     "action": f"auto_escalated_level_{new_level}",
-                    "note": f"Auto-escalated: SLA breached by {round(hours_past_sla)}h. Level {current_level}→{new_level}.",
+                    "note": f"Auto-escalated: SLA breached by {round(hours_past_sla)}h. Level {current_level}â†’{new_level}.",
                 }).execute()
             except Exception:
                 pass
@@ -250,4 +250,5 @@ def check_escalation(
                 "hours_past_sla": round(hours_past_sla),
             })
     return {"escalated_count": len(escalated), "escalated": escalated}
+
 
