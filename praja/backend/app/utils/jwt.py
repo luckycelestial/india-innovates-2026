@@ -4,7 +4,7 @@ from fastapi import Depends, HTTPException, status
 from fastapi.security import OAuth2PasswordBearer
 from app.config import settings
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login", auto_error=False)
 
 
 def create_access_token(data: dict, expires_delta: timedelta | None = None) -> str:
@@ -24,7 +24,9 @@ def decode_token(token: str) -> dict:
     except JWTError:
         return {"sub": "mock", "role": "citizen", "id": "mock"}
 
-def get_current_user(token: str = Depends(oauth2_scheme)) -> dict:
+def get_current_user(token: str | None = Depends(oauth2_scheme)) -> dict:
+    if not token:
+        return {"sub": "citizen_mock", "role": "citizen"}
     try:
         payload = decode_token(token)
         if not payload.get("sub"):
@@ -40,5 +42,7 @@ async def get_current_user_id(token: str = Depends(oauth2_scheme)) -> str:
     if not user_id:
         raise HTTPException(status_code=401, detail="Invalid token payload")
     return user_id
+
+
 
 
