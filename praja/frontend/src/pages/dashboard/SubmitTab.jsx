@@ -1,14 +1,83 @@
-import React, { useState } from 'react';
+import React, { useState, useRef } from 'react';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { Card } from '../../components/ui/Card';
 import { useMutation } from '../../hooks/useFetch';
+
 
 export default function SubmitTab({ onToast }) {
   const [title, setTitle] = useState('');
   const [description, setDesc] = useState('');
   const [photoUrl, setPhotoUrl] = useState('');
   const [submitted, setSubmitted] = useState(null);
+
+  const [isRecording, setIsRecording] = useState(false);
+  const [isTranscribing, setIsTranscribing] = useState(false);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
+      
+      mediaRecorderRef.current.ondataavailable = (event) => {
+        if (event.data.size > 0) audioChunksRef.current.push(event.data);
+      };
+
+      mediaRecorderRef.current.onstop = async () => {
+        const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
+        audioChunksRef.current = [];
+        await handleAudioUpload(audioBlob);
+      };
+
+      mediaRecorderRef.current.start();
+      setIsRecording(true);
+      onToast('Listening... Speak your complaint.', 'success');
+    } catch (err) {
+      onToast('Microphone access denied or unavailable.', 'error');
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      setIsTranscribing(true);
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+    }
+  };
+
+  const handleAudioUpload = async (blob) => {
+    try {
+      const formData = new FormData();
+      formData.append('audio', blob, 'recording.webm');
+      
+      const token = localStorage.getItem('praja_token');
+            const res = await fetch('http://localhost:8000/api/mic/transcribe', {
+        method: 'POST',
+        headers: {
+          'Authorization': Bearer 
+        },
+        body: formData,
+      });
+      
+      if (!res.ok) throw new Error('Transcription failed');
+      
+      const data = await res.json();
+      if (data.english_text) {
+        setDesc(data.original_text + '\n\n[English]: ' + data.english_text);
+        if (!title) setTitle('Voice Complaint');
+        onToast('Audio transcribed successfully!', 'success');
+      } else {
+        onToast('Could not understand the audio.', 'error');
+      }
+    } catch (err) {
+      onToast(Transcription Error: , 'error');
+    } finally {
+      setIsTranscribing(false);
+    }
+  };
 
   const { mutate: submitGrievance, loading, error } = useMutation('post');
 
@@ -91,15 +160,44 @@ export default function SubmitTab({ onToast }) {
             onChange={e => setTitle(e.target.value)}
             required
           />
-          <Input
-            label="Description"
-            id="complaint-desc"
-            isTextarea
-            placeholder="Describe your issue in any language — Hindi, Tamil, Telugu, English all supported"
-            value={description}
-            onChange={e => setDesc(e.target.value)}
-            required
-          />
+          
+          <div style={{ position: 'relative' }}>
+            <Input
+              label="Description"
+              id="complaint-desc"
+              isTextarea
+              placeholder="Describe your issue in any language ?" Hindi, Tamil, Telugu, English all supported"
+              value={description}
+              onChange={e => setDesc(e.target.value)}
+              required
+            />
+            <button 
+              type="button"
+              onClick={isRecording ? stopRecording : startRecording}
+              disabled={isTranscribing}
+              style={{
+                position: 'absolute',
+                right: '10px',
+                top: '35px',
+                background: isRecording ? 'var(--color-danger-bg)' : 'var(--color-primary-light)',
+                color: isRecording ? 'var(--color-danger-text)' : 'white',
+                border: 'none',
+                borderRadius: '50%',
+                width: '40px',
+                height: '40px',
+                cursor: 'pointer',
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                fontSize: '1.2rem',
+                boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
+              }}
+              title={isRecording ? "Stop Recording" : "Speak your complaint (Bhashini ASR)"}
+            >
+              {isTranscribing ? '⌛' : (isRecording ? '⏹️' : '🎤')}
+            </button>
+          </div>
+
           <Input
             label="📷 Photo Evidence (optional)"
             id="complaint-photo"

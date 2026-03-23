@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Grievance Tracking | Praja Sovereign</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "saffron": "#FF9933",
+              "navy-blue": "#000080",
+              "indian-green": "#138808",
+              "on-secondary-container": "#541d00",
+              "on-surface": "#1a1a2e",
+              "tertiary": "#002905",
+              "surface-container-highest": "#e2e0fc",
+              "surface-variant": "#e2e0fc",
+              "background": "#ffffff",
+              "error-container": "#ffdad6",
+              "on-surface-variant": "#444652",
+              "surface-container": "#efecff",
+              "secondary-container": "#FF9933",
+              "primary-fixed-dim": "#b4c5ff",
+              "on-tertiary-container": "#138808",
+              "surface-container-lowest": "#ffffff",
+              "primary-container": "#000080",
+              "on-primary-container": "#ffffff",
+              "surface": "#ffffff",
+              "primary": "#000080",
+              "on-primary": "#ffffff",
+              "surface-bright": "#ffffff",
+              "surface-container-high": "#f8f9fa",
+              "surface-dim": "#f1f3f4",
+              "outline-variant": "#c4c6d4",
+              "outline": "#747683",
+              "on-background": "#1a1a2e",
+              "error": "#ba1a1a",
+            },
+            fontFamily: {
+              "headline": ["Public Sans"],
+              "body": ["Inter"],
+              "label": ["Inter"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "0.75rem"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      body {
+        background-color: #ffffff;
+        color: #1a1a2e;
+        font-family: 'Inter', sans-serif;
+      }
+    </style>
+</head>
+<body class="bg-background">
+<!-- TopNavBar - Saffron Accent -->
+<nav class="fixed top-0 w-full z-50 flex justify-between items-center px-8 h-20 bg-white border-t-8 border-saffron border-b-4 border-indian-green shadow-sm">
+<div class="flex items-center gap-6">
+<img alt="Praja Sovereign Logo" class="h-12 w-12 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAPUZK9n03v-pySdCQPw40jsCTu-IWhsjBBc0sFgJLZhi6T1N_ePMhr9mPu93ui_QVlGemhPp-ybJQumA2RNPeGspDVTqpvR-6TIg4juRd0fWiSH6ESJI3GtH9HjYu4Sms539taAXwd4lDFo5XLl19vWQHpKS4oUGJEKaf8fihmdjbCbwbj_LN56TYbseSOEr1JCSdBhstQWixdPrWVoDeI-ZBC6dmON6A7MGY8XR-_YvR7nWm6OJZsMvYtzOQuq_83FxlXz00vbuE"/>
+<span class="text-2xl font-black text-slate-900 uppercase tracking-tighter font-headline">PRAJA SOVEREIGN</span>
+<div class="hidden md:flex gap-8 ml-8 font-headline font-bold tracking-tight">
+<a class="text-slate-600 hover:text-navy-blue transition-colors" href="#">Dashboard</a>
+<a class="text-navy-blue border-b-2 border-navy-blue pb-1" href="#">Services</a>
+<a class="text-slate-600 hover:text-navy-blue transition-colors" href="#">Schemes</a>
+<a class="text-slate-600 hover:text-navy-blue transition-colors" href="#">About</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-slate-600 p-2 hover:bg-slate-50 rounded-full transition-colors">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-slate-600 p-2 hover:bg-slate-50 rounded-full transition-colors">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<button class="bg-navy-blue text-white px-6 py-2 rounded shadow-md font-semibold hover:opacity-90 transition-all scale-95 active:scale-90 duration-200">Citizen Login</button>
+</div>
+</nav>
+<div class="flex min-h-screen pt-20">
+<!-- SideNavBar -->
+<aside class="hidden md:flex flex-col h-[calc(100vh-5rem)] w-64 fixed left-0 top-20 bg-slate-50 py-6 px-4 font-headline text-sm font-semibold uppercase tracking-widest border-r border-slate-200">
+<div class="flex items-center gap-3 mb-10 px-2">
+<div class="h-10 w-10 bg-navy-blue rounded flex items-center justify-center text-white">
+<span class="material-symbols-outlined">account_balance</span>
+</div>
+<div>
+<h2 class="text-lg font-bold text-navy-blue leading-tight">Sovereign Portal</h2>
+<p class="text-[10px] text-slate-500 normal-case tracking-normal">Official Government Workspace</p>
+</div>
+</div>
+<nav class="flex-1 space-y-2">
+<a class="text-slate-700 hover:bg-slate-200 px-4 py-3 flex items-center gap-3 transition-transform hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">home</span>
+                Home
+            </a>
+<a class="text-slate-700 hover:bg-slate-200 px-4 py-3 flex items-center gap-3 transition-transform hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">gavel</span>
+                Directives
+            </a>
+<a class="text-slate-700 hover:bg-slate-200 px-4 py-3 flex items-center gap-3 transition-transform hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+                Resources
+            </a>
+<a class="bg-navy-blue text-white rounded-sm shadow-md px-4 py-3 flex items-center gap-3" href="#">
+<span class="material-symbols-outlined">analytics</span>
+                Analytic
+            </a>
+<a class="text-slate-700 hover:bg-slate-200 px-4 py-3 flex items-center gap-3 transition-transform hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">history</span>
+                Archive
+            </a>
+</nav>
+<div class="mt-auto space-y-1">
+<button class="w-full bg-saffron text-white py-3 rounded-sm font-bold shadow-md mb-6 hover:opacity-90 transition-all">New Initiative</button>
+<a class="text-slate-700 hover:bg-slate-200 px-4 py-2 flex items-center gap-3 transition-transform hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">help</span>
+                Support
+            </a>
+<a class="text-slate-700 hover:bg-slate-200 px-4 py-2 flex items-center gap-3 transition-transform hover:translate-x-1" href="#">
+<span class="material-symbols-outlined">rate_review</span>
+                Feedback
+            </a>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="flex-1 md:ml-64 p-8 max-w-7xl mx-auto">
+<!-- Header Section -->
+<header class="mb-10 flex flex-col md:flex-row md:items-end justify-between gap-6 border-b pb-8">
+<div>
+<div class="flex items-center gap-3 mb-3">
+<span class="bg-saffron text-white px-3 py-1 rounded-sm text-xs font-bold uppercase tracking-widest shadow-sm">In Progress</span>
+<span class="text-slate-500 font-label text-sm font-semibold">REF ID: PRJ-2024-8842</span>
+</div>
+<h1 class="text-4xl font-extrabold font-headline text-navy-blue tracking-tight">Pothole Maintenance &amp; Drainage Block</h1>
+<p class="text-slate-600 mt-2 font-body max-w-3xl leading-relaxed">Reported at Sector 14 Main Road junction. Severe water logging hindering traffic flow and safety for public transport and commuters.</p>
+</div>
+<div class="flex gap-4">
+<button class="bg-slate-100 text-navy-blue px-6 py-3 rounded border border-navy-blue/20 font-bold flex items-center gap-2 hover:bg-slate-200 transition-all">
+<span class="material-symbols-outlined text-sm">print</span>
+                    Export PDF
+                </button>
+<button class="bg-saffron text-white px-8 py-3 rounded font-bold shadow-lg hover:brightness-110 hover:-translate-y-0.5 transition-all">
+                    Request Urgent Action
+                </button>
+</div>
+</header>
+<!-- Bento Layout Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
+<!-- Left Column: Timeline & Interaction -->
+<div class="lg:col-span-2 space-y-10">
+<!-- Progress Timeline -->
+<section class="bg-slate-50 rounded-lg p-8 border border-slate-200 shadow-sm">
+<h3 class="text-xl font-bold font-headline mb-10 flex items-center gap-3 text-navy-blue border-b border-slate-200 pb-4">
+<span class="material-symbols-outlined">history</span>
+                        Resolution Timeline
+                    </h3>
+<div class="relative space-y-12 before:content-[''] before:absolute before:left-[11px] before:top-2 before:bottom-2 before:w-[2px] before:bg-slate-300">
+<!-- Timeline Item 1 - Resolved -->
+<div class="relative pl-10">
+<div class="absolute left-0 top-1 w-6 h-6 rounded-full bg-indian-green border-4 border-white flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-[12px] text-white font-black">check</span>
+</div>
+<div>
+<div class="flex justify-between items-start mb-1">
+<h4 class="font-bold text-navy-blue">Complaint Lodged</h4>
+<span class="text-[10px] font-bold text-slate-500 bg-white border border-slate-200 px-2 py-1 rounded">MAY 12, 10:45 AM</span>
+</div>
+<p class="text-sm text-slate-600">System successfully registered the grievance. Assigned to the Municipal Engineering Department.</p>
+</div>
+</div>
+<!-- Timeline Item 2 - Resolved -->
+<div class="relative pl-10">
+<div class="absolute left-0 top-1 w-6 h-6 rounded-full bg-indian-green border-4 border-white flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-[12px] text-white font-black">check</span>
+</div>
+<div>
+<div class="flex justify-between items-start mb-1">
+<h4 class="font-bold text-navy-blue">Officer Assigned</h4>
+<span class="text-[10px] font-bold text-slate-500 bg-white border border-slate-200 px-2 py-1 rounded">MAY 13, 09:15 AM</span>
+</div>
+<p class="text-sm text-slate-600">Assistant Engineer <span class="text-navy-blue font-bold">Rajesh Kumar</span> has been assigned for site inspection.</p>
+</div>
+</div>
+<!-- Timeline Item 3 - Pending/Update -->
+<div class="relative pl-10">
+<div class="absolute left-0 top-1 w-6 h-6 rounded-full bg-saffron border-4 border-white flex items-center justify-center shadow-sm">
+<span class="material-symbols-outlined text-[12px] text-white font-black">priority_high</span>
+</div>
+<div class="bg-white p-6 rounded border-2 border-navy-blue shadow-md">
+<div class="flex justify-between items-start mb-4">
+<div>
+<h4 class="font-bold text-navy-blue uppercase tracking-tight">Official Update</h4>
+<span class="text-[10px] text-indian-green font-bold uppercase tracking-widest">Engineering Dept</span>
+</div>
+<span class="text-[10px] font-bold text-slate-500">YESTERDAY, 4:30 PM</span>
+</div>
+<p class="text-sm text-slate-800 italic mb-4 leading-relaxed bg-slate-50 p-3 rounded border-l-4 border-navy-blue">
+                                    "Initial inspection completed. Potholes are caused by a burst underground pipe. Water department has been co-ordinated for joint repair starting tomorrow morning."
+                                </p>
+<div class="flex gap-3">
+<div class="h-20 w-20 bg-slate-100 rounded border border-navy-blue/10 overflow-hidden">
+<img alt="Inspection photo 1" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAXN8YQt6a21EuGNBnhVIusxmCu5uitZME-8PDmFgEYOUjbXo7820QnA7BMNVWlh5DR7-6worlW6AbDHRnw3rgvaehCLz55APRRcojBFcewgJM9frujVO5Pdy0v3vcLWbrH2CI1tSciwTDym8TUWMGcoPnUPJMglbkcPnw9QS6h-fP39lsSAJzVZ04bDtjfbOgx-xu60khpwo1TtdZNQEHFC4ghy30i8eUl-9L_CWVcXXA8G6hm_fk3T0_xQatST609oWy23GGs5t4"/>
+</div>
+<div class="h-20 w-20 bg-slate-100 rounded border border-navy-blue/10 overflow-hidden">
+<img alt="Inspection photo 2" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuD4vAYvGRQ02sj8wA1z0O4UpxgHsC18mQdngzsUkUNFWkPSBljhbzF5Onli1fFNbWf9WQoYPGbUHeWUhMB--ngcNbUDK09p5r4Gb5VGwO7za30VgZSy4E_miJw4nK8yN06ni_EMtORlHecqL88ywbAJuAd77Mj9wnvYabhGLRzbQq3Trmt8LgiwYxw2lHrp-aOXaT-8646hiJ_iCt-kIkcI81H8Jg21BH64Rm1GjYW-2FZEVfAatnFBw97vHzHINKQmq3DGmehAico"/>
+</div>
+</div>
+</div>
+</div>
+<!-- Timeline Item 4 - Current -->
+<div class="relative pl-10">
+<div class="absolute left-0 top-1 w-6 h-6 rounded-full bg-saffron border-4 border-white animate-pulse shadow-md"></div>
+<div>
+<div class="flex justify-between items-start mb-1">
+<h4 class="font-bold text-saffron uppercase">Repair Commenced</h4>
+<span class="text-[10px] font-bold text-saffron bg-saffron/10 px-2 py-1 rounded">JUST NOW</span>
+</div>
+<p class="text-sm text-slate-600">Maintenance crew is currently on-site. Traffic diversion in place for the next 6 hours. Expect minor delays.</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Post Update / Evidence Section -->
+<section class="bg-white rounded-lg p-8 border-2 border-navy-blue/10 shadow-lg">
+<h3 class="text-xl font-bold font-headline mb-6 text-navy-blue">Post Update or Evidence</h3>
+<div class="space-y-6">
+<textarea class="w-full h-40 bg-slate-50 border-2 border-slate-100 rounded-lg p-5 focus:ring-2 focus:ring-navy-blue focus:border-navy-blue font-body text-sm resize-none" placeholder="Provide additional details or ask a question to the assigned officer..." spellcheck="false"></textarea>
+<div class="flex items-center justify-between border-t border-slate-100 pt-6">
+<div class="flex gap-4">
+<button class="px-4 py-2 text-slate-700 hover:bg-slate-100 rounded border border-slate-200 transition-colors flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+<span class="material-symbols-outlined text-lg">attach_file</span>
+                                    Add Photo
+                                </button>
+<button class="px-4 py-2 text-slate-700 hover:bg-slate-100 rounded border border-slate-200 transition-colors flex items-center gap-2 text-xs font-bold uppercase tracking-wider">
+<span class="material-symbols-outlined text-lg">location_on</span>
+                                    Update GPS
+                                </button>
+</div>
+<button class="bg-navy-blue text-white px-10 py-3 rounded font-bold hover:brightness-110 shadow-md transition-all">SUBMIT UPDATE</button>
+</div>
+</div>
+</section>
+</div>
+<!-- Right Column: Details Sidebar -->
+<div class="space-y-10">
+<!-- Officer Profile - Navy Blue Theme -->
+<div class="bg-navy-blue text-white p-8 rounded shadow-xl relative overflow-hidden">
+<div class="absolute top-0 right-0 w-48 h-48 bg-white/5 rounded-full -mr-20 -mt-20 blur-3xl"></div>
+<h4 class="text-[10px] uppercase tracking-[0.3em] font-bold opacity-60 mb-6">Assigned Authority</h4>
+<div class="flex items-center gap-5 mb-8">
+<div class="h-16 w-16 rounded shadow-inner bg-white/10 flex items-center justify-center text-white font-bold text-2xl border border-white/20">RK</div>
+<div>
+<h5 class="text-xl font-extrabold font-headline">Rajesh Kumar</h5>
+<p class="text-xs text-slate-300 font-medium">Sr. Assistant Engineer</p>
+</div>
+</div>
+<div class="space-y-4">
+<div class="flex items-center gap-4 text-sm font-medium">
+<span class="material-symbols-outlined text-saffron">call</span>
+<span>+91 98765 00012</span>
+</div>
+<div class="flex items-center gap-4 text-sm font-medium">
+<span class="material-symbols-outlined text-saffron">mail</span>
+<span>r.kumar@municipal.gov</span>
+</div>
+</div>
+<button class="w-full mt-8 py-3 bg-white text-navy-blue hover:bg-slate-100 rounded font-bold text-xs uppercase tracking-widest transition-all">Request Callback</button>
+</div>
+<!-- Map/Location Card - Navy/White Bordered -->
+<div class="bg-white rounded border-2 border-navy-blue overflow-hidden shadow-md">
+<div class="h-56 w-full bg-slate-200 relative border-b-2 border-navy-blue">
+<img alt="Map Location" class="w-full h-full object-cover" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAEW0DO2Czi8_xONxkitqD857BRIU7ZABCVlom_Th64oVNprPi1JbcaQDxjJmOu01ZGzjJf3FccjQ0PAX7s3nDrvH_3cZz6jGs0jxAnvCDO0buIoqm4zJ8VbqnehmEJGPtwpKit9CdZy8iMsd_nPR11OFA07edWgIgWg7yG-UMwqaRQYDjnAM23Y09K8nOU1rdklT8kCAjgje6_hM6_G7nJL87pVWHOlAtS5OzQ2OJYEDLZuzn7l73ty_DMU0aSQgSyQGGJIwCmdQw"/>
+<div class="absolute inset-0 bg-navy-blue/10 pointer-events-none"></div>
+<div class="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2">
+<span class="material-symbols-outlined text-saffron text-6xl drop-shadow-xl" style="font-variation-settings: 'FILL' 1;">location_on</span>
+</div>
+</div>
+<div class="p-6">
+<div class="flex justify-between items-start">
+<div>
+<h5 class="font-extrabold text-navy-blue text-lg mb-1">Sector 14 Junction</h5>
+<p class="text-[10px] font-bold text-slate-500 uppercase tracking-widest">28.6139° N, 77.2090° E</p>
+</div>
+</div>
+<button class="w-full mt-6 py-2 border-2 border-navy-blue text-navy-blue text-[10px] font-black uppercase tracking-widest flex items-center justify-center gap-2 hover:bg-navy-blue hover:text-white transition-all">
+                            View Large Map
+                            <span class="material-symbols-outlined text-sm">open_in_new</span>
+</button>
+</div>
+</div>
+<!-- Department Stats Card -->
+<div class="bg-slate-50 p-6 rounded border border-slate-200 shadow-sm">
+<h4 class="text-xs font-black text-navy-blue uppercase tracking-widest mb-6 border-b border-slate-200 pb-3">Department Performance</h4>
+<div class="space-y-6">
+<div>
+<div class="flex justify-between text-[10px] font-bold uppercase mb-2">
+<span class="text-slate-500">Response Time</span>
+<span class="text-indian-green">Fast (24h)</span>
+</div>
+<div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+<div class="bg-indian-green h-full w-[85%]"></div>
+</div>
+</div>
+<div>
+<div class="flex justify-between text-[10px] font-bold uppercase mb-2">
+<span class="text-slate-500">Success Rate</span>
+<span class="text-navy-blue">92%</span>
+</div>
+<div class="w-full bg-slate-200 h-2 rounded-full overflow-hidden">
+<div class="bg-navy-blue h-full w-[92%]"></div>
+</div>
+</div>
+</div>
+<div class="mt-8 flex items-start gap-3 bg-white p-3 rounded border border-slate-200">
+<span class="material-symbols-outlined text-indian-green text-lg">verified</span>
+<p class="text-[10px] text-slate-600 font-medium leading-relaxed">This department has successfully resolved 43 similar issues in your locality this month.</p>
+</div>
+</div>
+</div>
+</div>
+</main>
+</div>
+<!-- Footer - Green Base -->
+<footer class="w-full py-20 bg-indian-green text-white font-headline text-xs font-medium leading-loose flex flex-col items-center justify-center text-center gap-6">
+<div class="flex flex-col items-center gap-4">
+<img alt="White Logo" class="h-16 w-16 brightness-0 invert opacity-90" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAPUZK9n03v-pySdCQPw40jsCTu-IWhsjBBc0sFgJLZhi6T1N_ePMhr9mPu93ui_QVlGemhPp-ybJQumA2RNPeGspDVTqpvR-6TIg4juRd0fWiSH6ESJI3GtH9HjYu4Sms539taAXwd4lDFo5XLl19vWQHpKS4oUGJEKaf8fihmdjbCbwbj_LN56TYbseSOEr1JCSdBhstQWixdPrWVoDeI-ZBC6dmON6A7MGY8XR-_YvR7nWm6OJZsMvYtzOQuq_83FxlXz00vbuE"/>
+<p class="max-w-md opacity-90">© 2024 Government of India. All Rights Reserved. <br/>Designed for Editorial Sovereignty and Public Redressal.</p>
+</div>
+<div class="flex gap-10">
+<a class="text-green-50 opacity-80 hover:opacity-100 transition-opacity" href="#">Privacy Policy</a>
+<a class="text-green-50 opacity-80 hover:opacity-100 transition-opacity" href="#">Terms of Service</a>
+<a class="text-green-50 opacity-80 hover:opacity-100 transition-opacity" href="#">Accessibility Statement</a>
+<a class="text-green-50 opacity-80 hover:opacity-100 transition-opacity" href="#">Contact Us</a>
+</div>
+<div class="mt-4 pt-8 border-t border-white/10 w-full max-w-4xl opacity-60 text-[10px] uppercase tracking-widest">
+        Official Grievance Redressal Mechanism • Digital India Initiative
+    </div>
+</footer>
+</body></html>

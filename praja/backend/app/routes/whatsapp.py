@@ -44,9 +44,10 @@ def detect_language(text: str) -> str:
 import os
 import httpx
 import tempfile
+import base64
 
 def _download_and_transcribe(media_url: str) -> str:
-    """Download a Twilio voice note and transcribe using Groq Whisper API"""
+    """Download a Twilio voice note and transcribe using Bhashini ASR API"""
     try:
         auth = None
         if settings.TWILIO_ACCOUNT_SID and settings.TWILIO_AUTH_TOKEN:
@@ -56,22 +57,36 @@ def _download_and_transcribe(media_url: str) -> str:
             resp = client.get(media_url, auth=auth, follow_redirects=True)
             resp.raise_for_status()
 
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".ogg") as tmp:
-            tmp.write(resp.content)
-            tmp_path = tmp.name
+        base64_audio = base64.b64encode(resp.content).decode("utf-8")
+        
+        bhashini_url = "https://dhruva-api.bhashini.gov.in/services/inference/pipeline"
+        
+        payload = {
+            "pipelineTasks": [
+                {
+                    "taskType": "asr",
+                    "config": {
+                        "language": {"sourceLanguage": "hi"},
+                        "audioFormat": "ogg"
+                    }
+                }
+            ],
+            "inputData": {
+                "audio": [{"audioContent": base64_audio}]
+            }
+        }
 
-        with open(tmp_path, "rb") as f:
-            audio_data = f.read()
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": "VWunAyj_NMzI490Y9GHMvn3MX2k5i6njN7O8EWpddnvBv8zyj_kviEid9rKhB-iA"
+        }
 
-        # 1. Get original text using Whisper
-        transcription = groq_client.audio.transcriptions.create(
-            file=("audio.ogg", audio_data),
-            model="whisper-large-v3",
-            prompt="Citizen grievance audio. Languages: English, Hindi, Marathi, Tamil, Telugu, Kannada, Malayalam, Gujarati. Common words: purse, theft, chori, water, road, electricity, bribe, harass. माझा पर्स चोरीला गेला, मेरा पर्स चोरी हो गया."
-        )
-
-        os.remove(tmp_path)
-        return transcription.text
+        with httpx.Client(timeout=30) as client:
+            res = client.post(bhashini_url, json=payload, headers=headers)
+            res.raise_for_status()
+            data = res.json()
+            return data["pipelineResponse"][0]["output"][0]["source"]
+            
     except Exception as e:
         print(f"Transcription error: {e}")
         return ""

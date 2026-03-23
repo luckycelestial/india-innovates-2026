@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Submit Grievance | Praja Sovereign</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;600;700;800;900&amp;family=Inter:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "saffron": "#ff9933",
+              "navy-blue": "#000080",
+              "indian-green": "#138808",
+              "on-secondary-container": "#541d00",
+              "on-surface": "#1a1a2e",
+              "tertiary": "#002905",
+              "surface-container-highest": "#e2e0fc",
+              "surface-variant": "#e2e0fc",
+              "background": "#ffffff",
+              "error-container": "#ffdad6",
+              "on-surface-variant": "#444652",
+              "surface-container": "#f8fafc",
+              "secondary-container": "#ff9933",
+              "primary-fixed-dim": "#b4c5ff",
+              "on-tertiary-container": "#62b260",
+              "surface-container-lowest": "#ffffff",
+              "primary-container": "#000080",
+              "on-primary-container": "#ffffff",
+              "surface": "#ffffff",
+              "on-secondary-fixed-variant": "#7c2e00",
+              "secondary-fixed-dim": "#ffb596",
+              "secondary": "#ff9933",
+              "on-error": "#ffffff",
+              "surface-container-low": "#f1f5f9",
+              "on-secondary": "#ffffff",
+              "primary-fixed": "#dbe1ff",
+              "inverse-primary": "#b4c5ff",
+              "inverse-surface": "#2f2e43",
+              "on-error-container": "#93000a",
+              "inverse-on-surface": "#f2efff",
+              "on-primary": "#ffffff",
+              "primary": "#000080",
+              "on-secondary-fixed": "#360f00",
+              "surface-bright": "#ffffff",
+              "secondary-fixed": "#ffdbcd",
+              "tertiary-fixed": "#a3f69c",
+              "on-tertiary-fixed": "#002204",
+              "on-primary-fixed": "#00174b",
+              "on-tertiary-fixed-variant": "#005312",
+              "surface-container-high": "#e2e8f0",
+              "surface-dim": "#cbd5e1",
+              "outline-variant": "#cbd5e1",
+              "outline": "#64748b",
+              "on-tertiary": "#ffffff",
+              "on-background": "#0f172a",
+              "on-primary-fixed-variant": "#1c4197",
+              "surface-tint": "#000080",
+              "error": "#ba1a1a",
+              "tertiary-fixed-dim": "#88d982",
+              "tertiary-container": "#138808"
+            },
+            fontFamily: {
+              "headline": ["Public Sans", "sans-serif"],
+              "body": ["Inter", "sans-serif"],
+              "label": ["Inter", "sans-serif"]
+            },
+            borderRadius: {"DEFAULT": "0.125rem", "lg": "0.25rem", "xl": "0.5rem", "full": "9999px"},
+          },
+        },
+      }
+    </script>
+<style>
+      .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+      }
+      .ashoka-chakra-spin {
+        animation: spin 20s linear infinite;
+      }
+      @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+      }
+    </style>
+</head>
+<body class="bg-background font-body text-on-surface flex flex-col min-h-screen">
+<!-- TopNavBar Shared Component Implementation -->
+<nav class="fixed top-0 w-full z-50 bg-white border-t-8 border-saffron border-b-4 border-indian-green shadow-sm h-20">
+<div class="max-w-screen-2xl mx-auto flex justify-between items-center px-8 h-full">
+<div class="flex items-center gap-4">
+<img alt="Praja Sovereign Logo" class="h-12 w-12 object-contain" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAPUZK9n03v-pySdCQPw40jsCTu-IWhsjBBc0sFgJLZhi6T1N_ePMhr9mPu93ui_QVlGemhPp-ybJQumA2RNPeGspDVTqpvR-6TIg4juRd0fWiSH6ESJI3GtH9HjYu4Sms539taAXwd4lDFo5XLl19vWQHpKS4oUGJEKaf8fihmdjbCbwbj_LN56TYbseSOEr1JCSdBhstQWixdPrWVoDeI-ZBC6dmON6A7MGY8XR-_YvR7nWm6OJZsMvYtzOQuq_83FxlXz00vbuE"/>
+<div class="text-2xl font-black text-slate-900 uppercase tracking-tighter font-headline">PRAJA SOVEREIGN</div>
+</div>
+<div class="hidden md:flex items-center gap-8 font-headline font-bold tracking-tight">
+<a class="text-slate-600 hover:text-navy-blue transition-colors" href="#">Dashboard</a>
+<a class="text-navy-blue border-b-2 border-navy-blue pb-1" href="#">Services</a>
+<a class="text-slate-600 hover:text-navy-blue transition-colors" href="#">Schemes</a>
+<a class="text-slate-600 hover:text-navy-blue transition-colors" href="#">About</a>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative hidden lg:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
+<input class="pl-10 pr-4 py-2 rounded bg-slate-100 border-none focus:ring-2 focus:ring-navy-blue/20 w-64 text-sm" placeholder="Search portal..." type="text"/>
+</div>
+<button class="bg-navy-blue text-white px-6 py-2.5 rounded font-headline font-bold text-sm hover:opacity-90 active:scale-95 transition-all shadow-md">
+                Citizen Login
+            </button>
+</div>
+</div>
+</nav>
+<main class="flex-grow pt-32 pb-20 px-4 md:px-8 max-w-6xl mx-auto w-full">
+<!-- Header Section -->
+<header class="mb-12 text-center">
+<h1 class="font-headline font-black text-4xl md:text-5xl text-navy-blue tracking-tight mb-4">
+            Grievance Redressal Portal
+        </h1>
+<p class="text-slate-600 max-w-2xl mx-auto text-lg leading-relaxed font-medium">
+            Official platform for citizens to voice concerns directly to government departments.
+        </p>
+</header>
+<!-- Progress Indicator - Navy Blue & Saffron -->
+<div class="mb-16 max-w-4xl mx-auto">
+<div class="flex items-center justify-between relative px-2">
+<!-- Connector Line Background -->
+<div class="absolute top-5 left-0 w-full h-1 bg-slate-100 -z-10"></div>
+<!-- Progress Fill -->
+<div class="absolute top-5 left-0 w-1/3 h-1 bg-navy-blue -z-10"></div>
+<div class="flex flex-col items-center gap-3 bg-white px-4">
+<div class="w-12 h-12 rounded-full bg-navy-blue text-white flex items-center justify-center font-bold shadow-lg ring-4 ring-white">1</div>
+<span class="text-xs font-black font-headline uppercase tracking-widest text-navy-blue">Submission</span>
+</div>
+<div class="flex flex-col items-center gap-3 bg-white px-4">
+<div class="w-12 h-12 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-bold ring-4 ring-white">2</div>
+<span class="text-xs font-black font-headline uppercase tracking-widest text-slate-400">Department</span>
+</div>
+<div class="flex flex-col items-center gap-3 bg-white px-4">
+<div class="w-12 h-12 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center font-bold ring-4 ring-white">3</div>
+<span class="text-xs font-black font-headline uppercase tracking-widest text-slate-400">Confirmation</span>
+</div>
+</div>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-12">
+<!-- Main Form Column -->
+<div class="lg:col-span-8 space-y-12">
+<!-- Section 1: Core Content -->
+<section class="bg-white p-8 md:p-10 rounded-xl border border-slate-200 shadow-sm">
+<div class="flex items-center gap-4 mb-8">
+<span class="material-symbols-outlined text-saffron text-3xl">edit_document</span>
+<h2 class="font-headline font-bold text-2xl text-navy-blue">Grievance Particulars</h2>
+</div>
+<div class="space-y-8">
+<div>
+<label class="block text-xs font-black font-headline tracking-widest text-slate-500 mb-2 uppercase">Subject of Grievance</label>
+<input class="w-full bg-slate-50 border border-slate-200 rounded-lg p-4 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-navy-blue focus:border-transparent transition-all" placeholder="Enter a concise title for your concern" type="text"/>
+</div>
+<div>
+<label class="block text-xs font-black font-headline tracking-widest text-slate-500 mb-2 uppercase">Detailed Description</label>
+<textarea class="w-full bg-slate-50 border border-slate-200 rounded-lg p-4 text-slate-900 placeholder:text-slate-400 focus:ring-2 focus:ring-navy-blue focus:border-transparent transition-all" placeholder="Provide full context, including dates, names, and locations..." rows="6"></textarea>
+<div class="flex justify-between items-center mt-2">
+<p class="text-xs text-slate-400 italic">Character limit: 2000</p>
+<p class="text-xs font-bold text-navy-blue">Mandatory Field*</p>
+</div>
+</div>
+</div>
+</section>
+<!-- Section 2: Department Selection -->
+<section class="bg-slate-50 p-8 md:p-10 rounded-xl border border-slate-200">
+<div class="flex justify-between items-end mb-8">
+<div class="flex items-center gap-4">
+<span class="material-symbols-outlined text-saffron text-3xl">account_balance</span>
+<div>
+<h2 class="font-headline font-bold text-2xl text-navy-blue">Target Department</h2>
+<p class="text-sm text-slate-500 font-medium">Route your grievance to the correct authority.</p>
+</div>
+</div>
+<button class="text-navy-blue font-headline font-bold text-sm hover:underline flex items-center gap-1">
+                        All Ministries <span class="material-symbols-outlined text-sm">open_in_new</span>
+</button>
+</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+<button class="flex items-start gap-4 p-5 bg-white rounded-xl border-2 border-slate-100 hover:border-saffron hover:shadow-md transition-all text-left group">
+<div class="p-3 bg-slate-100 rounded-lg text-navy-blue group-hover:bg-saffron group-hover:text-white transition-colors">
+<span class="material-symbols-outlined">commute</span>
+</div>
+<div>
+<h3 class="font-bold text-navy-blue">Roads &amp; Transport</h3>
+<p class="text-xs text-slate-500 leading-tight mt-1">Highways, local roads, and transit.</p>
+</div>
+</button>
+<button class="flex items-start gap-4 p-5 bg-white rounded-xl border-2 border-navy-blue shadow-md text-left">
+<div class="p-3 bg-navy-blue rounded-lg text-white">
+<span class="material-symbols-outlined">health_and_safety</span>
+</div>
+<div>
+<h3 class="font-bold text-navy-blue">Health &amp; Welfare</h3>
+<p class="text-xs text-slate-500 leading-tight mt-1">Medical care and public health safety.</p>
+</div>
+</button>
+<button class="flex items-start gap-4 p-5 bg-white rounded-xl border-2 border-slate-100 hover:border-saffron hover:shadow-md transition-all text-left group">
+<div class="p-3 bg-slate-100 rounded-lg text-navy-blue group-hover:bg-saffron group-hover:text-white transition-colors">
+<span class="material-symbols-outlined">electric_bolt</span>
+</div>
+<div>
+<h3 class="font-bold text-navy-blue">Power &amp; Energy</h3>
+<p class="text-xs text-slate-500 leading-tight mt-1">Electricity and renewable resources.</p>
+</div>
+</button>
+<button class="flex items-start gap-4 p-5 bg-white rounded-xl border-2 border-slate-100 hover:border-saffron hover:shadow-md transition-all text-left group">
+<div class="p-3 bg-slate-100 rounded-lg text-navy-blue group-hover:bg-saffron group-hover:text-white transition-colors">
+<span class="material-symbols-outlined">school</span>
+</div>
+<div>
+<h3 class="font-bold text-navy-blue">Public Education</h3>
+<p class="text-xs text-slate-500 leading-tight mt-1">Academic standards and institutions.</p>
+</div>
+</button>
+</div>
+</section>
+<!-- Section 3: Evidence Upload -->
+<section class="bg-white p-8 md:p-10 rounded-xl border border-slate-200 shadow-sm">
+<div class="flex items-center gap-4 mb-6">
+<span class="material-symbols-outlined text-saffron text-3xl">attachment</span>
+<h2 class="font-headline font-bold text-2xl text-navy-blue">Supporting Evidence</h2>
+</div>
+<div class="border-2 border-dashed border-slate-200 rounded-xl p-10 text-center hover:bg-slate-50 hover:border-navy-blue transition-all group cursor-pointer">
+<span class="material-symbols-outlined text-5xl text-slate-300 mb-4 group-hover:text-navy-blue transition-colors">upload_file</span>
+<p class="font-headline font-bold text-lg text-navy-blue">Upload Documents</p>
+<p class="text-sm text-slate-500 mt-2 font-medium">Drag &amp; Drop files or click to browse (Max 10MB)</p>
+</div>
+<div class="mt-8">
+<div class="flex items-center justify-between p-4 bg-slate-50 rounded-lg border border-slate-100">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-navy-blue">description</span>
+<span class="text-sm font-bold text-slate-700">medical_report_case_77.pdf</span>
+</div>
+<button class="text-red-600 hover:bg-red-50 p-2 rounded-full transition-colors">
+<span class="material-symbols-outlined text-sm">delete</span>
+</button>
+</div>
+</div>
+</section>
+<!-- Navigation Actions -->
+<div class="flex flex-col sm:flex-row items-center justify-between gap-6 pt-10 border-t border-slate-200">
+<button class="flex items-center gap-2 text-slate-500 font-headline font-bold hover:text-navy-blue transition-all">
+<span class="material-symbols-outlined">close</span>
+                    Discard Draft
+                </button>
+<button class="w-full sm:w-auto bg-navy-blue text-white px-12 py-4 rounded-xl font-headline font-black text-lg shadow-xl shadow-navy-blue/20 hover:translate-y-[-2px] active:scale-95 transition-all flex items-center gap-3">
+                    Next Step: Review Details
+                    <span class="material-symbols-outlined">arrow_forward</span>
+</button>
+</div>
+</div>
+<!-- Sidebar Info -->
+<aside class="lg:col-span-4 space-y-8">
+<div class="bg-navy-blue p-8 rounded-xl text-white shadow-2xl shadow-navy-blue/30 relative overflow-hidden">
+<span class="material-symbols-outlined text-6xl absolute -top-4 -right-4 opacity-10">policy</span>
+<span class="material-symbols-outlined text-4xl mb-4 text-saffron" style="font-variation-settings: 'FILL' 1;">security</span>
+<h3 class="font-headline font-black text-xl mb-4 leading-tight">Sovereign Protection</h3>
+<p class="text-sm text-white/80 leading-relaxed mb-6 font-medium">
+                    Your grievance is protected by the Citizen's Charter. We ensure confidentiality and a mandatory response window of 15 working days.
+                </p>
+<div class="space-y-4">
+<div class="flex items-center gap-3 text-sm font-bold">
+<span class="material-symbols-outlined text-saffron text-xl">verified</span>
+                        End-to-End Encryption
+                    </div>
+<div class="flex items-center gap-3 text-sm font-bold">
+<span class="material-symbols-outlined text-saffron text-xl">verified</span>
+                        Direct Secretary Oversight
+                    </div>
+</div>
+</div>
+<div class="bg-white p-8 rounded-xl border border-slate-200">
+<h4 class="font-headline font-black text-navy-blue mb-6 uppercase tracking-widest text-xs">Guidelines</h4>
+<ul class="space-y-6">
+<li class="flex gap-4">
+<span class="w-6 h-6 rounded-full bg-saffron text-white flex-shrink-0 flex items-center justify-center text-[10px] font-black">01</span>
+<p class="text-xs text-slate-600 font-bold leading-normal">Ensure your ID matches the portal profile for automatic verification.</p>
+</li>
+<li class="flex gap-4">
+<span class="w-6 h-6 rounded-full bg-saffron text-white flex-shrink-0 flex items-center justify-center text-[10px] font-black">02</span>
+<p class="text-xs text-slate-600 font-bold leading-normal">Matters under judicial consideration cannot be accepted here.</p>
+</li>
+<li class="flex gap-4">
+<span class="w-6 h-6 rounded-full bg-saffron text-white flex-shrink-0 flex items-center justify-center text-[10px] font-black">03</span>
+<p class="text-xs text-slate-600 font-bold leading-normal">Upload clear scans of documents to speed up the vetting process.</p>
+</li>
+</ul>
+</div>
+<div class="relative overflow-hidden rounded-xl bg-slate-900 aspect-video group cursor-pointer shadow-lg">
+<img alt="Legal framework background" class="absolute inset-0 w-full h-full object-cover grayscale opacity-40 group-hover:scale-110 group-hover:opacity-60 transition-all duration-700" src="https://lh3.googleusercontent.com/aida-public/AB6AXuBaTvXczzVArgdE6bQUxdMV4LUmd3X07WCEZBDR5RS1sU8FZgttgMc4lRKutI-gX6MP1gIu-RFnQ4aWbK6vVkCDo1V80HTAl4hh85C7YFRt6WCoS_Z97bO10SId0oSD3LNh4m-fHtSNpfJTigcfWXddMXPefguphqPq_3oIV4vEHxz0Jgvu69vHdJfRWj0FVu22dosWRSveOOqaJXYuYlIPLGdVRH6YcYQMz0ifrTNtBjiu0DucfBXPI8CizB9MvFAD_bzvQ2j1IVk"/>
+<div class="absolute inset-0 bg-gradient-to-t from-navy-blue/90 via-navy-blue/20 to-transparent"></div>
+<div class="absolute bottom-6 left-6 right-6">
+<div class="flex items-center gap-2 text-saffron mb-2">
+<span class="material-symbols-outlined text-sm">help</span>
+<span class="text-[10px] font-black uppercase tracking-widest">Support</span>
+</div>
+<p class="text-white font-headline font-bold text-lg leading-tight">Documentation for Complex Legal Filings</p>
+</div>
+</div>
+</aside>
+</div>
+</main>
+<!-- Footer Shared Component Implementation - Green -->
+<footer class="bg-indian-green w-full py-20 mt-auto">
+<div class="max-w-screen-2xl mx-auto px-8 flex flex-col items-center justify-center text-center gap-8">
+<div class="flex items-center gap-4">
+<div class="w-16 h-16 rounded-full bg-white/10 flex items-center justify-center">
+<img alt="Praja Sovereign" class="h-10 w-10 brightness-0 invert opacity-90" src="https://lh3.googleusercontent.com/aida-public/AB6AXuAPUZK9n03v-pySdCQPw40jsCTu-IWhsjBBc0sFgJLZhi6T1N_ePMhr9mPu93ui_QVlGemhPp-ybJQumA2RNPeGspDVTqpvR-6TIg4juRd0fWiSH6ESJI3GtH9HjYu4Sms539taAXwd4lDFo5XLl19vWQHpKS4oUGJEKaf8fihmdjbCbwbj_LN56TYbseSOEr1JCSdBhstQWixdPrWVoDeI-ZBC6dmON6A7MGY8XR-_YvR7nWm6OJZsMvYtzOQuq_83FxlXz00vbuE"/>
+</div>
+<div class="text-left">
+<p class="text-white font-headline font-black text-xl uppercase tracking-tighter">PRAJA SOVEREIGN</p>
+<p class="text-green-100/60 text-xs font-medium uppercase tracking-widest">Empowering Citizen Redressal</p>
+</div>
+</div>
+<div class="flex flex-wrap justify-center gap-10">
+<a class="text-green-50 opacity-80 hover:opacity-100 font-headline text-xs font-medium uppercase tracking-widest transition-opacity underline" href="#">Privacy Policy</a>
+<a class="text-green-50 opacity-80 hover:opacity-100 font-headline text-xs font-medium uppercase tracking-widest transition-opacity" href="#">Terms of Service</a>
+<a class="text-green-50 opacity-80 hover:opacity-100 font-headline text-xs font-medium uppercase tracking-widest transition-opacity" href="#">Accessibility Statement</a>
+<a class="text-green-50 opacity-80 hover:opacity-100 font-headline text-xs font-medium uppercase tracking-widest transition-opacity" href="#">Contact Us</a>
+</div>
+<div class="max-w-xl">
+<p class="text-white/70 font-public-sans text-xs font-medium leading-loose">
+                © 2024 Government of India. All Rights Reserved. Designed for Editorial Sovereignty. Managed by Department of Administrative Reforms &amp; Public Grievances.
+            </p>
+</div>
+<!-- Ashoka Chakra Decoration -->
+<div class="opacity-10">
+<span class="material-symbols-outlined text-6xl text-white ashoka-chakra-spin">settings_motion</span>
+</div>
+</div>
+</footer>
+</body></html>
