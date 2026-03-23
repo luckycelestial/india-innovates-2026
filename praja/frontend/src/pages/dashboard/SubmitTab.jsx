@@ -33,64 +33,7 @@ export default function SubmitTab({ onToast }) {
 
       mediaRecorderRef.current.start();
       setIsRecording(true);
-      onToast('Listening... Speak your complaint.', 'success');
-    } catch (err) {
-      onToast('Microphone access denied or unavailable.', 'error');
-    }
-  };
-
-  const stopRecording = () => {
-    if (mediaRecorderRef.current && isRecording) {
-      mediaRecorderRef.current.stop();
-      setIsRecording(false);
-      setIsTranscribing(true);
-      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
-    }
-  };
-
-  const handleAudioUpload = async (blob) => {
-    try {
-      const formData = new FormData();
-      formData.append('audio', blob, 'recording.webm');
-      
-      const token = localStorage.getItem('praja_token');
-            const res = await fetch((import.meta.env.VITE_API_URL || 'https://prajavox-backend.vercel.app') + '/api/mic/transcribe', {
-        method: 'POST',
-        headers: {
-          'Authorization': Bearer  
-        },
-        body: formData,
-      });
-      
-      if (!res.ok) throw new Error('Transcription failed');
-      
-      const data = await res.json();
-      if (data.english_text) {
-        setDesc(data.original_text + '\n\n[English]: ' + data.english_text);
-        if (!title) setTitle('Voice Complaint');
-        onToast('Audio transcribed successfully!', 'success');
-      } else {
-        onToast('Could not understand the audio.', 'error');
-      }
-    } catch (err) {
-      onToast('Transcription Error', 'error');
-    } finally {
-      setIsTranscribing(false);
-    }
-  };
-
-  const { mutate: submitGrievance, loading, error } = useMutation('post');
-
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setSubmitted(null);
-    try {
-      const body = { title, description };
-      if (photoUrl.trim()) body.photo_url = photoUrl.trim();
-      const data = await submitGrievance('/grievances/submit', body);
-      setSubmitted(data);
-      setTitle(''); setDesc(''); setPhotoUrl('');
-      onToast(`âœ… Submitted â€” ID: ${data.tracking_id}`, 'success');
+      onToast(✅ Submitted - ID: ${data.tracking_id}`, 'success');
     } catch (err) {
       onToast(`âŒ ${err.message}`, 'error');
     }
@@ -127,13 +70,13 @@ export default function SubmitTab({ onToast }) {
           gap: 8,
         }}>
           <div style={{ fontWeight: 700, color: 'var(--color-success-text)', fontSize: '0.95rem' }}>
-            âœ… Complaint submitted successfully
+              ✅ Complaint submitted successfully
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10, fontSize: '0.84rem' }}>
             <span style={{ color: 'var(--text-secondary)' }}>Tracking ID:</span>
             <span className="ud-tracking-id">{submitted.tracking_id}</span>
             {submitted.ai_category && (
-              <span style={{ color: 'var(--text-secondary)' }}>📂 {submitted.ai_category}</span>
+              <span style={{ color: \'var(--text-secondary)\' }}>📂 {submitted.ai_category}</span>
             )}
             {submitted.priority && (
               <span style={{
@@ -221,6 +164,12 @@ export default function SubmitTab({ onToast }) {
     </div>
   );
 }
+
+
+
+
+
+
 
 
 
