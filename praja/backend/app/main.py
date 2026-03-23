@@ -36,6 +36,7 @@ app.include_router(sentinel.router,    prefix="/api/sentinel",   tags=["Sentinel
 app.include_router(whatsapp.router,    prefix="/api/whatsapp",   tags=["WhatsApp"])
 app.include_router(sms.router,         prefix="/api/sms",        tags=["SMS"])
 app.include_router(voice.router,       prefix="/api/voice",      tags=["Voice"])
+app.include_router(mic.router,         prefix="/api/mic",        tags=["Mic"])
 
 @app.get("/")
 def root():
