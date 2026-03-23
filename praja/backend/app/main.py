@@ -1,4 +1,4 @@
-from fastapi import FastAPI, Request
+from fastapi import FastAPI, Request, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.config import settings
@@ -22,11 +22,20 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.exception_handler(HTTPException)
+async def http_exception_handler(request: Request, exc: HTTPException):
+    return JSONResponse(
+        status_code=exc.status_code,
+        content={"detail": exc.detail},
+    )
+
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
+    print(f"Unhandled error: {type(exc).__name__}: {str(exc)}")
+    print(traceback.format_exc())
     return JSONResponse(
         status_code=500,
-        content={"error": str(exc), "type": type(exc).__name__, "traceback": traceback.format_exc()},
+        content={"detail": "Server error. Please try again later."},
     )
 
 app.include_router(auth.router,        prefix="/api/auth",       tags=["Auth"])

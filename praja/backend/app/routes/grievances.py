@@ -67,27 +67,31 @@ def create_grievance(
     current: dict = Depends(get_current_user),
     sb: Any = Depends(get_supabase),
 ):
-    cls = _classify(body.title, body.description)
-    now = datetime.now(timezone.utc)
-    hours = SLA_HOURS.get(cls["priority"], 168)
-    sla_deadline = (now + timedelta(hours=hours)).isoformat()
-    insert_data = {
-        "tracking_id":  _gen_tracking_id(),
-        "citizen_id":   current["sub"],
-        "title":        body.title,
-        "description":  body.description,
-        "ai_category":  cls["category"],
-        "ai_sentiment": cls.get("sentiment", "negative"),
-        "priority":     cls["priority"],
-        "status":       "open",
-        "channel":      "web",
-        "sla_deadline":  sla_deadline,
-    }
-    if body.photo_url:
-        insert_data["photo_url"] = body.photo_url
-    row = sb.table("grievances").insert(insert_data).execute()
-    g = row.data[0]
-    return {**g, "tracking_id": g["tracking_id"], "priority": g["priority"]}
+    try:
+        cls = _classify(body.title, body.description)
+        now = datetime.now(timezone.utc)
+        hours = SLA_HOURS.get(cls["priority"], 168)
+        sla_deadline = (now + timedelta(hours=hours)).isoformat()
+        insert_data = {
+            "tracking_id":  _gen_tracking_id(),
+            "citizen_id":   current["sub"],
+            "title":        body.title,
+            "description":  body.description,
+            "ai_category":  cls["category"],
+            "ai_sentiment": cls.get("sentiment", "negative"),
+            "priority":     cls["priority"],
+            "status":       "open",
+            "channel":      "web",
+            "sla_deadline":  sla_deadline,
+        }
+        if body.photo_url:
+            insert_data["photo_url"] = body.photo_url
+        row = sb.table("grievances").insert(insert_data).execute()
+        g = row.data[0]
+        return {**g, "tracking_id": g["tracking_id"], "priority": g["priority"]}
+    except Exception as e:
+        print(f"Error creating grievance: {str(e)}")
+        raise HTTPException(status_code=500, detail="Failed to submit complaint. Please try again.")
 
 
 @router.get("/")

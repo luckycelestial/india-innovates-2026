@@ -54,33 +54,51 @@ export function useFetch(url, options = {}, immediate = true) {
 }
 
 /**
- * Custom hook for POST/PUT/DELETE mutations
+ * Custom hook for POST/PUT/DELETE mutations with retry logic
  * @param {'post'|'put'|'delete'|'patch'} method 
  */
 export function useMutation(method = 'post') {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
-  const mutate = useCallback(async (url, body = null, config = {}) => {
+  const mutate = useCallback(async (url, body = null, config = {}, maxRetries = 3) => {
     setLoading(true);
     setError(null);
-    try {
-      const args = ['delete', 'get'].includes(method.toLowerCase()) 
-        ? [url, config] 
-        : [url, body, config];
-      
-      const response = await api[method.toLowerCase()](...args);
-      return response.data;
-    } catch (err) {
-      const msg = err.response?.data?.detail
-        ? Array.isArray(err.response.data.detail)
-          ? err.response.data.detail.map(d => d.msg || String(d)).join('; ')
-          : String(err.response.data.detail)
-        : err.message || 'Mutation failed';
-      setError(msg);
-      throw new Error(msg);
-    } finally {
-      setLoading(false);
+    let lastErr = null;
+
+    for (let attempt = 0; attempt < maxRetries; attempt++) {
+      try {
+        const args = ['delete', 'get'].includes(method.toLowerCase()) 
+          ? [url, config] 
+          : [url, body, config];
+        
+        const response = await api[method.toLowerCase()](...args);
+        setLoading(false);
+        return response.data;
+      } catch (err) {
+        lastErr = err;
+        // Retry on network errors or 5xx errors, but not on 4xx client errors
+        const isNetworkError = !err.response || err.code === 'ECONNABORTED';
+        const isServerError = err.response?.status >= 500;
+        const shouldRetry = isNetworkError || isServerError;
+
+        if (shouldRetry && attempt < maxRetries - 1) {
+          // Wait with exponential backoff: 500ms, 1000ms, 2000ms
+          await new Promise(resolve => setTimeout(resolve, Math.pow(2, attempt) * 500));
+          continue;
+        }
+
+        // No more retries or don't retry this type of error
+        const msg = err.response?.data?.detail
+          ? Array.isArray(err.response.data.detail)
+            ? err.response.data.detail.map(d => d.msg || String(d)).join('; ')
+            : String(err.response.data.detail)
+          : 'Unable to submit. Please check your connection and try again.';
+        
+        setError(msg);
+        setLoading(false);
+        throw new Error(msg);
+      }
     }
   }, [method]);
 
