@@ -133,7 +133,7 @@ export default function SubmitTab({ onToast }) {
             <span style={{ color: 'var(--text-secondary)' }}>Tracking ID:</span>
             <span className="ud-tracking-id">{submitted.tracking_id}</span>
             {submitted.ai_category && (
-              <span style={{ color: 'var(--text-secondary)' }}>ðŸ“‚ {submitted.ai_category}</span>
+              <span style={{ color: 'var(--text-secondary)' }}>📂 {submitted.ai_category}</span>
             )}
             {submitted.priority && (
               <span style={{
@@ -194,12 +194,12 @@ export default function SubmitTab({ onToast }) {
               }}
               title={isRecording ? "Stop Recording" : "Speak your complaint (Bhashini ASR)"}
             >
-              {isTranscribing ? 'âŒ›' : (isRecording ? 'â¹ï¸' : 'ðŸŽ¤')}
+              {isTranscribing ? "⏳" : (isRecording ? "🛑" : "🎙️")}
             </button>
           </div>
 
           <Input
-            label="ðŸ“· Photo Evidence (optional)"
+            label="📷 Photo Evidence (optional)"
             id="complaint-photo"
             placeholder="Paste an image URL (e.g. https://imgur.com/...)"
             value={photoUrl}
@@ -214,14 +214,16 @@ export default function SubmitTab({ onToast }) {
             />
           )}
           <div style={{ marginTop: 20 }}>
-            <Button type="submit" isLoading={loading} size="lg" fullWidth>
-              ðŸ“¤ Submit Complaint
-            </Button>
+            <Button type="submit" isLoading={loading} size="lg" fullWidth>🚀 Submit Complaint</Button>
           </div>
         </form>
       </Card>
     </div>
   );
 }
+
+
+
+
 
 
