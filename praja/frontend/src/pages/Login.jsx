@@ -58,7 +58,7 @@ export default function Login() {
             style={{
               padding: '20px',
               borderRadius: '10px',
-              border: 2px solid ,
+              border: '2px solid ' + u.color,
               background: '#1e293b',
               color: 'white',
               fontSize: '1.2rem',
