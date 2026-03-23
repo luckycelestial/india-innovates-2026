@@ -36,67 +36,40 @@ export default function Login() {
   const [error, setError] = useState('');
   const [demoOpen, setDemoOpen] = useState(false);
 
-  const handleSubmit = async (e) => {
-    e.preventDefault();
-    setError('');
-    setLoading(true);
+  
+  const forceLoginAndRedirect = (inputAadhaar) => {
+    let role = 'citizen';
+    let name = 'Demo User';
+    let id = 'dummy-' + Math.random().toString(36).substr(2, 9);
+    
+    const cleanAadhaar = inputAadhaar.replace(/\s/g, '').replace(/-/g, '');
 
-    try {
-      let role = 'citizen';
-      let name = 'Demo User';
-      let id = 'dummy-' + Math.random().toString(36).substr(2, 9);
-      
-      const cleanAadhaar = aadhaar.replace(/\s/g, '').replace(/-/g, '');
-
-      if (cleanAadhaar === '111122223333') { role = 'sarpanch'; name = 'Lakshmi Devi'; }
-      else if (cleanAadhaar === '789012345678') { role = 'district_collector'; name = 'Vikram Singh'; }
-      else if (cleanAadhaar === '901234567890') { role = 'mla'; name = 'Arjun Mehta'; }
-      else if (cleanAadhaar === '444455556666') { role = 'mp'; name = 'Rajendra Prasad'; }
-      
-      const user = {
-        id: id,
-        name: name,
-        full_name: name,
-        role: role,
-        aadhaar_number: cleanAadhaar
-      };
-      
-      localStorage.setItem('praja_token', 'mock-token-' + Date.now());
-      localStorage.setItem('praja_user', JSON.stringify(user));
-      
-      // We will try the real login just to trigger the context update, but if it fails, we force redirect anyway
-      try { 
-        await login(cleanAadhaar, password || 'Demo'); 
-      } catch(e) {
-        console.log("Backend login failed, using mock auth");
-      }
-      
-      window.location.href = '/dashboard';
-    } catch (err) {
-      console.error(err);
-      setError('An error occurred. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+    if (cleanAadhaar === '111122223333') { role = 'sarpanch'; name = 'Lakshmi Devi'; }
+    else if (cleanAadhaar === '789012345678') { role = 'district_collector'; name = 'Vikram Singh'; }
+    else if (cleanAadhaar === '901234567890') { role = 'mla'; name = 'Arjun Mehta'; }
+    else if (cleanAadhaar === '444455556666') { role = 'mp'; name = 'Rajendra Prasad'; }
+    
+    const user = {
+      id: id,
+      name: name,
+      full_name: name,
+      role: role,
+      aadhaar_number: cleanAadhaar
+    };
+    
+    localStorage.setItem('praja_token', 'mock-token-' + Date.now());
+    localStorage.setItem('praja_user', JSON.stringify(user));
+    
+    window.location.href = '/dashboard';
   };
 
-  const handleDemoLogin = async (u) => {
-    setAadhaar(u.aadhaar);
-    setPassword(u.password);
-    setError('');
-    setLoading(true);
-    try {
-      await login(u.aadhaar.replace(/\s/g, ''), u.password);
-      navigate('/dashboard');
-    } catch (err) {
-      const detail = err.response?.data?.detail;
-      const msg = Array.isArray(detail)
-        ? detail.map(d => (typeof d === 'object' ? (d.msg || JSON.stringify(d)) : String(d))).join('; ')
-        : (typeof detail === 'string' ? detail : 'Invalid Aadhaar or password. Please try again.');
-      setError(msg);
-    } finally {
-      setLoading(false);
-    }
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    forceLoginAndRedirect(aadhaar);
+  };
+
+  const handleDemoLogin = (u) => {
+    forceLoginAndRedirect(u.aadhaar);
   };
 
   return (
@@ -182,7 +155,7 @@ export default function Login() {
               inputMode="numeric"
               maxLength={14}
               autoComplete="username"
-              required
+              
               hint="12-digit Aadhaar number — auto-formatted"
             />
             <Input
@@ -193,7 +166,7 @@ export default function Login() {
               value={password}
               onChange={e => setPassword(e.target.value)}
               autoComplete="current-password"
-              required
+              
             />
 
             {error && (
