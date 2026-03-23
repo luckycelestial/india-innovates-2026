@@ -19,22 +19,22 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
 def decode_token(token: str) -> dict:
     try:
         if token.startswith("mock-token-"):
-            return {"sub": "mock", "role": "citizen", "id": "mock"}
+            return {"sub": "00000000-0000-0000-0000-000000000000", "role": "citizen", "id": "00000000-0000-0000-0000-000000000000"}
         return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
     except JWTError:
-        return {"sub": "mock", "role": "citizen", "id": "mock"}
+        return {"sub": "00000000-0000-0000-0000-000000000000", "role": "citizen", "id": "00000000-0000-0000-0000-000000000000"}
 
 def get_current_user(token: str | None = Depends(oauth2_scheme)) -> dict:
     if not token:
-        return {"sub": "citizen_mock", "role": "citizen"}
+        return {"sub": "00000000-0000-0000-0000-000000000000", "role": "citizen"}
     try:
         payload = decode_token(token)
         if not payload.get("sub"):
-            return {"sub": "citizen_mock", "role": "citizen"}
+            return {"sub": "00000000-0000-0000-0000-000000000000", "role": "citizen"}
         return payload
     except Exception:
         # Scrap authentication for prototype - mock a citizen user
-        return {"sub": "citizen_mock", "role": "citizen"}
+        return {"sub": "00000000-0000-0000-0000-000000000000", "role": "citizen"}
 
 async def get_current_user_id(token: str = Depends(oauth2_scheme)) -> str:
     payload = decode_token(token)
@@ -42,6 +42,9 @@ async def get_current_user_id(token: str = Depends(oauth2_scheme)) -> str:
     if not user_id:
         raise HTTPException(status_code=401, detail="Invalid token payload")
     return user_id
+
+
+
 
 
 
