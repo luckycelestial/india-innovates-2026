@@ -33,9 +33,9 @@ export default function SubmitTab({ onToast }) {
 
       mediaRecorderRef.current.start();
       setIsRecording(true);
-      onToast(✅ Submitted - ID: ${data.tracking_id}`, 'success');
+      onToast('✅ Submitted - ID: ' + data.tracking_id, 'success');
     } catch (err) {
-      onToast(`âŒ ${err.message}`, 'error');
+      onToast('❌ ' + err.message, 'error');
     }
   };
 
@@ -76,7 +76,7 @@ export default function SubmitTab({ onToast }) {
             <span style={{ color: 'var(--text-secondary)' }}>Tracking ID:</span>
             <span className="ud-tracking-id">{submitted.tracking_id}</span>
             {submitted.ai_category && (
-              <span style={{ color: \'var(--text-secondary)\' }}>📂 {submitted.ai_category}</span>
+              <span style={{ color: 'var(--text-secondary)' }}>📂 {submitted.ai_category}</span>
             )}
             {submitted.priority && (
               <span style={{
@@ -164,6 +164,8 @@ export default function SubmitTab({ onToast }) {
     </div>
   );
 }
+
+
 
 
 
