@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+﻿import React, { useState, useRef } from 'react';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { Card } from '../../components/ui/Card';
@@ -54,7 +54,7 @@ export default function SubmitTab({ onToast }) {
       formData.append('audio', blob, 'recording.webm');
       
       const token = localStorage.getItem('praja_token');
-            const res = await fetch((import.meta.env.VITE_API_URL || 'https://prajavox-backend.vercel.app') + '/api/mic/transcribe', {
+            const res = await fetch((import.meta.env.VITE_API_URL || 'https://praja-backend.vercel.app') + '/api/mic/transcribe', {
         method: 'POST',
         headers: {
           'Authorization': Bearer  
@@ -90,9 +90,9 @@ export default function SubmitTab({ onToast }) {
       const data = await submitGrievance('/grievances/submit', body);
       setSubmitted(data);
       setTitle(''); setDesc(''); setPhotoUrl('');
-      onToast(`✅ Submitted — ID: ${data.tracking_id}`, 'success');
+      onToast(`âœ… Submitted â€” ID: ${data.tracking_id}`, 'success');
     } catch (err) {
-      onToast(`❌ ${err.message}`, 'error');
+      onToast(`âŒ ${err.message}`, 'error');
     }
   };
 
@@ -127,13 +127,13 @@ export default function SubmitTab({ onToast }) {
           gap: 8,
         }}>
           <div style={{ fontWeight: 700, color: 'var(--color-success-text)', fontSize: '0.95rem' }}>
-            ✅ Complaint submitted successfully
+            âœ… Complaint submitted successfully
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10, fontSize: '0.84rem' }}>
             <span style={{ color: 'var(--text-secondary)' }}>Tracking ID:</span>
             <span className="ud-tracking-id">{submitted.tracking_id}</span>
             {submitted.ai_category && (
-              <span style={{ color: 'var(--text-secondary)' }}>📂 {submitted.ai_category}</span>
+              <span style={{ color: 'var(--text-secondary)' }}>ðŸ“‚ {submitted.ai_category}</span>
             )}
             {submitted.priority && (
               <span style={{
@@ -194,12 +194,12 @@ export default function SubmitTab({ onToast }) {
               }}
               title={isRecording ? "Stop Recording" : "Speak your complaint (Bhashini ASR)"}
             >
-              {isTranscribing ? '⌛' : (isRecording ? '⏹️' : '🎤')}
+              {isTranscribing ? 'âŒ›' : (isRecording ? 'â¹ï¸' : 'ðŸŽ¤')}
             </button>
           </div>
 
           <Input
-            label="📷 Photo Evidence (optional)"
+            label="ðŸ“· Photo Evidence (optional)"
             id="complaint-photo"
             placeholder="Paste an image URL (e.g. https://imgur.com/...)"
             value={photoUrl}
@@ -215,7 +215,7 @@ export default function SubmitTab({ onToast }) {
           )}
           <div style={{ marginTop: 20 }}>
             <Button type="submit" isLoading={loading} size="lg" fullWidth>
-              📤 Submit Complaint
+              ðŸ“¤ Submit Complaint
             </Button>
           </div>
         </form>
@@ -223,3 +223,4 @@ export default function SubmitTab({ onToast }) {
     </div>
   );
 }
+
