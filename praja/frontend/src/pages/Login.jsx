@@ -37,12 +37,15 @@ export default function Login() {
   const [demoOpen, setDemoOpen] = useState(false);
 
   
+  
   const forceLoginAndRedirect = (inputAadhaar) => {
     let role = 'citizen';
     let name = 'Demo User';
     let id = 'dummy-' + Math.random().toString(36).substr(2, 9);
     
-    const cleanAadhaar = inputAadhaar.replace(/\s/g, '').replace(/-/g, '');
+    // Safety check if inputAadhaar is undefined
+    const safeAadhaar = inputAadhaar || '234567890123';
+    const cleanAadhaar = safeAadhaar.toString().replace(/\s/g, '').replace(/-/g, '');
 
     if (cleanAadhaar === '111122223333') { role = 'sarpanch'; name = 'Lakshmi Devi'; }
     else if (cleanAadhaar === '789012345678') { role = 'district_collector'; name = 'Vikram Singh'; }
@@ -57,9 +60,11 @@ export default function Login() {
       aadhaar_number: cleanAadhaar
     };
     
+    // We update local storage directly
     localStorage.setItem('praja_token', 'mock-token-' + Date.now());
     localStorage.setItem('praja_user', JSON.stringify(user));
     
+    // Force direct navigation, completely bypassing React Router to break out of any stale state
     window.location.href = '/dashboard';
   };
 
