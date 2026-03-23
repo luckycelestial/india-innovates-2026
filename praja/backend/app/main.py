@@ -2,8 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.config import settings
-from app.routes import auth,, mic
-grievances, officers, sentinel, whatsapp, sms, voice
+from app.routes import auth, mic, grievances, officers, sentinel, whatsapp, sms, voice
 import re, traceback
 
 app = FastAPI(title="PRAJA API", description="AI-powered Citizen Grievance Platform", version="1.0.0")
