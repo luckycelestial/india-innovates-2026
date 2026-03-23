@@ -64,8 +64,7 @@
   margin-right: 12px;
 }
   .ud-sidebar:not(.open) {
-    transform: translateX(-260px);
-    width: 0;
+    /* transform removed */
     overflow: hidden;
   }/* On mobile, hidden by default */
 @media (max-width: 768px) {
@@ -543,5 +542,6 @@
 }
 
 @keyframes ud-spin { to { transform: rotate(360deg); } }
+
 
 
