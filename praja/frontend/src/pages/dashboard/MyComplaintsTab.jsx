@@ -23,12 +23,12 @@ const getSlaStatus = (sla_deadline) => {
 };
 
 export default function MyComplaintsTab() {
-  const { data: _tickets, loading, error } = useFetch('/grievances/');
-  const { data: _schemes } = useFetch('/grievances/schemes');
+  const { data: _tickets, loading, error } = useFetch('/grievances/', {}, true);
+  const { data: _schemes } = useFetch('/grievances/schemes', {}, true);
   const [expandedTicketId, setExpandedTicketId] = useState(null);
 
-  const tickets = _tickets || [];
-  const schemes = _schemes || [];
+  const tickets = Array.isArray(_tickets) ? _tickets : [];
+  const schemes = Array.isArray(_schemes) ? _schemes : [];
 
   const handleToggleTicket = (id) => {
     setExpandedTicketId(expandedTicketId === id ? null : id);

@@ -23,14 +23,28 @@ export function useFetch(url, options = {}, immediate = true) {
       const response = await api.get(url, { ...optionsRef, ...overrideOptions });
       const responseData = response.data;
       
-      // Some endpoints return { items: [] }, normalize it or return directly
-      const normalizedData = (typeof responseData === 'object' && 'items' in responseData && !Array.isArray(responseData)) 
-        ? responseData.items 
-        : responseData;
+      // Handle various response formats
+      let normalizedData;
+      if (Array.isArray(responseData)) {
+        // Direct array response
+        normalizedData = responseData;
+      } else if (typeof responseData === 'object' && responseData !== null) {
+        // Check for common wrapping patterns
+        if ('items' in responseData && !Array.isArray(responseData)) {
+          normalizedData = responseData.items;
+        } else if ('data' in responseData && Array.isArray(responseData.data)) {
+          normalizedData = responseData.data;
+        } else {
+          normalizedData = responseData;
+        }
+      } else {
+        normalizedData = responseData;
+      }
         
       setData(normalizedData);
       return normalizedData;
     } catch (err) {
+      console.error('[v0] Fetch error for', url, err);
       const msg = err.response?.data?.detail
         ? Array.isArray(err.response.data.detail)
           ? err.response.data.detail.map(d => d.msg || String(d)).join('; ')
