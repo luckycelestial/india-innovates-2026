@@ -1,7 +1,7 @@
-import axios from 'axios'
+﻿import axios from 'axios'
 
 const api = axios.create({
-  baseURL: (import.meta.env.VITE_API_URL || 'https://prajavox-backend.vercel.app') + '/api',
+  baseURL: (import.meta.env.VITE_API_URL || 'https://praja-backend.vercel.app') + '/api',
   timeout: 15000,
 })
 
@@ -27,3 +27,4 @@ api.interceptors.response.use(
 )
 
 export default api
+
