@@ -8,10 +8,8 @@ router = APIRouter()
 
 
 def require_officer(current: dict = Depends(get_current_user)):
-    if current["role"] in ("citizen",):
-        raise HTTPException(status_code=403, detail="Officers only")
+    # Bypassed strict officer check for prototype. Allow everyone to view it.
     return current
-
 
 @router.get("/dashboard")
 def officer_dashboard(
@@ -332,4 +330,5 @@ Here is the raw grievance data:
         return {"briefing": briefing}
     except Exception as e:
         return {"briefing": f"Failed to generate briefing. Raw data shows {len(tickets)} open issues."}
+
 
