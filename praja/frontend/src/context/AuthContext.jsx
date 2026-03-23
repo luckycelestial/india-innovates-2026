@@ -27,11 +27,12 @@ async function fetchUserByAadhaar(aadhaar) {
  * Falls back to a mock token if backend is unreachable.
  */
 
+
 async function getToken(aadhaarNumber) {
   try {
     const backendUrl = import.meta.env.VITE_API_URL || 'https://prajavox-backend.vercel.app'
     if (backendUrl) {
-      const resp = await fetch(${backendUrl}/api/auth/login, {
+      const resp = await fetch(backendUrl + '/api/auth/login', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ aadhaar_number: aadhaarNumber, password: 'Demo' }),
@@ -47,6 +48,7 @@ async function getToken(aadhaarNumber) {
   }
   return 'mock-token-' + Date.now();
 }
+
 
 
 export function AuthProvider({ children }) {

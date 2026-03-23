@@ -73,7 +73,7 @@ export default function SubmitTab({ onToast }) {
         onToast('Could not understand the audio.', 'error');
       }
     } catch (err) {
-      onToast(Transcription Error: , 'error');
+      onToast('Transcription Error', 'error');
     } finally {
       setIsTranscribing(false);
     }
@@ -166,7 +166,7 @@ export default function SubmitTab({ onToast }) {
               label="Description"
               id="complaint-desc"
               isTextarea
-              placeholder="Describe your issue in any language ?" Hindi, Tamil, Telugu, English all supported"
+              placeholder="Describe your issue in any language - Hindi, Tamil, Telugu, English all supported"
               value={description}
               onChange={e => setDesc(e.target.value)}
               required
