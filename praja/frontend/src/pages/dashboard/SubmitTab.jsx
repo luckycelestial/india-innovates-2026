@@ -54,10 +54,10 @@ export default function SubmitTab({ onToast }) {
       formData.append('audio', blob, 'recording.webm');
       
       const token = localStorage.getItem('praja_token');
-            const res = await fetch('http://localhost:8000/api/mic/transcribe', {
+            const res = await fetch((import.meta.env.VITE_API_URL || 'https://prajavox-backend.vercel.app') + '/api/mic/transcribe', {
         method: 'POST',
         headers: {
-          'Authorization': Bearer 
+          'Authorization': Bearer  
         },
         body: formData,
       });
