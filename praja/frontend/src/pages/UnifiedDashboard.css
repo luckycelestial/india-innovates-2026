@@ -67,10 +67,7 @@
     transform: translateX(-260px);
     width: 0;
     overflow: hidden;
-  }
-}
-
-/* On mobile, hidden by default */
+  }/* On mobile, hidden by default */
 @media (max-width: 768px) {
   .ud-sidebar {
     transform: translateX(-100%);
@@ -546,4 +543,5 @@
 }
 
 @keyframes ud-spin { to { transform: rotate(360deg); } }
+
 
