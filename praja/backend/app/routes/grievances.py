@@ -99,8 +99,11 @@ def list_grievances(
     sb: Any = Depends(get_supabase),
 ):
     q = sb.table("grievances").select("*").order("created_at", desc=True)
-    if current["role"] == "citizen":
+    if current["role"] == "citizen" and current["sub"] != "00000000-0000-0000-0000-000000000000":
         q = q.eq("citizen_id", current["sub"])
+    # For the prototype mockup user (00000000...), show all grievances so the UI looks populated
+    elif current["sub"] == "00000000-0000-0000-0000-000000000000":
+        pass  # Do not filter by citizen_id, let them see data for the demo
     if status:
         q = q.eq("status", status)
     result = q.range(skip, skip + limit - 1).execute()
@@ -247,3 +250,4 @@ def check_escalation(
                 "hours_past_sla": round(hours_past_sla),
             })
     return {"escalated_count": len(escalated), "escalated": escalated}
+
