@@ -390,20 +390,17 @@ async def whatsapp_webhook(
     MediaContentType0: str = Form(""),
 ):
     resp = MessagingResponse()
-    received_voice_note = False
     try:
         text_body = Body.strip()
         
         # If user sent a voice note, transcribe it
         if NumMedia > 0 and MediaUrl0:
             if "audio" in MediaContentType0 or "video" in MediaContentType0:
-                received_voice_note = True
                 transcription_result = _download_and_transcribe(MediaUrl0)
                 if transcription_result:
                     text_body = transcription_result
                 else:
                     resp.message("⚠️ Apologies, I could not transcribe your audio message. Please send a text message or try again.")
-                    _trigger_voice_reply_call(From)
                     return xml_response(resp)
 
         if not text_body:
@@ -411,8 +408,6 @@ async def whatsapp_webhook(
             return xml_response(resp)
 
         await _handle_message(text_body, From, resp)
-        if received_voice_note:
-            _trigger_voice_reply_call(From)
     except Exception as exc:
         import traceback
         tb = traceback.format_exc()
