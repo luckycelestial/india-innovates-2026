@@ -389,12 +389,19 @@ async def voice_outbound_language(request: Request, Digits: str = Form(default="
     lang_map = {"1": "en-IN", "2": "hi-IN", "3": "ta-IN"}
     lang_code = lang_map.get(Digits, "en-IN")
     
+    # Determine Citizen's Phone (In outbound calls From=Twilio, To=User)
+    form_data = await request.form()
+    phone = (form_data.get("To") or Form).replace("whatsapp:", "").strip()
+    if phone.startswith("+") and len(phone) > 10:
+        pass # looks like a user phone
+    else:
+        phone = (form_data.get("From") or "").replace("whatsapp:", "").strip()
+
     # Initialize Draft in Supabase
     sb = get_supabase()
-    phone = From.replace("whatsapp:", "").strip()
     user_id = get_or_create_user(phone, sb)
     
-    # Clean previous drafts to start fresh for this call
+    # Clean previous drafts to start fresh
     sb.table("grievances").delete().eq("citizen_id", user_id).eq("status", "closed").eq("title", "Draft Ticket").execute()
     
     tracking_id = f"PRJ-{datetime.now(timezone.utc).strftime('%y%m%d')}-{secrets.token_hex(3).upper()}"
@@ -445,7 +452,11 @@ async def voice_outbound_chat(
         return _xml(resp)
 
     sb = get_supabase()
-    phone = From.replace("whatsapp:", "").strip()
+    form_data = await request.form()
+    phone = (form_data.get("To") or "").replace("whatsapp:", "").strip()
+    if not phone or "+" not in phone:
+        phone = (form_data.get("From") or "").replace("whatsapp:", "").strip()
+        
     user_id = get_or_create_user(phone, sb)
     
     # Get Draft
