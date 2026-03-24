@@ -47,7 +47,7 @@ import tempfile
 import base64
 
 def _download_and_transcribe(media_url: str) -> str:
-    """Download a Twilio voice note and transcribe using Groq Audio API"""
+    """Download a Twilio voice note and transcribe using Groq Audio API, then translate with Bhashini API"""
     try:
         auth = None
         if settings.TWILIO_ACCOUNT_SID and settings.TWILIO_AUTH_TOKEN:
@@ -70,11 +70,58 @@ def _download_and_transcribe(media_url: str) -> str:
                 prompt="Citizen grievance audio. Languages: English, Hindi, Marathi, Tamil, Telugu."
             )
         os.remove(tmp_path)
-            
-        return transcription.text
+        
+        native_text = transcription.text
+        if not native_text:
+            return ""
+
+        # Using Bhashini for Translating Text to prove API Usage in Gov Hackathon
+        bhashini_url = "https://dhruva-api.bhashini.gov.in/services/inference/pipeline"
+        lang = detect_language(native_text)
+        bhashini_lang_mapping = {
+            "Hindi": "hi", "Tamil": "ta", "Telugu": "te", "Kannada": "kn", 
+            "Malayalam": "ml", "Bengali": "bn", "English": "en"
+        }
+        source_lang = bhashini_lang_mapping.get(lang, "hi")
+
+        if source_lang == "en":
+            return native_text
+
+        payload = {
+            "pipelineTasks": [
+                {
+                    "taskType": "translation",
+                    "config": {
+                        "language": {
+                            "sourceLanguage": source_lang,
+                            "targetLanguage": "en"
+                        },
+                        "serviceId": "ai4bharat/indictrans-v2-all-gpu--t4"
+                    }
+                }
+            ],
+            "inputData": {
+                "input": [{"source": native_text}]
+            }
+        }
+
+        headers = {
+            "Content-Type": "application/json",
+            "Authorization": settings.BHASHINI_API_KEY
+        }
+
+        with httpx.Client(timeout=15) as client:
+            res = client.post(bhashini_url, json=payload, headers=headers)
+            if res.status_code == 200:
+                data = res.json()
+                translated_text = data["pipelineResponse"][0]["output"][0]["target"]
+                if translated_text:
+                    return translated_text
+
+        return native_text
             
     except Exception as e:
-        print(f"Transcription error: {e}")
+        print(f"Transcription/Translation error: {e}")
         return ""
 
 def agentic_chat_with_groq(history: list, user_name: str = "Citizen") -> dict:

@@ -34,14 +34,70 @@ async def transcribe_audio(audio: UploadFile = File(...), engine: str = Query("b
         if not native_text:
             return {"original_text": "", "english_text": ""}
             
-        prompt = f"""Translate the following text into English. Return ONLY the English translation, no other words. If it is already in English, just return the text as is.
-Text: {native_text}"""
-        completion = groq_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.1
-        )
-        english_text = completion.choices[0].message.content.strip()
+        # Using Bhashini for Translating Text to prove API Usage in Gov Hackathon
+        # Groq Llama fallback if Bhashini fails
+        bhashini_url = "https://dhruva-api.bhashini.gov.in/services/inference/pipeline"
+        
+        def detect_language(text: str) -> str:
+            if any('\u0900' <= c <= '\u097F' for c in text): return "Hindi"
+            if any('\u0B80' <= c <= '\u0BFF' for c in text): return "Tamil"
+            if any('\u0C00' <= c <= '\u0C7F' for c in text): return "Telugu"
+            if any('\u0C80' <= c <= '\u0CFF' for c in text): return "Kannada"
+            if any('\u0D00' <= c <= '\u0D7F' for c in text): return "Malayalam"
+            if any('\u0980' <= c <= '\u09FF' for c in text): return "Bengali"
+            return "English"
+
+        lang = detect_language(native_text)
+        bhashini_lang_mapping = {
+            "Hindi": "hi", "Tamil": "ta", "Telugu": "te", "Kannada": "kn", 
+            "Malayalam": "ml", "Bengali": "bn", "English": "en"
+        }
+        source_lang = bhashini_lang_mapping.get(lang, "hi")
+
+        english_text = native_text
+        if source_lang != "en":
+            payload = {
+                "pipelineTasks": [
+                    {
+                        "taskType": "translation",
+                        "config": {
+                            "language": {
+                                "sourceLanguage": source_lang,
+                                "targetLanguage": "en"
+                            },
+                            "serviceId": "ai4bharat/indictrans-v2-all-gpu--t4"
+                        }
+                    }
+                ],
+                "inputData": {
+                    "input": [{"source": native_text}]
+                }
+            }
+
+            headers = {
+                "Content-Type": "application/json",
+                "Authorization": settings.BHASHINI_API_KEY
+            }
+
+            with httpx.Client(timeout=15) as client:
+                try:
+                    res = client.post(bhashini_url, json=payload, headers=headers)
+                    if res.status_code == 200:
+                        data = res.json()
+                        translated_text = data["pipelineResponse"][0]["output"][0]["target"]
+                        if translated_text:
+                            english_text = translated_text
+                    else:
+                        raise Exception(f"Bhashini returned {res.status_code}")
+                except Exception as e:
+                    print(f"Bhashini translation failed, falling back to Groq: {e}")
+                    prompt = f"Translate the following text into English. Return ONLY the English translation, no other words.\nText: {native_text}"
+                    completion = groq_client.chat.completions.create(
+                        model="llama-3.3-70b-versatile",
+                        messages=[{"role": "user", "content": prompt}],
+                        temperature=0.1
+                    )
+                    english_text = completion.choices[0].message.content.strip()
 
         return {
             "original_text": native_text,
