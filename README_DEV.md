@@ -5,6 +5,10 @@
 - **Backend**: Python FastAPI (located in `praja/backend`)
 - **Database/Auth**: Supabase
 
+## Production URLs
+- **Frontend**: [prajavox.vercel.app](https://prajavox.vercel.app)
+- **Backend**: [prajavox-backend.vercel.app](https://prajavox-backend.vercel.app)
+
 ## Environment Setup
 
 ### Prerequisites

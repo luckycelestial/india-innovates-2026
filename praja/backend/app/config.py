@@ -22,8 +22,8 @@ class Settings(BaseSettings):
     BHASHINI_USER_ID:  str = ""
     BHASHINI_API_KEY:  str = ""
     ENVIRONMENT:  str = "development"
-    FRONTEND_URL: str = "http://localhost:5173"
-    BACKEND_URL:  str = "https://praja-backend.vercel.app"
+    FRONTEND_URL: str = "https://prajavox.vercel.app"
+    BACKEND_URL:  str = "https://prajavox-backend.vercel.app"
 
 
 @lru_cache
