@@ -40,6 +40,46 @@ export default function SubmitTab({ onToast }) {
     }
   };
 
+  const stopRecording = () => {
+    if (mediaRecorderRef.current && isRecording) {
+      mediaRecorderRef.current.stop();
+      setIsRecording(false);
+      setIsTranscribing(true);
+      mediaRecorderRef.current.stream.getTracks().forEach(track => track.stop());
+    }
+  };
+
+  const handleAudioUpload = async (blob) => {
+    try {
+      const formData = new FormData();
+      formData.append('audio', blob, 'recording.webm');
+      
+      const token = localStorage.getItem('praja_token');
+      const res = await fetch((import.meta.env.VITE_API_URL || 'https://prajavox-backend.vercel.app') + '/api/mic/transcribe', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData,
+      });
+      
+      if (!res.ok) throw new Error('Transcription failed');
+      
+      const data = await res.json();
+      if (data.english_text) {
+        setDesc(data.original_text + '\n\n[English]: ' + data.english_text);
+        if (!title) setTitle('Voice Complaint');
+        onToast('Audio transcribed successfully!', 'success');
+      } else {
+        onToast('Could not understand the audio.', 'error');
+      }
+    } catch (err) {
+      onToast('Transcription Error', 'error');
+    } finally {
+      setIsTranscribing(false);
+    }
+  };
+
   const { mutate: submitGrievance, loading } = useMutation('post');
 
   const handleSubmit = async (e) => {
