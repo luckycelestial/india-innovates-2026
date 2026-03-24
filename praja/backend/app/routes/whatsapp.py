@@ -59,8 +59,8 @@ import httpx
 import tempfile
 import base64
 
-def _download_and_transcribe(media_url: str) -> str:
-    """Download a Twilio voice note and transcribe using Groq Audio API, then translate with Bhashini API"""
+def _download_and_transcribe(media_url: str) -> dict:
+    """Download a Twilio voice note and return normalized text with detected source language."""
     try:
         auth = None
         if settings.TWILIO_ACCOUNT_SID and settings.TWILIO_AUTH_TOKEN:
@@ -86,7 +86,7 @@ def _download_and_transcribe(media_url: str) -> str:
         
         native_text = transcription.text
         if not native_text:
-            return ""
+            return {"text": "", "language": "English"}
 
         # Using Bhashini for Translating Text to prove API Usage in Gov Hackathon
         bhashini_url = "https://dhruva-api.bhashini.gov.in/services/inference/pipeline"
@@ -98,7 +98,7 @@ def _download_and_transcribe(media_url: str) -> str:
         source_lang = bhashini_lang_mapping.get(lang, "hi")
 
         if source_lang == "en":
-            return native_text
+            return {"text": native_text, "language": lang}
 
         payload = {
             "pipelineTasks": [
@@ -129,13 +129,13 @@ def _download_and_transcribe(media_url: str) -> str:
                 data = res.json()
                 translated_text = data["pipelineResponse"][0]["output"][0]["target"]
                 if translated_text:
-                    return translated_text
+                    return {"text": translated_text, "language": lang}
 
-        return native_text
+        return {"text": native_text, "language": lang}
             
     except Exception as e:
         print(f"Transcription/Translation error: {e}")
-        return ""
+        return {"text": "", "language": "English"}
 
 def agentic_chat_with_groq(history: list, user_name: str = "Citizen") -> dict:
     prompt = f"""You are PRAJA Bot, an official WhatsApp Assistant for Indian Citizens to register grievances.
@@ -413,6 +413,7 @@ async def whatsapp_webhook(
 ):
     resp = MessagingResponse()
     received_voice_note = False
+    detected_voice_language = "English"
     try:
         form_data = await request.form()
         params = {k: str(v) for k, v in form_data.items()}
@@ -428,15 +429,15 @@ async def whatsapp_webhook(
             if "audio" in MediaContentType0 or "video" in MediaContentType0:
                 received_voice_note = True
                 transcription_result = _download_and_transcribe(MediaUrl0)
-                if transcription_result:
-                    text_body = transcription_result
+                if transcription_result.get("text"):
+                    text_body = transcription_result.get("text", "")
+                    detected_voice_language = transcription_result.get("language", "English")
                     if _needs_followup_details(text_body):
-                        lang_name = detect_language(text_body)
                         resp.message("📞 We need a bit more detail. You will receive an automated call now to collect exact location and ward.")
                         voice_result = _trigger_voice_reply_call(
                             From,
                             text_body,
-                            lang_name,
+                            detected_voice_language,
                             public_base_url=public_base_url,
                             require_followup=True,
                         )
@@ -446,11 +447,10 @@ async def whatsapp_webhook(
                         return xml_response(resp)
                 else:
                     resp.message("⚠️ Apologies, I could not transcribe your audio message. Please send a text message or try again.")
-                    lang_name = detect_language(text_body or Body)
                     voice_result = _trigger_voice_reply_call(
                         From,
                         "Namaste from Praja. We received your voice note but could not transcribe it. Please send a clearer voice note or type your complaint on WhatsApp.",
-                        lang_name,
+                        detected_voice_language,
                     )
                     if not voice_result.get("ok"):
                         print(f"Twilio voice callback failed after transcription error: {voice_result.get('reason')}")
@@ -462,11 +462,10 @@ async def whatsapp_webhook(
 
         await _handle_message(text_body, From, resp)
         if received_voice_note:
-            lang_name = detect_language(text_body or Body)
             voice_result = _trigger_voice_reply_call(
                 From,
                 "Namaste from Praja. Your voice complaint has been processed. Please check your WhatsApp message for ticket details and tracking instructions.",
-                lang_name,
+                detected_voice_language,
             )
             if not voice_result.get("ok"):
                 print(f"Twilio voice callback failed: {voice_result.get('reason')}")
@@ -499,7 +498,7 @@ async def whatsapp_voice_followup_start(
     profile = _language_profile(lang)
     locale = profile["locale"]
     voice = profile["voice"] or "Polly.Aditi"
-    action_qs = urlencode({"phone": phone, "lang": lang, "base": base[:220]})
+    action_qs = urlencode({"phone": phone, "lang": lang, "base": base[:220], "attempt": 0})
     action_url = f"{str(request.base_url).rstrip('/')}/api/whatsapp/voice-followup/collect?{action_qs}"
 
     vr = VoiceResponse()
@@ -524,6 +523,7 @@ async def whatsapp_voice_followup_collect(
     phone: str = Query(""),
     lang: str = Query("English"),
     base: str = Query(""),
+    attempt: int = Query(0),
     SpeechResult: str = Form(default=""),
 ):
     form_data = await request.form()
@@ -537,11 +537,29 @@ async def whatsapp_voice_followup_collect(
     followup_text = (SpeechResult or "").strip()
     vr = VoiceResponse()
 
-    if not followup_text:
-        vr.say("No speech detected. Please send location and ward via WhatsApp message.", language=locale, voice=voice)
+    combined_text = " ".join(part for part in [base.strip(), followup_text] if part).strip()
+
+    # Ask once more if speech is missing or still lacks location/ward details.
+    if (not followup_text or _needs_followup_details(combined_text)) and attempt < 1:
+        retry_qs = urlencode({"phone": phone, "lang": lang, "base": base[:220], "attempt": attempt + 1})
+        retry_action = f"{str(request.base_url).rstrip('/')}/api/whatsapp/voice-followup/collect?{retry_qs}"
+        gather = Gather(
+            input="speech",
+            action=retry_action,
+            method="POST",
+            timeout=8,
+            speech_timeout="auto",
+            language=locale,
+        )
+        gather.say(_followup_prompt(lang), language=locale, voice=voice)
+        vr.append(gather)
+        vr.say("Please include exact location and ward number.", language=locale, voice=voice)
         return voice_xml_response(vr)
 
-    combined_text = " ".join(part for part in [base.strip(), followup_text] if part).strip()
+    if not followup_text or _needs_followup_details(combined_text):
+        vr.say("We still need exact location and ward. Please send it in WhatsApp text.", language=locale, voice=voice)
+        return voice_xml_response(vr)
+
     try:
         result = _create_grievance_from_text(phone, combined_text)
         tracking_id = result["tracking_id"]
