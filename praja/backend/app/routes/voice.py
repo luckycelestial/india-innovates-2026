@@ -39,6 +39,32 @@ def _speak_ticket(ticket_id: str) -> str:
     return " ".join(list(ticket_id or ""))
 
 
+def _detect_language(text: str) -> str:
+    if any('\u0900' <= c <= '\u097F' for c in text):
+        return "hi-IN"
+    if any('\u0B80' <= c <= '\u0BFF' for c in text):
+        return "ta-IN"
+    if any('\u0C00' <= c <= '\u0C7F' for c in text):
+        return "te-IN"
+    if any('\u0C80' <= c <= '\u0CFF' for c in text):
+        return "kn-IN"
+    if any('\u0D00' <= c <= '\u0D7F' for c in text):
+        return "ml-IN"
+    if any('\u0980' <= c <= '\u09FF' for c in text):
+        return "bn-IN"
+    return "en-IN"
+
+
+def _voice_for_lang(lang_code: str) -> str:
+    if lang_code in ("en-IN", "hi-IN"):
+        return "Polly.Aditi"
+    return "alice"
+
+
+def _say(resp: VoiceResponse, text: str, lang_code: str = "en-IN"):
+    resp.say(text, voice=_voice_for_lang(lang_code), language=lang_code)
+
+
 def _normalize_ticket_id(value: str) -> str:
     raw = (value or "").upper()
     raw = re.sub(r"[^A-Z0-9-]", "", raw)
@@ -79,8 +105,7 @@ async def voice_inbound(From: str = Form(...), To: str = Form(...), CallSid: str
         CALL_CONTEXTS[CallSid] = {"from": From}
 
     gather = Gather(
-        input="dtmf speech",
-        num_digits=1,
+        input="speech",
         action="/api/voice/menu",
         method="POST",
         timeout=8,
@@ -89,14 +114,13 @@ async def voice_inbound(From: str = Form(...), To: str = Form(...), CallSid: str
         enhanced=True,
     )
     gather.say(
-        "Welcome to Praja voice assistant. Press 1 to file a new complaint. "
-        "Press 2 to track an existing ticket. "
-        "Or say file complaint or track ticket.",
+        "Welcome to Praja voice assistant. Please speak naturally. "
+        "Say file complaint to register a new complaint, or say track ticket to check status.",
         voice="Polly.Aditi",
         language="en-IN",
     )
     resp.append(gather)
-    resp.say(NO_SPEECH_MSG, voice="Polly.Aditi", language="en-IN")
+    _say(resp, NO_SPEECH_MSG, "en-IN")
     return _xml(resp)
 
 
@@ -104,18 +128,21 @@ async def voice_inbound(From: str = Form(...), To: str = Form(...), CallSid: str
 async def voice_menu(
     From: str = Form(...),
     CallSid: str = Form(default=""),
-    Digits: str = Form(default=""),
     SpeechResult: str = Form(default=""),
 ):
     resp = VoiceResponse()
     spoken = (SpeechResult or "").strip().lower()
-    digit = (Digits or "").strip()
+    lang_code = _detect_language(SpeechResult or "")
 
     if CallSid and CallSid not in CALL_CONTEXTS:
         CALL_CONTEXTS[CallSid] = {"from": From}
+    if CallSid:
+        ctx = CALL_CONTEXTS.get(CallSid, {"from": From})
+        ctx["lang"] = lang_code
+        CALL_CONTEXTS[CallSid] = ctx
 
-    wants_file = digit == "1" or "file" in spoken or "complaint" in spoken
-    wants_track = digit == "2" or "track" in spoken or "status" in spoken
+    wants_file = any(k in spoken for k in ("file", "complaint", "register", "issue", "புகார்", "शिकायत", "ఫిర్యాదు"))
+    wants_track = any(k in spoken for k in ("track", "status", "ticket", "நிலை", "स्थिति", "స్థితి"))
 
     if wants_file:
         gather = Gather(
@@ -124,16 +151,12 @@ async def voice_menu(
             method="POST",
             timeout=8,
             speech_timeout="auto",
-            language="hi-IN",
+            language=lang_code,
             enhanced=True,
         )
-        gather.say(
-            "Please tell your issue briefly after the beep. For example, no water supply for two days.",
-            voice="Polly.Aditi",
-            language="en-IN",
-        )
+        gather.say("Please tell your issue briefly after the beep.", voice=_voice_for_lang(lang_code), language=lang_code)
         resp.append(gather)
-        resp.say("No issue captured. Please call again.", voice="Polly.Aditi", language="en-IN")
+        _say(resp, "No issue captured. Please call again.", lang_code)
         return _xml(resp)
 
     if wants_track:
@@ -143,23 +166,15 @@ async def voice_menu(
             method="POST",
             timeout=8,
             speech_timeout="auto",
-            language="en-IN",
+            language=lang_code,
             enhanced=True,
         )
-        gather.say(
-            "Please say your ticket I D, for example P R J dash two six zero three zero five dash A B C one two three.",
-            voice="Polly.Aditi",
-            language="en-IN",
-        )
+        gather.say("Please say your ticket I D.", voice=_voice_for_lang(lang_code), language=lang_code)
         resp.append(gather)
-        resp.say("No ticket I D received. Please call again.", voice="Polly.Aditi", language="en-IN")
+        _say(resp, "No ticket I D received. Please call again.", lang_code)
         return _xml(resp)
 
-    resp.say(
-        "I could not understand your choice. Please call again and press 1 to file complaint or 2 to track ticket.",
-        voice="Polly.Aditi",
-        language="en-IN",
-    )
+    _say(resp, "I could not understand. Please say file complaint or track ticket.", lang_code)
     resp.hangup()
     return _xml(resp)
 
@@ -172,14 +187,16 @@ async def voice_collect_issue(
 ):
     resp = VoiceResponse()
     issue_text = (SpeechResult or "").strip()
+    lang_code = _detect_language(issue_text)
     if not issue_text:
-        resp.say(FALLBACK_MSG, voice="Polly.Aditi", language="en-IN")
+        _say(resp, FALLBACK_MSG, lang_code)
         resp.hangup()
         return _xml(resp)
 
     if CallSid:
         ctx = CALL_CONTEXTS.get(CallSid, {"from": From})
         ctx["issue"] = issue_text
+        ctx["lang"] = lang_code
         CALL_CONTEXTS[CallSid] = ctx
 
     gather = Gather(
@@ -188,16 +205,12 @@ async def voice_collect_issue(
         method="POST",
         timeout=8,
         speech_timeout="auto",
-        language="hi-IN",
+        language=lang_code,
         enhanced=True,
     )
-    gather.say(
-        "Now tell the exact location, such as area name, street, and nearby landmark.",
-        voice="Polly.Aditi",
-        language="en-IN",
-    )
+    gather.say("Now tell the exact location, such as area name, street, and nearby landmark.", voice=_voice_for_lang(lang_code), language=lang_code)
     resp.append(gather)
-    resp.say("No location captured. Please call again.", voice="Polly.Aditi", language="en-IN")
+    _say(resp, "No location captured. Please call again.", lang_code)
     return _xml(resp)
 
 
@@ -209,22 +222,25 @@ async def voice_collect_location(
 ):
     resp = VoiceResponse()
     location_text = (SpeechResult or "").strip()
+    lang_code = _detect_language(location_text)
     if not location_text:
-        resp.say("Location not received. Please call again and include landmark details.", voice="Polly.Aditi", language="en-IN")
+        _say(resp, "Location not received. Please call again and include landmark details.", lang_code)
         resp.hangup()
         return _xml(resp)
 
     sb = get_supabase()
     issue_text = ""
     if CallSid:
-        issue_text = (CALL_CONTEXTS.get(CallSid, {}) or {}).get("issue", "")
+        ctx = CALL_CONTEXTS.get(CallSid, {}) or {}
+        issue_text = ctx.get("issue", "")
+        lang_code = ctx.get("lang", lang_code)
     if not issue_text:
         issue_text = "Citizen reported an issue by voice call."
 
     try:
         created = _create_voice_grievance(sb, From, issue_text, location_text)
     except Exception:
-        resp.say("Sorry, we could not file your complaint right now. Please try again.", voice="Polly.Aditi", language="en-IN")
+        _say(resp, "Sorry, we could not file your complaint right now. Please try again.", lang_code)
         resp.hangup()
         return _xml(resp)
 
@@ -232,12 +248,12 @@ async def voice_collect_location(
     category = created["category"]
     priority = created["priority"]
 
-    resp.say(
+    _say(
+        resp,
         f"Your complaint has been registered under {category}. "
         f"Ticket I D is {_speak_ticket(tracking_id)}. "
         f"Priority is {priority}. You will get SMS confirmation shortly.",
-        voice="Polly.Aditi",
-        language="en-IN",
+        lang_code,
     )
     resp.hangup()
 
@@ -263,32 +279,33 @@ async def voice_track_ticket(
 ):
     resp = VoiceResponse()
     raw_ticket = (SpeechResult or "").strip()
+    lang_code = _detect_language(raw_ticket)
     ticket_id = _normalize_ticket_id(raw_ticket)
 
     if not ticket_id:
-        resp.say("I could not capture the ticket I D. Please call again.", voice="Polly.Aditi", language="en-IN")
+        _say(resp, "I could not capture the ticket I D. Please call again.", lang_code)
         resp.hangup()
         return _xml(resp)
 
     sb = get_supabase()
     rows = sb.table("grievances").select("tracking_id,status,priority,ai_category").eq("tracking_id", ticket_id).execute()
     if not rows.data:
-        resp.say(
+        _say(
+            resp,
             "No complaint found with that ticket I D. Please check and try again, or send status on WhatsApp.",
-            voice="Polly.Aditi",
-            language="en-IN",
+            lang_code,
         )
         resp.hangup()
         return _xml(resp)
 
     g = rows.data[0]
-    resp.say(
+    _say(
+        resp,
         f"Ticket {_speak_ticket(g['tracking_id'])}. "
         f"Status {str(g.get('status', 'open')).replace('_', ' ')}. "
         f"Department {g.get('ai_category', 'General')}. "
         f"Priority {g.get('priority', 'medium')}.",
-        voice="Polly.Aditi",
-        language="en-IN",
+        lang_code,
     )
     resp.hangup()
     return _xml(resp)
@@ -304,29 +321,30 @@ async def voice_gather(
     resp = VoiceResponse()
 
     text = (SpeechResult or "").strip()
+    lang_code = _detect_language(text)
     if not text:
-        resp.say(FALLBACK_MSG, voice="Polly.Aditi", language="en-IN")
+        _say(resp, FALLBACK_MSG, lang_code)
         return _xml(resp)
 
     sb = get_supabase()
     try:
         created = _create_voice_grievance(sb, From, text, "Location not provided")
     except Exception:
-        resp.say("Sorry, we could not file your complaint right now. Please try again.", voice="Polly.Aditi", language="en-IN")
+        _say(resp, "Sorry, we could not file your complaint right now. Please try again.", lang_code)
         return _xml(resp)
 
     category = created["category"]
     priority = created["priority"]
     tracking_id = created["tracking_id"]
 
-    resp.say(
+    _say(
+        resp,
         f"Thank you. Your complaint about {category} has been registered successfully. "
         f"Your ticket ID is {_speak_ticket(tracking_id)}. "
         f"Priority is {priority}. "
         f"You will receive an SMS confirmation now. "
         f"You can track your complaint by sending 'track {tracking_id}' via SMS to this number.",
-        voice="Polly.Aditi",
-        language="en-IN",
+        lang_code,
     )
 
     sms_body = (
@@ -336,7 +354,7 @@ async def voice_gather(
         f"Priority: {priority.upper()}\n"
         f"Track: reply 'track {tracking_id}' to this number."
     )
-    send_sms_via_twilio(phone, sms_body)
+    send_sms_via_twilio(From, sms_body)
 
     return _xml(resp)
 
