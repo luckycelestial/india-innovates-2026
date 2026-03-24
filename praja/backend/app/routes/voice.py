@@ -56,8 +56,6 @@ def _detect_language(text: str) -> str:
 
 
 def _voice_for_lang(lang_code: str) -> str:
-    if lang_code in ("en-IN", "hi-IN"):
-        return "Polly.Aditi"
     return "alice"
 
 
@@ -116,7 +114,7 @@ async def voice_inbound(From: str = Form(...), To: str = Form(...), CallSid: str
     gather.say(
         "Welcome to Praja voice assistant. Please speak naturally. "
         "Say file complaint to register a new complaint, or say track ticket to check status.",
-        voice="Polly.Aditi",
+        voice="alice",
         language="en-IN",
     )
     resp.append(gather)
@@ -372,12 +370,12 @@ async def voice_outbound_start():
     )
     gather.say(
         "Welcome to Praja. Press 1 for English. Press 2 for Hindi. Press 3 for Tamil.",
-        voice="Polly.Aditi",
+        voice="alice",
         language="en-IN"
     )
     resp.append(gather)
     # Correct handling of no input
-    resp.say("No input received. Goodbye.", voice="Polly.Aditi", language="en-IN")
+    resp.say("No input received. Goodbye.", voice="alice", language="en-IN")
     resp.hangup()
     return _xml(resp)
 
