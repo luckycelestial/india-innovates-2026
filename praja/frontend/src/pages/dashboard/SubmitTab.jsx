@@ -13,6 +13,7 @@ export default function SubmitTab({ onToast }) {
 
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [error, setError] = useState(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
 
