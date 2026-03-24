@@ -5,14 +5,16 @@ Citizen calls the Canadian number → speaks their complaint → AI classifies �
 import secrets
 import re
 from datetime import datetime, timezone
-from fastapi import APIRouter, Form, Request
+from fastapi import APIRouter, Form, Request, Query
 from fastapi.responses import Response
 
 from twilio.twiml.voice_response import VoiceResponse, Gather
 
 from app.db.database import get_supabase
-from app.routes.whatsapp import get_or_create_user, classify_with_groq
+from app.routes.whatsapp import get_or_create_user, check_registration_and_get_user
 from app.routes.sms import send_sms_via_twilio
+from app.utils.ai import CATEGORIES, agentic_chat_with_groq, translate_to_english, detect_language
+import json
 
 router = APIRouter()
 
@@ -381,39 +383,127 @@ async def voice_outbound_start():
 
 
 @router.post("/outbound/language")
-async def voice_outbound_language(Digits: str = Form(default=""), CallSid: str = Form(default="")):
-    """Handles digit input and asks for complaint in selected language."""
+async def voice_outbound_language(request: Request, Digits: str = Form(default=""), From: str = Form(default="")):
+    """Starts the interactive agentic chat session."""
     resp = VoiceResponse()
     lang_map = {"1": "en-IN", "2": "hi-IN", "3": "ta-IN"}
     lang_code = lang_map.get(Digits, "en-IN")
+    
+    # Initialize Draft in Supabase
+    sb = get_supabase()
+    phone = From.replace("whatsapp:", "").strip()
+    user_id = get_or_create_user(phone, sb)
+    
+    # Clean previous drafts to start fresh for this call
+    sb.table("grievances").delete().eq("citizen_id", user_id).eq("status", "closed").eq("title", "Draft Ticket").execute()
+    
+    tracking_id = f"PRJ-{datetime.now(timezone.utc).strftime('%y%m%d')}-{secrets.token_hex(3).upper()}"
+    sb.table("grievances").insert({
+        "tracking_id":  tracking_id,
+        "citizen_id":   user_id,
+        "title":        "Draft Ticket",
+        "description":  "Voice Conversation Start",
+        "status":       "closed",
+        "channel":      "voice",
+        "resolution_note": json.dumps([])
+    }).execute()
 
-    if CallSid:
-        ctx = CALL_CONTEXTS.get(CallSid, {})
-        ctx["lang"] = lang_code
-        CALL_CONTEXTS[CallSid] = ctx
-
-    # Localized prompts for the selected language
     prompts = {
-        "en-IN": "Please describe your complaint clearly after the beep.",
-        "hi-IN": "कृपया बीप के बाद अपनी शिकायत बताएं।",
-        "ta-IN": "பீப் சத்தத்திற்குப் பிறகு உங்கள் புகாரைத் தெளிவாகக் கூறுங்கள்."
+        "en-IN": "Please describe your issue and its location.",
+        "hi-IN": "कृपया अपनी समस्या और उसका स्थान बताएं।",
+        "ta-IN": "உங்கள் பிரச்சினை மற்றும் அதன் இடத்தைப் பற்றி சொல்லுங்கள்."
     }
     prompt = prompts.get(lang_code, prompts["en-IN"])
 
     gather = Gather(
         input="speech",
-        action="/api/voice/complaint/issue", # Reuse existing issue gatherer
+        action=f"/api/voice/outbound/chat?lang={lang_code}",
         method="POST",
         timeout=10,
         speech_timeout="auto",
         language=lang_code,
         enhanced=True
     )
-    gather.say(prompt, voice=_voice_for_lang(lang_code), language=lang_code)
+    gather.say(prompt, voice="alice", language=lang_code)
     resp.append(gather)
-    # Fallback
-    resp.say("I could not hear any speech. Goodbye.", voice=_voice_for_lang(lang_code), language=lang_code)
+    resp.say("I didn't hear anything. Goodbye.", voice="alice", language=lang_code)
     resp.hangup()
+    return _xml(resp)
+
+@router.post("/outbound/chat")
+async def voice_outbound_chat(
+    request: Request, 
+    SpeechResult: str = Form(""), 
+    From: str = Form(""),
+    lang: str = Query("en-IN")
+):
+    """The interactive loop turn."""
+    resp = VoiceResponse()
+    if not SpeechResult:
+        resp.say("I couldn't hear you clearly. Please try calling again.", voice="alice", language=lang)
+        resp.hangup()
+        return _xml(resp)
+
+    sb = get_supabase()
+    phone = From.replace("whatsapp:", "").strip()
+    user_id = get_or_create_user(phone, sb)
+    
+    # Get Draft
+    drafts = sb.table("grievances").select("*").eq("citizen_id", user_id).eq("status", "closed").eq("title", "Draft Ticket").execute()
+    if not drafts.data:
+        resp.say("Session expired. Please try again.", voice="alice", language=lang)
+        resp.hangup()
+        return _xml(resp)
+    
+    draft = drafts.data[0]
+    history = json.loads(draft.get("resolution_note") or "[]")
+    
+    # Translate to English for Brain
+    english_text = translate_to_english(SpeechResult)
+    history.append({"role": "user", "content": english_text})
+    
+    # Brain iteration
+    groq_resp = agentic_chat_with_groq(history, "Citizen")
+    
+    if groq_resp["type"] == "question":
+        ans = groq_resp["text"]
+        history.append({"role": "assistant", "content": ans})
+        sb.table("grievances").update({"resolution_note": json.dumps(history)}).eq("id", draft["id"]).execute()
+        
+        gather = Gather(
+            input="speech",
+            action=f"/api/voice/outbound/chat?lang={lang}",
+            method="POST",
+            timeout=10,
+            speech_timeout="auto",
+            language=lang,
+            enhanced=True
+        )
+        gather.say(ans, voice="alice", language=lang)
+        resp.append(gather)
+    else:
+        # Complete!
+        data = groq_resp["data"]
+        sb.table("grievances").update({
+            "title":        data.get("title", "Voice Complaint"),
+            "description":  data.get("clean_description", SpeechResult),
+            "ai_category":  data.get("category", "General"),
+            "priority":     data.get("priority", "medium"),
+            "ai_sentiment": data.get("sentiment", "negative"),
+            "status":       "open",
+            "resolution_note": None
+        }).eq("id", draft["id"]).execute()
+        
+        tracking_id = draft["tracking_id"]
+        # Success message
+        success_prompts = {
+            "en-IN": f"Your complaint has been filed. Your ticket ID is {' '.join(tracking_id)}. Thank you.",
+            "hi-IN": f"आपकी शिकायत दर्ज कर ली गई है। आपकी टिकट आई डी {' '.join(tracking_id)} है। धन्यवाद।",
+            "ta-IN": f"உங்கள் புகார் பதிவு செய்யப்பட்டுள்ளது. உங்கள் டிக்கெட் ஐடி {' '.join(tracking_id)}. நன்றி."
+        }
+        resp.say(success_prompts.get(lang, success_prompts["en-IN"]), voice="alice", language=lang)
+        resp.hangup()
+
     return _xml(resp)
 
 

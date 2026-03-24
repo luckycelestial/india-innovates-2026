@@ -12,6 +12,7 @@ from twilio.twiml.messaging_response import MessagingResponse
 from twilio.twiml.voice_response import VoiceResponse, Gather
 from groq import Groq
 from xml.sax.saxutils import escape as xml_escape
+from app.utils.ai import CATEGORIES, detect_language, agentic_chat_with_groq, classify_with_groq
 
 try:
     from twilio.rest import Client as TwilioClient
@@ -44,15 +45,7 @@ HELP_MSG = (
     "\u2022 *help* \u2014 Show this message"
 )
 
-def detect_language(text: str) -> str:
-    """Detect language using Unicode script ranges."""
-    if any('\u0900' <= c <= '\u097F' for c in text): return "Hindi"
-    if any('\u0B80' <= c <= '\u0BFF' for c in text): return "Tamil"
-    if any('\u0C00' <= c <= '\u0C7F' for c in text): return "Telugu"
-    if any('\u0C80' <= c <= '\u0CFF' for c in text): return "Kannada"
-    if any('\u0D00' <= c <= '\u0D7F' for c in text): return "Malayalam"
-    if any('\u0980' <= c <= '\u09FF' for c in text): return "Bengali"
-    return "English"
+# Removed detect_language (imported from utils.ai)
 
 import os
 import httpx
@@ -137,88 +130,7 @@ def _download_and_transcribe(media_url: str) -> dict:
         print(f"Transcription/Translation error: {e}")
         return {"text": "", "language": "English"}
 
-def agentic_chat_with_groq(history: list, user_name: str = "Citizen") -> dict:
-    prompt = f"""You are PRAJA Bot, an official WhatsApp Assistant for Indian Citizens to register grievances.
-The citizen's name is {user_name}.
-Your goal is to collect enough information to file a complete ticket.
-
-Required Info:
-1. Core Issue / Complaint (What is the problem?)
-2. Exact Location / Landmark (Where is it? -> Must be a SPECIFIC area, street name, ward, or public landmark. Vague locations like "my home", "near me", "here" are NOT acceptable).
-
-Instructions:
-- Do NOT ask for their name, as you already know it is {user_name}.
-- If ANY of the required info is missing or ambiguous, ask a polite, short question in the language the user is speaking to get the missing info. Respond with ONLY normal text (NO JSON).
-- If the user gives a vague location (like 'mera ghar', 'near my house', 'here'), DO NOT accept it. Specifically ask them to name the colony, street, or a famous landmark nearby.
-- Only when you have BOTH pieces of information explicitly, and feel ready to file the ticket, you must respond with ONLY a valid JSON block and absolutely no other text.
-
-JSON FORMAT:
-  {{
-    "status": "complete",
-    "data": {{
-      "category": "<Water Supply|Roads|Electricity|Sanitation|Drainage|Parks|Health|Education|General>",
-      "priority": "<low|medium|high|critical>",
-      "title": "<accurate 5-8 word English title capturing the true meaning>",
-      "sentiment": "<negative|neutral|positive>",
-      "location": "<Extracted location>",
-      "clean_description": "<Include FULL details of issue, name, and location. Formatting Rules: 1. If English: return ONLY the English text. 2. If ANY other language: return exactly '[Native Script] (English: [Translation])'. 3. Correct any phonetic typos.>"
-    }}
-  }}
-
-  Rules for Classification:
-- Any mention of suicide, severe domestic abuse/toxicity, or self-harm -> priority=critical, category=Health or General
-- Any death threat or threat to public figure -> priority=critical, category=General
-- Sexual assault / abduction -> priority=critical, category=General
-"""
-    messages = [{"role": "system", "content": prompt}] + history
-    try:
-        response = groq_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=messages,
-            max_tokens=350,
-            temperature=0.2,
-        )
-        content = (response.choices[0].message.content or "").strip()
-        
-        if "{" in content and "category" in content and "clean_description" in content:
-            raw = re.sub(r"^```json\s*|^```\s*|```$", "", content, flags=re.MULTILINE).strip()
-            match = re.search(r"\{.*\}", raw, flags=re.DOTALL)
-            if match:
-                raw = match.group(0)
-            data = json.loads(raw)
-            res_data = data.get("data", data)
-            if res_data.get("category") not in CATEGORIES:
-                res_data["category"] = "General"
-            if res_data.get("priority") not in ["low", "medium", "high", "critical"]:
-                res_data["priority"] = "medium"
-            return {"type": "complete", "data": res_data}
-        else:
-            return {"type": "question", "text": content}
-    except Exception as e:
-        print("Groq Error:", e)
-        return {"type": "question", "text": "I'm having trouble processing that. Could you please state your issue, name, and location clearly?"}
-
-def classify_with_groq(text: str) -> dict:
-    """Legacy one-shot classification for SMS and Voice endpoints."""
-    try:
-        prompt = f"""Classify this grievance, responding ONLY with valid JSON.
-Text: "{text}"
-JSON Format:
-{{"category": "Water Supply|Roads|Electricity|Sanitation|General", "priority": "low|medium|high|critical", "sentiment": "negative|neutral|positive", "title": "...", "clean_description": "..."}}
-"""
-        response = groq_client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.1
-        )
-        content = (response.choices[0].message.content or "").strip()
-        raw = re.sub(r"^```json\s*|^```\s*|```$", "", content, flags=re.MULTILINE).strip()
-        match = re.search(r"\{.*\}", raw, flags=re.DOTALL)
-        if match:
-            return json.loads(match.group(0))
-        raise Exception("No JSON found")
-    except Exception:
-        return {"category": "General", "priority": "medium", "sentiment": "neutral", "title": text[:40], "clean_description": text}
+# Removed agentic_chat_with_groq and classify_with_groq (imported from utils.ai)
 def get_or_create_user(phone: str, sb) -> str:
     clean_phone = phone.replace("whatsapp:", "")
     rows = sb.table("users").select("id").eq("phone", clean_phone).execute()
