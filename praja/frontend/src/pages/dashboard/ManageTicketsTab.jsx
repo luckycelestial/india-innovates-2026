@@ -151,39 +151,25 @@ export default function ManageTicketsTab({ onToast }) {
       </div>
 
       {/* Stats row */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: "16px", marginBottom: "24px" }}>
+      <div className="ud-stats-row">
         {STAT_ITEMS.map(({ key, label, color }) => {
           const count = getCount(key);
           const isActive = statusFilter === key;
-          const isTotal = key === "__total__";
           return (
             <div
               key={key}
-              onClick={() => !isTotal && setFilter(f => f === key ? "" : key)}
+              className="ud-stat-card"
               style={{
-                cursor: !isTotal ? "pointer" : "default",
-                background: "var(--bg-surface)",
-                border: "1px solid",
-                borderColor: isActive ? "var(--color-primary)" : "var(--border-color)",
-                borderTop: `4px solid ${color}`,
-                borderRadius: "var(--radius-lg)",
-                padding: "16px 20px",
-                display: "flex",
-                flexDirection: "column",
-                justifyContent: "center",
-                boxShadow: isActive ? "0 0 0 2px var(--color-primary-glow)" : "0 2px 4px rgba(0,0,0,0.02)",
-                opacity: (statusFilter && !isActive && !isTotal) ? 0.6 : 1,
-                transition: "all 0.2s ease"
+                cursor: key !== '__total__' ? 'pointer' : 'default',
+                borderColor: isActive ? 'var(--color-primary)' : undefined,
+                boxShadow: isActive ? '0 0 0 2px var(--color-primary-glow)' : undefined,
               }}
-              role={!isTotal ? "button" : undefined}
+              onClick={() => key !== '__total__' && setFilter(f => f === key ? '' : key)}
+              role={key !== '__total__' ? 'button' : undefined}
               aria-pressed={isActive}
             >
-              <div style={{ color: color, fontSize: "1.8rem", fontWeight: 900, lineHeight: 1, marginBottom: "8px" }}>
-                {count}
-              </div>
-              <div style={{ color: "var(--text-secondary)", fontSize: "0.75rem", fontWeight: 700, textTransform: "uppercase", letterSpacing: "0.05em" }}>
-                {label}
-              </div>
+              <div className="ud-stat-num" style={{ color }}>{count}</div>
+              <div className="ud-stat-label">{label}</div>
             </div>
           );
         })}
@@ -313,4 +299,3 @@ export default function ManageTicketsTab({ onToast }) {
     </div>
   );
 }
-

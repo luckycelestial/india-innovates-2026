@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import prajaLogo   from '../assets/RR.jpg';
@@ -79,4 +79,3 @@ export default function Login() {
     </div>
   );
 }
-

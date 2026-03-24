@@ -1,9 +1,8 @@
-﻿import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import prajaIcon from '../assets/SS.jpg';
 import './UnifiedDashboard.css';
-import { FileText, List as ListIcon, Ticket, BarChart3, Map as MapIcon, Bell, Menu } from 'lucide-react';
 
 import SubmitTab      from './dashboard/SubmitTab';
 import MyComplaintsTab from './dashboard/MyComplaintsTab';
@@ -43,11 +42,11 @@ const ROLE_LABELS = {
 };
 
 const ALL_TABS = [
-  { id: 'submit',    label: 'Submit Grievance', icon: 'FileText', roles: ['citizen','sarpanch','district_collector','mla','mp'] },
-  { id: 'mine',      label: 'My Complaints', icon: 'ListIcon', roles: ['citizen','sarpanch','district_collector','mla','mp'] },
-  { id: 'manage',    label: 'Manage Tickets', icon: 'Ticket', roles: ['sarpanch','district_collector','mla','mp'] },
-  { id: 'analytics', label: 'Analytics', icon: 'BarChart3', roles: ['sarpanch','district_collector','mla','mp'] },
-  { id: 'sentinel',  label: 'Sentinel Pulse', icon: 'MapIcon', roles: ['district_collector','mla','mp'] },
+  { id: 'submit',    label: '📝 Submit Grievance', roles: ['citizen','sarpanch','district_collector','mla','mp'] },
+  { id: 'mine',      label: '📋 My Complaints',    roles: ['citizen','sarpanch','district_collector','mla','mp'] },
+  { id: 'manage',    label: '🗂 Manage Tickets',  roles: ['sarpanch','district_collector','mla','mp'] },
+  { id: 'analytics', label: '📊 Analytics',         roles: ['sarpanch','district_collector','mla','mp'] },
+  { id: 'sentinel',  label: '🗺 Sentinel Pulse',    roles: ['district_collector','mla','mp'] },
 ];
 
 /* ── Root Layout ──────────────────────────────────────────────── */
@@ -97,13 +96,6 @@ export default function UnifiedDashboard() {
   const role      = user?.role || 'citizen';
   const roleLabel = ROLE_LABELS[role] || role;
 
-    const IconMap = {
-    FileText: <FileText size={20} />,
-    ListIcon: <ListIcon size={20} />,
-    Ticket: <Ticket size={20} />,
-    BarChart3: <BarChart3 size={20} />,
-    MapIcon: <MapIcon size={20} />
-  };
   const TABS = ALL_TABS.filter(t => t.roles.includes(role));
   const [activeTab, setActiveTab] = useState(TABS[0]?.id || 'submit');
 
@@ -148,8 +140,7 @@ export default function UnifiedDashboard() {
               onClick={() => selectTab(t.id)}
               aria-selected={activeTab === t.id}
             >
-              <span className='ud-nav-icon'>{IconMap[t.icon]}</span>
-              <span className='ud-nav-label'>{t.label}</span>
+              {t.label}
             </button>
           ))}
         </nav>
@@ -266,6 +257,4 @@ export default function UnifiedDashboard() {
     </div>
   );
 }
-
-
 

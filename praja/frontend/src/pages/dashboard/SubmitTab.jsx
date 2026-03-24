@@ -4,6 +4,7 @@ import Input from '../../components/ui/Input';
 import { Card } from '../../components/ui/Card';
 import { useMutation } from '../../hooks/useFetch';
 
+
 export default function SubmitTab({ onToast }) {
   const [title, setTitle] = useState('');
   const [description, setDesc] = useState('');
@@ -12,16 +13,13 @@ export default function SubmitTab({ onToast }) {
   const [submitted, setSubmitted] = useState(null);
 
   const [isRecording, setIsRecording] = useState(false);
-  const [recordingEngine, setRecordingEngine] = useState(null);
   const [isTranscribing, setIsTranscribing] = useState(false);
-  const [error, setError] = useState(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
   const photoInputRef = useRef(null);
 
-  const startRecording = async (engine) => {
+  const startRecording = async () => {
     try {
-      setRecordingEngine(engine);
       const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
       mediaRecorderRef.current = new MediaRecorder(stream, { mimeType: 'audio/webm' });
       
@@ -32,16 +30,14 @@ export default function SubmitTab({ onToast }) {
       mediaRecorderRef.current.onstop = async () => {
         const audioBlob = new Blob(audioChunksRef.current, { type: 'audio/webm' });
         audioChunksRef.current = [];
-        await handleAudioUpload(audioBlob, engine);
-        setRecordingEngine(null);
+        await handleAudioUpload(audioBlob);
       };
 
       mediaRecorderRef.current.start();
       setIsRecording(true);
-      
+      onToast('Listening... Speak your complaint.', 'success');
     } catch (err) {
-      onToast('🎤 ' + err.message, 'error');
-      setRecordingEngine(null);
+      onToast('Microphone access denied or unavailable.', 'error');
     }
   };
 
@@ -54,13 +50,13 @@ export default function SubmitTab({ onToast }) {
     }
   };
 
-  const handleAudioUpload = async (blob, engine) => {
+  const handleAudioUpload = async (blob) => {
     try {
       const formData = new FormData();
       formData.append('audio', blob, 'recording.webm');
       
       const token = localStorage.getItem('praja_token');
-      const res = await fetch((import.meta.env.VITE_API_URL || 'https://prajavox-backend.vercel.app') + '/api/mic/transcribe?engine=' + encodeURIComponent(engine), {
+      const res = await fetch((import.meta.env.VITE_API_URL || 'https://backend-topaz-one-69.vercel.app') + '/api/mic/transcribe', {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -68,7 +64,7 @@ export default function SubmitTab({ onToast }) {
         body: formData,
       });
       
-      if (!res.ok) throw new Error(`${engine.toUpperCase()} Transcription failed`);
+      if (!res.ok) throw new Error('Transcription failed');
       
       const data = await res.json();
       if (data.english_text) {
@@ -79,13 +75,13 @@ export default function SubmitTab({ onToast }) {
         onToast('Could not understand the audio.', 'error');
       }
     } catch (err) {
-      onToast(err.message, 'error');
+      onToast('Transcription Error', 'error');
     } finally {
       setIsTranscribing(false);
     }
   };
 
-  const { mutate: submitGrievance, loading } = useMutation('post');
+  const { mutate: submitGrievance, loading, error } = useMutation('post');
 
   const fileToDataUrl = (file) =>
     new Promise((resolve, reject) => {
@@ -194,7 +190,7 @@ export default function SubmitTab({ onToast }) {
       if (photoInputRef.current) photoInputRef.current.value = '';
       onToast(`✅ Submitted — ID: ${data.tracking_id}`, 'success');
     } catch (err) {
-      onToast(err.message, 'error');
+      onToast(`❌ ${err.message}`, 'error');
     }
   };
 
@@ -207,6 +203,7 @@ export default function SubmitTab({ onToast }) {
 
   return (
     <div style={{ maxWidth: 640 }}>
+      {/* Page header */}
       <div style={{ marginBottom: 24 }}>
         <p className="ud-title">File a Complaint</p>
         <p className="ud-subtitle">
@@ -214,6 +211,7 @@ export default function SubmitTab({ onToast }) {
         </p>
       </div>
 
+      {/* Success state */}
       {submitted && (
         <div style={{
           background: 'var(--color-success-bg)',
@@ -227,13 +225,13 @@ export default function SubmitTab({ onToast }) {
           gap: 8,
         }}>
           <div style={{ fontWeight: 700, color: 'var(--color-success-text)', fontSize: '0.95rem' }}>
-              ✅ Complaint submitted successfully
+            ✅ Complaint submitted successfully
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10, fontSize: '0.84rem' }}>
             <span style={{ color: 'var(--text-secondary)' }}>Tracking ID:</span>
             <span className="ud-tracking-id">{submitted.tracking_id}</span>
             {submitted.ai_category && (
-              <span style={{ color: 'var(--text-secondary)' }}>📁 {submitted.ai_category}</span>
+              <span style={{ color: 'var(--text-secondary)' }}>📂 {submitted.ai_category}</span>
             )}
             {submitted.priority && (
               <span style={{
@@ -247,12 +245,7 @@ export default function SubmitTab({ onToast }) {
         </div>
       )}
 
-<<<<<<< HEAD
-      {error && <div className="ud-alert-error">{error}</div>}
-
-=======
       {/* Form */}
->>>>>>> adde623 (Merge sanjana frontend changes into main)
       <Card>
         <form onSubmit={handleSubmit}>
           <Input
@@ -274,44 +267,16 @@ export default function SubmitTab({ onToast }) {
               onChange={e => setDesc(e.target.value)}
               required
             />
-            
             <button 
               type="button"
-              onClick={() => isRecording && recordingEngine === 'groq' ? stopRecording() : startRecording('groq')}
-              disabled={isTranscribing || (isRecording && recordingEngine !== 'groq')}
-              style={{
-                position: 'absolute',
-                right: '60px',
-                top: '35px',
-                background: isRecording && recordingEngine === 'groq' ? 'var(--color-danger-bg)' : '#10a37f',
-                color: isRecording && recordingEngine === 'groq' ? 'var(--color-danger-text)' : 'white',
-                border: 'none',
-                borderRadius: '50%',
-                width: '40px',
-                height: '40px',
-                cursor: 'pointer',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                fontSize: '1.2rem',
-                boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
-                opacity: isTranscribing || (isRecording && recordingEngine !== 'groq') ? 0.5 : 1
-              }}
-              title={isRecording && recordingEngine === 'groq' ? "Stop Groq" : "Speak (Groq Whisper)"}
-            >
-              {isTranscribing && recordingEngine === 'groq' ? "⏳" : "🎤 G"}
-            </button>
-
-            <button 
-              type="button"
-              onClick={() => isRecording && recordingEngine === 'bhashini' ? stopRecording() : startRecording('bhashini')}
-              disabled={isTranscribing || (isRecording && recordingEngine !== 'bhashini')}
+              onClick={isRecording ? stopRecording : startRecording}
+              disabled={isTranscribing}
               style={{
                 position: 'absolute',
                 right: '10px',
                 top: '35px',
-                background: isRecording && recordingEngine === 'bhashini' ? 'var(--color-danger-bg)' : '#f39c12',
-                color: isRecording && recordingEngine === 'bhashini' ? 'var(--color-danger-text)' : 'white',
+                background: isRecording ? 'var(--color-danger-bg)' : 'var(--color-primary-light)',
+                color: isRecording ? 'var(--color-danger-text)' : 'white',
                 border: 'none',
                 borderRadius: '50%',
                 width: '40px',
@@ -321,30 +286,14 @@ export default function SubmitTab({ onToast }) {
                 alignItems: 'center',
                 justifyContent: 'center',
                 fontSize: '1.2rem',
-                boxShadow: '0 2px 5px rgba(0,0,0,0.2)',
-                opacity: isTranscribing || (isRecording && recordingEngine !== 'bhashini') ? 0.5 : 1
+                boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
               }}
-              title={isRecording && recordingEngine === 'bhashini' ? "Stop Bhashini" : "Speak (Bhashini)"}
+              title={isRecording ? "Stop Recording" : "Speak your complaint (Bhashini ASR)"}
             >
-              {isTranscribing && recordingEngine === 'bhashini' ? "⏳" : "🎤 B"}
+              {isTranscribing ? '⌛' : (isRecording ? '⏹️' : '🎤')}
             </button>
           </div>
 
-<<<<<<< HEAD
-          <Input
-            label="📸 Photo Evidence (optional)"
-            id="complaint-photo"
-            placeholder="Paste an image URL (e.g. https://imgur.com/...)"
-            value={photoUrl}
-            onChange={e => setPhotoUrl(e.target.value)}
-          />
-          {photoUrl && (
-            <img
-              src={photoUrl}
-              alt="Evidence preview"
-              className="ud-photo-preview"
-              onError={e => { e.target.style.display = 'none'; }}
-=======
           <div className="ud-field-wrapper">
             <label htmlFor="complaint-photo" className="ud-label">📷 Photo Evidence (optional)</label>
             <input
@@ -354,7 +303,6 @@ export default function SubmitTab({ onToast }) {
               accept="image/*"
               onChange={handlePhotoFileChange}
               className="ud-photo-input-hidden"
->>>>>>> adde623 (Merge sanjana frontend changes into main)
             />
             <div className="ud-photo-upload-shell" role="group" aria-label="Photo evidence upload">
               <button type="button" className="ud-photo-upload-btn" onClick={openPhotoPicker}>
@@ -383,7 +331,9 @@ export default function SubmitTab({ onToast }) {
             </div>
           )}
           <div style={{ marginTop: 20 }}>
-            <Button type="submit" isLoading={loading} size="lg" fullWidth>🚀 Submit Complaint</Button>
+            <Button type="submit" isLoading={loading} size="lg" fullWidth>
+              📤 Submit Complaint
+            </Button>
           </div>
         </form>
       </Card>

@@ -53,7 +53,7 @@ export default function AnalyticsTab() {
     let alive = true
     async function load() {
       try {
-        const resp = await api.get('/grievances/?limit=1000')
+        const resp = await api.get('/officers/tickets?limit=1000')
         if (!alive) return
         const rows = resp.data || []
         
@@ -271,4 +271,3 @@ export default function AnalyticsTab() {
     </div>
   )
 }
-

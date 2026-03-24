@@ -1,9 +1,9 @@
-﻿/* â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•
-   PRAJA â€” Dashboard Shell
-   Official Civic Theme Â· India Innovates 2026
-   â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â•â• */
+/* ═══════════════════════════════════════════════════════════════
+   PRAJA — Dashboard Shell
+   Official Civic Theme · India Innovates 2026
+   ═══════════════════════════════════════════════════════════════ */
 
-/* â”€â”€ Layout Shell â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Layout Shell ─────────────────────────────────────────────── */
 .ud-layout {
   display: flex;
   min-height: 100vh;
@@ -13,7 +13,7 @@
   position: relative;
 }
 
-/* â”€â”€ Sidebar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Sidebar ──────────────────────────────────────────────────── */
 .ud-sidebar {
   width: 260px;
   background: var(--bg-surface); /* White */
@@ -29,44 +29,21 @@
   box-shadow: 4px 0 15px rgba(0,0,0,0.05); /* Slight shadow over main content */
 }
 
-/* Shrink sidebar instead of moving off-screen */
+/* On desktop, shrinking the layout when closed */
 @media (min-width: 769px) {
   .ud-sidebar {
     position: relative;
-    transition: width 0.3s ease;
+    /* Instead of translating, we can just collapse width if we wanted, 
+       but for simplicity matching the request: we just translate left */
   }
   .ud-sidebar:not(.open) {
-    width: 64px;
+    transform: translateX(-260px);
+    width: 0;
     overflow: hidden;
-  }
-  .ud-sidebar:not(.open) .ud-logo-text,
-  .ud-sidebar:not(.open) .ud-nav-label,
-  .ud-sidebar:not(.open) .ud-nav-group,
-  .ud-sidebar:not(.open) .ud-sidebar-footer {
-    display: none;
-  }
-  .ud-sidebar:not(.open) .ud-sidebar-header {
-    justify-content: center;
-    padding: 0;
-  }
-  .ud-sidebar:not(.open) .ud-nav-item {
-    justify-content: center;
-    padding: 10px 0;
-  }
-  .ud-sidebar:not(.open) .ud-nav-icon {
-    margin-right: 0;
   }
 }
 
-.ud-nav-icon {
-  display: flex;
-  align-items: center;
-  margin-right: 12px;
-}
-  .ud-sidebar:not(.open) {
-    /* transform removed */
-    overflow: hidden;
-  }/* On mobile, hidden by default */
+/* On mobile, hidden by default */
 @media (max-width: 768px) {
   .ud-sidebar {
     transform: translateX(-100%);
@@ -76,7 +53,7 @@
   }
 }
 
-/* â”€â”€ Sidebar Header (Logo) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Sidebar Header (Logo) ────────────────────────────────────── */
 .ud-sidebar-header {
   height: 64px;
   display: flex;
@@ -111,7 +88,7 @@
   font-weight: 600;
 }
 
-/* â”€â”€ Sidebar Navigation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Sidebar Navigation ───────────────────────────────────────── */
 .ud-sidebar-nav {
   flex: 1;
   padding: 24px 12px;
@@ -162,7 +139,7 @@
   border-top: 1px solid var(--border-color);
 }
 
-/* â”€â”€ Mobile Backdrop â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Mobile Backdrop ──────────────────────────────────────────── */
 .ud-sidebar-backdrop {
   position: fixed;
   inset: 0;
@@ -177,7 +154,7 @@
   to { opacity: 1; }
 }
 
-/* â”€â”€ Main Column â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Main Column ──────────────────────────────────────────────── */
 .ud-main-col {
   flex: 1;
   display: flex;
@@ -194,7 +171,7 @@
   flex-shrink: 0;
 }
 
-/* â”€â”€ Topbar â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Topbar ───────────────────────────────────────────────────── */
 .ud-topbar {
   background: var(--bg-surface);
   border-bottom: 1px solid var(--border-color);
@@ -369,7 +346,7 @@
   border-color: var(--color-primary);
 }
 
-/* â”€â”€ Body Content â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Body Content ─────────────────────────────────────────────── */
 .ud-content-body {
   flex: 1;
   padding: 24px 32px;
@@ -386,7 +363,7 @@
   .ud-content-body { padding: 20px 16px; }
 }
 
-/* â”€â”€ Toasts â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Toasts ───────────────────────────────────────────────────── */
 .ud-toast {
   position: fixed;
   bottom: 24px;
@@ -412,7 +389,7 @@
   to   { transform: translateY(0) scale(1); opacity: 1; }
 }
 
-/* â”€â”€ Section Headings â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Section Headings ─────────────────────────────────────────── */
 .ud-title {
   font-size: 1.4rem;
   font-weight: 800;
@@ -428,7 +405,7 @@
   line-height: 1.5;
 }
 
-/* â”€â”€ Sub Navigation Tabs (replaces Tailwind) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Sub Navigation Tabs (replaces Tailwind) ──────────────────── */
 .ud-subtab-nav {
   display: flex;
   gap: 8px;
@@ -467,7 +444,7 @@
   outline-offset: -2px;
 }
 
-/* â”€â”€ Alerts / Empty / Loading â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Alerts / Empty / Loading ─────────────────────────────────── */
 .ud-alert-empty {
   background: var(--bg-surface);
   border: 1px dashed var(--border-color);
@@ -516,7 +493,7 @@
   animation: ud-spin 0.8s linear infinite;
 }
 
-/* â”€â”€ Priorities/Meta â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€ */
+/* ── Priorities/Meta ──────────────────────────────────────────── */
 .ud-pri-low      { color: var(--color-success);  font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; }
 .ud-pri-medium   { color: var(--color-warning);  font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; }
 .ud-pri-high     { color: var(--color-accent);   font-weight: 700; font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; }
@@ -885,6 +862,3 @@
 }
 
 @keyframes ud-spin { to { transform: rotate(360deg); } }
-
-
-
