@@ -8,7 +8,7 @@ from datetime import datetime, timezone
 from fastapi import APIRouter, Form, Request, Query
 from fastapi.responses import Response
 
-from twilio.twiml.voice_response import VoiceResponse, Gather
+from twilio.twiml.voice_response import VoiceResponse, Gather, Say
 
 from app.db.database import get_supabase
 from app.routes.whatsapp import get_or_create_user, check_registration_and_get_user
@@ -362,6 +362,7 @@ async def voice_gather(
 @router.post("/outbound/start")
 async def voice_outbound_start():
     """Initial greeting with multilingual language selection."""
+    print("DEBUG: /api/voice/outbound/start HIT")
     resp = VoiceResponse()
     gather = Gather(
         num_digits=1,
@@ -369,11 +370,10 @@ async def voice_outbound_start():
         method="POST",
         timeout=10
     )
-    # Multilingual selection: Say each in its native accent if possible, 
-    # but since Alice switches, we'll try to use a neutral accent or multiple Say tags.
-    gather.say("Welcome to Praja. Press 1 for English.", voice="alice", language="en-IN")
-    gather.say("Hindi ke liye 2 dabaaye.", voice="alice", language="hi-IN")
-    gather.say("Tamizhukku en moon-drai azhuthavum.", voice="alice", language="ta-IN")
+    # Multilingual selection: Each in its native language/voice
+    gather.append(Say("Welcome to Praja. Press 1 for English.", voice="alice", language="en-IN"))
+    gather.append(Say("Hindi ke liye 2 dabaaye.", voice="alice", language="hi-IN"))
+    gather.append(Say("Tamizhukku en moon-drai azhuthavum.", voice="alice", language="ta-IN"))
     
     resp.append(gather)
     resp.say("No input received. Goodbye.", voice="alice", language="en-IN")
