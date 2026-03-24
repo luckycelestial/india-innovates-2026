@@ -509,14 +509,26 @@ async def whatsapp_webhook(
                             resp.message("⚠️ Could not place callback. Please send location and ward in WhatsApp text.")
                         return xml_response(resp)
                 else:
-                    resp.message("⚠️ Apologies, I could not transcribe your audio message. Please send a text message or try again.")
+                    resp.message("⚠️ Apologies, transcription failed. You will now receive an automated call to collect details by voice.")
+                    detected_voice_language = detect_language(Body or "")
                     voice_result = _trigger_voice_reply_call(
                         From,
-                        _localized_voice_line(detected_voice_language, "transcription_failed"),
+                        "Voice note transcription failed. Collecting grievance details by call.",
                         detected_voice_language,
+                        public_base_url=public_base_url,
+                        require_followup=True,
                     )
                     if not voice_result.get("ok"):
-                        print(f"Twilio voice callback failed after transcription error: {voice_result.get('reason')}")
+                        print(f"Twilio interactive callback failed after transcription error: {voice_result.get('reason')}")
+                        # Fallback plain callback message if interactive call cannot be started.
+                        fallback_voice_result = _trigger_voice_reply_call(
+                            From,
+                            _localized_voice_line(detected_voice_language, "transcription_failed"),
+                            detected_voice_language,
+                        )
+                        if not fallback_voice_result.get("ok"):
+                            print(f"Twilio fallback callback also failed: {fallback_voice_result.get('reason')}")
+                            resp.message("⚠️ Could not place callback right now. Please send location and ward as WhatsApp text.")
                     return xml_response(resp)
 
         if not text_body:
