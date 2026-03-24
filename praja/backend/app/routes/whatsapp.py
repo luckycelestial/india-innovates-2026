@@ -4,10 +4,12 @@ WhatsApp Bot via Twilio Sandbox
 import re
 import json
 import secrets
+from urllib.parse import urlencode
 from datetime import datetime, timezone
-from fastapi import APIRouter, Form, Request, Header
+from fastapi import APIRouter, Form, Request, Header, Query
 from fastapi.responses import Response
 from twilio.twiml.messaging_response import MessagingResponse
+from twilio.twiml.voice_response import VoiceResponse, Gather
 from groq import Groq
 from xml.sax.saxutils import escape as xml_escape
 
@@ -276,6 +278,70 @@ def xml_response(resp: MessagingResponse) -> Response:
     return Response(content=str(resp), media_type="text/xml; charset=utf-8")
 
 
+def voice_xml_response(resp: VoiceResponse) -> Response:
+    return Response(content=str(resp), media_type="text/xml; charset=utf-8")
+
+
+def _is_valid_twilio_signature(request: Request, signature: str, params: dict) -> bool:
+    if not settings.TWILIO_AUTH_TOKEN or not RequestValidator:
+        return True
+    validator = RequestValidator(settings.TWILIO_AUTH_TOKEN)
+    request_url = str(request.url)
+    if validator.validate(request_url, params, signature or ""):
+        return True
+    if request_url.startswith("http://"):
+        https_url = request_url.replace("http://", "https://", 1)
+        return validator.validate(https_url, params, signature or "")
+    return False
+
+
+def _needs_followup_details(text: str) -> bool:
+    """Return True when complaint text likely misses exact location/ward details."""
+    normalized = " ".join((text or "").lower().split())
+    if not normalized:
+        return True
+    has_ward = bool(re.search(r"\bward\b|\bward\s*\d+\b", normalized))
+    has_location_hint = bool(
+        re.search(
+            r"\b(road|street|colony|area|village|town|city|near|opposite|junction|market|bus stand|school|hospital)\b",
+            normalized,
+        )
+    )
+    return not (has_ward and has_location_hint)
+
+
+def _followup_prompt(language_name: str) -> str:
+    prompts = {
+        "Hindi": "Namaste. Kripya apni shikayat ka sahi location, ward number, aur najdeeki landmark bataye.",
+        "Tamil": "Vanakkam. Dayavu seithu ungal pugaariyin sariyana idam, ward enn, matrum arugil ullla landmark sollunga.",
+        "Telugu": "Namaskaram. Mee complaint ki exact location, ward number, mariyu daggara landmark cheppandi.",
+        "Kannada": "Namaskara. Dayavittu nimma durigege sariyada sthalada hesaru, ward sankhye mattu hattirada gurutu heli.",
+        "Malayalam": "Namaskaram. Dayavayi ningalude paraathiyude sariyaaya sthalavum ward numberum aduthulla landmarkum parayuka.",
+        "Bengali": "Nomoskar. Doya kore apnar ovijoger thik location, ward number, ebong kachakachi landmark bolun.",
+        "English": "Hello. Please tell the exact location, ward number, and nearby landmark for your complaint.",
+    }
+    return prompts.get(language_name, prompts["English"])
+
+
+def _create_grievance_from_text(phone_number: str, complaint_text: str) -> dict:
+    sb = get_supabase()
+    user_id = get_or_create_user(phone_number, sb)
+    classification = classify_with_groq(complaint_text)
+    tracking_id = f"PRJ-{datetime.now(timezone.utc).strftime('%y%m%d')}-{secrets.token_hex(3).upper()}"
+    sb.table("grievances").insert({
+        "tracking_id": tracking_id,
+        "citizen_id": user_id,
+        "title": classification.get("title", complaint_text[:80]),
+        "description": complaint_text,
+        "ai_category": classification.get("category", "General"),
+        "ai_sentiment": classification.get("sentiment", "negative"),
+        "priority": classification.get("priority", "medium"),
+        "status": "open",
+        "channel": "whatsapp",
+    }).execute()
+    return {"tracking_id": tracking_id, "classification": classification}
+
+
 def _language_profile(language_name: str) -> dict:
     profiles = {
         "Hindi":    {"locale": "hi-IN", "voice": "Polly.Aditi"},
@@ -289,7 +355,13 @@ def _language_profile(language_name: str) -> dict:
     return profiles.get(language_name, profiles["English"])
 
 
-def _trigger_voice_reply_call(whatsapp_from: str, spoken_text: str, language_name: str = "English") -> dict:
+def _trigger_voice_reply_call(
+    whatsapp_from: str,
+    spoken_text: str,
+    language_name: str = "English",
+    public_base_url: str = "",
+    require_followup: bool = False,
+) -> dict:
     """Place an outbound voice call to read an acknowledgement to the user."""
     if not TwilioClient:
         return {"ok": False, "reason": "twilio not available"}
@@ -318,7 +390,12 @@ def _trigger_voice_reply_call(whatsapp_from: str, spoken_text: str, language_nam
 
     try:
         client = TwilioClient(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
-        call = client.calls.create(to=to_phone, from_=from_number, twiml=twiml)
+        if require_followup and public_base_url:
+            qs = urlencode({"phone": to_phone, "lang": language_name, "base": spoken_text[:220]})
+            followup_url = f"{public_base_url}/api/whatsapp/voice-followup/start?{qs}"
+            call = client.calls.create(to=to_phone, from_=from_number, url=followup_url, method="POST")
+        else:
+            call = client.calls.create(to=to_phone, from_=from_number, twiml=twiml)
         return {"ok": True, "sid": call.sid}
     except Exception as exc:
         return {"ok": False, "reason": str(exc)}
@@ -337,19 +414,14 @@ async def whatsapp_webhook(
     resp = MessagingResponse()
     received_voice_note = False
     try:
-        if settings.TWILIO_AUTH_TOKEN and RequestValidator:
-            form_data = await request.form()
-            params = {k: str(v) for k, v in form_data.items()}
-            validator = RequestValidator(settings.TWILIO_AUTH_TOKEN)
-            request_url = str(request.url)
-            is_valid = validator.validate(request_url, params, x_twilio_signature or "")
-            if not is_valid and request_url.startswith("http://"):
-                is_valid = validator.validate(request_url.replace("http://", "https://", 1), params, x_twilio_signature or "")
-            if not is_valid:
-                print("Rejected non-Twilio webhook call: invalid signature")
-                return Response(content="Forbidden", status_code=403)
+        form_data = await request.form()
+        params = {k: str(v) for k, v in form_data.items()}
+        if not _is_valid_twilio_signature(request, x_twilio_signature, params):
+            print("Rejected non-Twilio webhook call: invalid signature")
+            return Response(content="Forbidden", status_code=403)
 
         text_body = Body.strip()
+        public_base_url = str(request.base_url).rstrip("/")
         
         # If user sent a voice note, transcribe it
         if NumMedia > 0 and MediaUrl0:
@@ -358,6 +430,20 @@ async def whatsapp_webhook(
                 transcription_result = _download_and_transcribe(MediaUrl0)
                 if transcription_result:
                     text_body = transcription_result
+                    if _needs_followup_details(text_body):
+                        lang_name = detect_language(text_body)
+                        resp.message("📞 We need a bit more detail. You will receive an automated call now to collect exact location and ward.")
+                        voice_result = _trigger_voice_reply_call(
+                            From,
+                            text_body,
+                            lang_name,
+                            public_base_url=public_base_url,
+                            require_followup=True,
+                        )
+                        if not voice_result.get("ok"):
+                            print(f"Twilio interactive follow-up call failed: {voice_result.get('reason')}")
+                            resp.message("⚠️ Could not place callback. Please send location and ward in WhatsApp text.")
+                        return xml_response(resp)
                 else:
                     resp.message("⚠️ Apologies, I could not transcribe your audio message. Please send a text message or try again.")
                     lang_name = detect_language(text_body or Body)
@@ -395,6 +481,80 @@ async def whatsapp_webhook(
             f"Error ref: {type(exc).__name__}\n\n{str(exc)}"
         )
     return xml_response(resp)
+
+
+@router.post("/voice-followup/start")
+async def whatsapp_voice_followup_start(
+    request: Request,
+    x_twilio_signature: str = Header(default=""),
+    phone: str = Query(""),
+    lang: str = Query("English"),
+    base: str = Query(""),
+):
+    form_data = await request.form()
+    params = {k: str(v) for k, v in form_data.items()}
+    if not _is_valid_twilio_signature(request, x_twilio_signature, params):
+        return Response(content="Forbidden", status_code=403)
+
+    profile = _language_profile(lang)
+    locale = profile["locale"]
+    voice = profile["voice"] or "Polly.Aditi"
+    action_qs = urlencode({"phone": phone, "lang": lang, "base": base[:220]})
+    action_url = f"{str(request.base_url).rstrip('/')}/api/whatsapp/voice-followup/collect?{action_qs}"
+
+    vr = VoiceResponse()
+    gather = Gather(
+        input="speech",
+        action=action_url,
+        method="POST",
+        timeout=8,
+        speech_timeout="auto",
+        language=locale,
+    )
+    gather.say(_followup_prompt(lang), language=locale, voice=voice)
+    vr.append(gather)
+    vr.say(_followup_prompt(lang), language=locale, voice=voice)
+    return voice_xml_response(vr)
+
+
+@router.post("/voice-followup/collect")
+async def whatsapp_voice_followup_collect(
+    request: Request,
+    x_twilio_signature: str = Header(default=""),
+    phone: str = Query(""),
+    lang: str = Query("English"),
+    base: str = Query(""),
+    SpeechResult: str = Form(default=""),
+):
+    form_data = await request.form()
+    params = {k: str(v) for k, v in form_data.items()}
+    if not _is_valid_twilio_signature(request, x_twilio_signature, params):
+        return Response(content="Forbidden", status_code=403)
+
+    profile = _language_profile(lang)
+    locale = profile["locale"]
+    voice = profile["voice"] or "Polly.Aditi"
+    followup_text = (SpeechResult or "").strip()
+    vr = VoiceResponse()
+
+    if not followup_text:
+        vr.say("No speech detected. Please send location and ward via WhatsApp message.", language=locale, voice=voice)
+        return voice_xml_response(vr)
+
+    combined_text = " ".join(part for part in [base.strip(), followup_text] if part).strip()
+    try:
+        result = _create_grievance_from_text(phone, combined_text)
+        tracking_id = result["tracking_id"]
+        vr.say(
+            f"Thank you. Your grievance is registered. Ticket I D is {' '.join(tracking_id)}. You can track on WhatsApp.",
+            language=locale,
+            voice=voice,
+        )
+    except Exception as exc:
+        print(f"Failed to file grievance from follow-up call: {exc}")
+        vr.say("Sorry, we could not file your complaint right now. Please send details on WhatsApp.", language=locale, voice=voice)
+
+    return voice_xml_response(vr)
 
 
 async def _handle_message(Body: str, From: str, resp: MessagingResponse) -> None:
