@@ -361,22 +361,21 @@ async def voice_gather(
 
 @router.post("/outbound/start")
 async def voice_outbound_start():
-    """Initial greeting for outbound call triggered from WhatsApp."""
+    """Initial greeting with multilingual language selection."""
     resp = VoiceResponse()
-    # Ask for language via numbers
     gather = Gather(
         num_digits=1,
         action="/api/voice/outbound/language",
         method="POST",
         timeout=10
     )
-    gather.say(
-        "Welcome to Praja. Press 1 for English. Press 2 for Hindi. Press 3 for Tamil.",
-        voice="alice",
-        language="en-IN"
-    )
+    # Multilingual selection: Say each in its native accent if possible, 
+    # but since Alice switches, we'll try to use a neutral accent or multiple Say tags.
+    gather.say("Welcome to Praja. Press 1 for English.", voice="alice", language="en-IN")
+    gather.say("Hindi ke liye 2 dabaaye.", voice="alice", language="hi-IN")
+    gather.say("Tamizhukku en moon-drai azhuthavum.", voice="alice", language="ta-IN")
+    
     resp.append(gather)
-    # Correct handling of no input
     resp.say("No input received. Goodbye.", voice="alice", language="en-IN")
     resp.hangup()
     return _xml(resp)
@@ -429,8 +428,7 @@ async def voice_outbound_language(request: Request, Digits: str = Form(default="
         method="POST",
         timeout=10,
         speech_timeout="auto",
-        language=lang_code,
-        enhanced=True
+        language=lang_code
     )
     gather.say(prompt, voice="alice", language=lang_code)
     resp.append(gather)
