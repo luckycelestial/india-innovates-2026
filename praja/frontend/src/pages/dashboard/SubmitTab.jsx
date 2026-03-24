@@ -40,6 +40,23 @@ export default function SubmitTab({ onToast }) {
     }
   };
 
+  const { mutate: submitGrievance, loading } = useMutation('post');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitted(null);
+    try {
+      const body = { title, description };
+      if (photoUrl.trim()) body.photo_url = photoUrl.trim();
+      const data = await submitGrievance('/grievances/submit', body);
+      setSubmitted(data);
+      setTitle(''); setDesc(''); setPhotoUrl('');
+      onToast('? Submitted - ID: ' + data.tracking_id, 'success');
+    } catch (err) {
+      onToast('? ' + err.message, 'error');
+    }
+  };
+
   const PRIORITY_COLORS = {
     critical: 'var(--color-danger-text)',
     high:     'var(--color-primary-light)',
