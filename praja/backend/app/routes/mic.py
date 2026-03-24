@@ -61,7 +61,7 @@ async def transcribe_audio(audio: UploadFile = File(...)):
         Text: {native_text}"""
         
         completion = groq_client.chat.completions.create(
-            model="llama3-8b-8192",
+            model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.1
         )
@@ -92,7 +92,7 @@ async def transcribe_audio(audio: UploadFile = File(...)):
             native_text = transcription.text
             prompt = f"""Translate the following text into English. Return ONLY the English translation. Text: {native_text}"""
             completion = groq_client.chat.completions.create(
-                model="llama3-8b-8192",
+                model="llama-3.3-70b-versatile",
                 messages=[{"role": "user", "content": prompt}],
                 temperature=0.1
             )
