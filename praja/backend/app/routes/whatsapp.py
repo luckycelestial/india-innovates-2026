@@ -5,7 +5,7 @@ import re
 import json
 import secrets
 from datetime import datetime, timezone
-from fastapi import APIRouter, Form
+from fastapi import APIRouter, Form, Request, Header
 from fastapi.responses import Response
 from twilio.twiml.messaging_response import MessagingResponse
 from groq import Groq
@@ -15,6 +15,11 @@ try:
     from twilio.rest import Client as TwilioClient
 except Exception:
     TwilioClient = None
+
+try:
+    from twilio.request_validator import RequestValidator
+except Exception:
+    RequestValidator = None
 
 from app.config import settings
 from app.db.database import get_supabase
@@ -271,7 +276,20 @@ def xml_response(resp: MessagingResponse) -> Response:
     return Response(content=str(resp), media_type="text/xml; charset=utf-8")
 
 
-def _trigger_voice_reply_call(whatsapp_from: str, spoken_text: str) -> dict:
+def _language_profile(language_name: str) -> dict:
+    profiles = {
+        "Hindi":    {"locale": "hi-IN", "voice": "Polly.Aditi"},
+        "English":  {"locale": "en-IN", "voice": "Polly.Aditi"},
+        "Tamil":    {"locale": "ta-IN", "voice": ""},
+        "Telugu":   {"locale": "te-IN", "voice": ""},
+        "Kannada":  {"locale": "kn-IN", "voice": ""},
+        "Malayalam": {"locale": "ml-IN", "voice": ""},
+        "Bengali":  {"locale": "bn-IN", "voice": ""},
+    }
+    return profiles.get(language_name, profiles["English"])
+
+
+def _trigger_voice_reply_call(whatsapp_from: str, spoken_text: str, language_name: str = "English") -> dict:
     """Place an outbound voice call to read an acknowledgement to the user."""
     if not TwilioClient:
         return {"ok": False, "reason": "twilio not available"}
@@ -286,9 +304,13 @@ def _trigger_voice_reply_call(whatsapp_from: str, spoken_text: str) -> dict:
         return {"ok": False, "reason": "invalid destination phone"}
 
     safe_text = xml_escape(" ".join((spoken_text or "").split())[:320])
+    profile = _language_profile(language_name)
+    locale = profile["locale"]
+    voice = profile["voice"]
+    voice_attr = f' voice="{voice}"' if voice else ""
     twiml = (
         "<Response>"
-        "<Say voice=\"Polly.Aditi\" language=\"hi-IN\">"
+        f"<Say{voice_attr} language=\"{locale}\">"
         f"{safe_text}"
         "</Say>"
         "</Response>"
@@ -304,6 +326,8 @@ def _trigger_voice_reply_call(whatsapp_from: str, spoken_text: str) -> dict:
 
 @router.post("/webhook")
 async def whatsapp_webhook(
+    request: Request,
+    x_twilio_signature: str = Header(default=""),
     Body: str = Form(""),
     From: str = Form(...),
     NumMedia: int = Form(0),
@@ -313,6 +337,18 @@ async def whatsapp_webhook(
     resp = MessagingResponse()
     received_voice_note = False
     try:
+        if settings.TWILIO_AUTH_TOKEN and RequestValidator:
+            form_data = await request.form()
+            params = {k: str(v) for k, v in form_data.items()}
+            validator = RequestValidator(settings.TWILIO_AUTH_TOKEN)
+            request_url = str(request.url)
+            is_valid = validator.validate(request_url, params, x_twilio_signature or "")
+            if not is_valid and request_url.startswith("http://"):
+                is_valid = validator.validate(request_url.replace("http://", "https://", 1), params, x_twilio_signature or "")
+            if not is_valid:
+                print("Rejected non-Twilio webhook call: invalid signature")
+                return Response(content="Forbidden", status_code=403)
+
         text_body = Body.strip()
         
         # If user sent a voice note, transcribe it
@@ -324,9 +360,11 @@ async def whatsapp_webhook(
                     text_body = transcription_result
                 else:
                     resp.message("⚠️ Apologies, I could not transcribe your audio message. Please send a text message or try again.")
+                    lang_name = detect_language(text_body or Body)
                     voice_result = _trigger_voice_reply_call(
                         From,
                         "Namaste from Praja. We received your voice note but could not transcribe it. Please send a clearer voice note or type your complaint on WhatsApp.",
+                        lang_name,
                     )
                     if not voice_result.get("ok"):
                         print(f"Twilio voice callback failed after transcription error: {voice_result.get('reason')}")
@@ -338,9 +376,11 @@ async def whatsapp_webhook(
 
         await _handle_message(text_body, From, resp)
         if received_voice_note:
+            lang_name = detect_language(text_body or Body)
             voice_result = _trigger_voice_reply_call(
                 From,
                 "Namaste from Praja. Your voice complaint has been processed. Please check your WhatsApp message for ticket details and tracking instructions.",
+                lang_name,
             )
             if not voice_result.get("ok"):
                 print(f"Twilio voice callback failed: {voice_result.get('reason')}")
