@@ -28,27 +28,24 @@
 
 ## Development Workflow (Single-Branch Model)
 
-This project follows a streamlined **Single-Branch Workflow**:
+This project follows a streamlined **Single-Branch Model**:
 
-1. **`main` Branch**: All development, testing, and production occurs on `main`. Hooked to Vercel Production.
-
-### Vibe Coding Workflow
-1. **Plan & Implement**: Directly work on the `main` branch.
-2. **Auto-Deploy**: Every push to `main` triggers a **Vercel Production Deployment**.
-3. **Mandatory Verification**: Use the browser tool to visit the production URL to verify the fix or feature personally before reporting.
-4. **Autonomous Flow**: AI Lead handles planning, implementation, and git operations (commit/push) autonomously.
+1. **`main` Branch**: All development, testing, and production occurs on `main`.
+2. **Vibe Coding Flow**:
+   - **Plan & Implement**: Direct implementation on the `main` branch.
+   - **Verification**: Mandatory verification of the production/live URL after every commit.
+   - **Push Often**: Keep local and origin synced frequently.
 
 ### Git Hygiene
-- Use only the `main` branch.
-- AI Lead uses descriptive commit messages.
-- NEVER commit secrets or `.env` files.
+- Use descriptive commit messages.
+- Never commit secrets or `.env` files. (Ensure .gitignore covers these).
+- Run `git pull origin main --rebase` before pushing to avoid conflicts.
 
 ### Running Locally (Optional)
 - **Frontend**: `npm run dev` in `praja/frontend`
 - **Backend**: `uvicorn main:app --reload` (or similar) in `praja/backend`
 
-## Verification Checklist
-- [ ] Push changes to `main` branch.
-- [ ] Wait for Vercel Production Deployment.
-- [ ] AI Lead verifies functionality on the live URL.
-- [ ] Report completed task to User.
+## Final Sprint Checklist (Deadline: March 28)
+- [ ] Push features directly to `main`.
+- [ ] Verify functionality on the live production URL.
+- [ ] Maintain a clean workspace (no untracked experiment files).
