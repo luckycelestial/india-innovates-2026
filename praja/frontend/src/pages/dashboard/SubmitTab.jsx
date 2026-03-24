@@ -13,6 +13,7 @@ export default function SubmitTab({ onToast }) {
 
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
+  const [error, setError] = useState(null);
   const mediaRecorderRef = useRef(null);
   const audioChunksRef = useRef([]);
 
@@ -33,9 +34,26 @@ export default function SubmitTab({ onToast }) {
 
       mediaRecorderRef.current.start();
       setIsRecording(true);
-      onToast('✅ Submitted - ID: ' + data.tracking_id, 'success');
+      
     } catch (err) {
       onToast('❌ ' + err.message, 'error');
+    }
+  };
+
+  const { mutate: submitGrievance, loading } = useMutation('post');
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    setSubmitted(null);
+    try {
+      const body = { title, description };
+      if (photoUrl.trim()) body.photo_url = photoUrl.trim();
+      const data = await submitGrievance('/grievances/submit', body);
+      setSubmitted(data);
+      setTitle(''); setDesc(''); setPhotoUrl('');
+      onToast('Submitted - ID: ' + data.tracking_id, 'success');
+    } catch (err) {
+      onToast(err.message, 'error');
     }
   };
 
