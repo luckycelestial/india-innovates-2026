@@ -659,6 +659,22 @@ async def _handle_message(Body: str, From: str, resp: MessagingResponse) -> None
         resp.message(HELP_MSG)
         return
 
+    if text.upper() == "CALL ME":
+        # Outbound call trigger
+        to_phone = sender.replace("whatsapp:", "")
+        xml_url = f"{settings.BACKEND_URL}/api/voice/outbound/start"
+        
+        try:
+            # Inline import to avoid circular dependency
+            from twilio.rest import Client as TwilioClient
+            client = TwilioClient(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+            client.calls.create(url=xml_url, to=to_phone, from_=settings.TWILIO_PHONE_NUMBER)
+            
+            resp.message("📞 *Initiating Voice Call...*\n\nPlease answer your phone to file your complaint via our IVR system.")
+        except Exception as e:
+            resp.message(f"⚠️ *Call Failed:* {str(e)}")
+        return
+
     if text.lower() == "reset":
         clean_phone = sender.replace("whatsapp:", "")
         # First find the user

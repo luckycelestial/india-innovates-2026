@@ -359,6 +359,66 @@ async def voice_gather(
     return _xml(resp)
 
 
+@router.post("/outbound/start")
+async def voice_outbound_start():
+    """Initial greeting for outbound call triggered from WhatsApp."""
+    resp = VoiceResponse()
+    # Ask for language via numbers
+    gather = Gather(
+        num_digits=1,
+        action="/api/voice/outbound/language",
+        method="POST",
+        timeout=10
+    )
+    gather.say(
+        "Welcome to Praja. Press 1 for English. Press 2 for Hindi. Press 3 for Tamil.",
+        voice="Polly.Aditi",
+        language="en-IN"
+    )
+    resp.append(gather)
+    # Correct handling of no input
+    resp.say("No input received. Goodbye.", voice="Polly.Aditi", language="en-IN")
+    resp.hangup()
+    return _xml(resp)
+
+
+@router.post("/outbound/language")
+async def voice_outbound_language(Digits: str = Form(default=""), CallSid: str = Form(default="")):
+    """Handles digit input and asks for complaint in selected language."""
+    resp = VoiceResponse()
+    lang_map = {"1": "en-IN", "2": "hi-IN", "3": "ta-IN"}
+    lang_code = lang_map.get(Digits, "en-IN")
+
+    if CallSid:
+        ctx = CALL_CONTEXTS.get(CallSid, {})
+        ctx["lang"] = lang_code
+        CALL_CONTEXTS[CallSid] = ctx
+
+    # Localized prompts for the selected language
+    prompts = {
+        "en-IN": "Please describe your complaint clearly after the beep.",
+        "hi-IN": "कृपया बीप के बाद अपनी शिकायत बताएं।",
+        "ta-IN": "பீப் சத்தத்திற்குப் பிறகு உங்கள் புகாரைத் தெளிவாகக் கூறுங்கள்."
+    }
+    prompt = prompts.get(lang_code, prompts["en-IN"])
+
+    gather = Gather(
+        input="speech",
+        action="/api/voice/complaint/issue", # Reuse existing issue gatherer
+        method="POST",
+        timeout=10,
+        speech_timeout="auto",
+        language=lang_code,
+        enhanced=True
+    )
+    gather.say(prompt, voice=_voice_for_lang(lang_code), language=lang_code)
+    resp.append(gather)
+    # Fallback
+    resp.say("I could not hear any speech. Goodbye.", voice=_voice_for_lang(lang_code), language=lang_code)
+    resp.hangup()
+    return _xml(resp)
+
+
 @router.post("/status-callback")
 async def voice_status(request: Request):
     """Optional: Twilio calls this when call completes (for logs)."""
