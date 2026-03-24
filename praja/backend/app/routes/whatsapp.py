@@ -9,6 +9,12 @@ from fastapi import APIRouter, Form
 from fastapi.responses import Response
 from twilio.twiml.messaging_response import MessagingResponse
 from groq import Groq
+from xml.sax.saxutils import escape as xml_escape
+
+try:
+    from twilio.rest import Client as TwilioClient
+except Exception:
+    TwilioClient = None
 
 from app.config import settings
 from app.db.database import get_supabase
@@ -265,6 +271,36 @@ def xml_response(resp: MessagingResponse) -> Response:
     return Response(content=str(resp), media_type="text/xml; charset=utf-8")
 
 
+def _trigger_voice_reply_call(whatsapp_from: str, spoken_text: str) -> dict:
+    """Place an outbound voice call to read an acknowledgement to the user."""
+    if not TwilioClient:
+        return {"ok": False, "reason": "twilio not available"}
+    if not settings.TWILIO_ACCOUNT_SID or not settings.TWILIO_AUTH_TOKEN:
+        return {"ok": False, "reason": "twilio keys missing"}
+    if not settings.TWILIO_PHONE_NUMBER:
+        return {"ok": False, "reason": "twilio phone number missing"}
+
+    to_phone = (whatsapp_from or "").replace("whatsapp:", "").strip()
+    if not to_phone.startswith("+"):
+        return {"ok": False, "reason": "invalid destination phone"}
+
+    safe_text = xml_escape(" ".join((spoken_text or "").split())[:320])
+    twiml = (
+        "<Response>"
+        "<Say voice=\"Polly.Aditi\" language=\"hi-IN\">"
+        f"{safe_text}"
+        "</Say>"
+        "</Response>"
+    )
+
+    try:
+        client = TwilioClient(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+        call = client.calls.create(to=to_phone, from_=settings.TWILIO_PHONE_NUMBER, twiml=twiml)
+        return {"ok": True, "sid": call.sid}
+    except Exception as exc:
+        return {"ok": False, "reason": str(exc)}
+
+
 @router.post("/webhook")
 async def whatsapp_webhook(
     Body: str = Form(""),
@@ -274,17 +310,23 @@ async def whatsapp_webhook(
     MediaContentType0: str = Form(""),
 ):
     resp = MessagingResponse()
+    received_voice_note = False
     try:
         text_body = Body.strip()
         
         # If user sent a voice note, transcribe it
         if NumMedia > 0 and MediaUrl0:
             if "audio" in MediaContentType0 or "video" in MediaContentType0:
+                received_voice_note = True
                 transcription_result = _download_and_transcribe(MediaUrl0)
                 if transcription_result:
                     text_body = transcription_result
                 else:
                     resp.message("⚠️ Apologies, I could not transcribe your audio message. Please send a text message or try again.")
+                    _trigger_voice_reply_call(
+                        From,
+                        "Namaste from Praja. We received your voice note but could not transcribe it. Please send a clearer voice note or type your complaint on WhatsApp.",
+                    )
                     return xml_response(resp)
 
         if not text_body:
@@ -292,6 +334,11 @@ async def whatsapp_webhook(
             return xml_response(resp)
 
         await _handle_message(text_body, From, resp)
+        if received_voice_note:
+            _trigger_voice_reply_call(
+                From,
+                "Namaste from Praja. Your voice complaint has been processed. Please check your WhatsApp message for ticket details and tracking instructions.",
+            )
     except Exception as exc:
         import traceback
         tb = traceback.format_exc()
