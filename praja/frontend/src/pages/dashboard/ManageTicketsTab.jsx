@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import Button from '../../components/ui/Button';
 import { Card, Badge } from '../../components/ui/Card';
 import { useFetch, useMutation } from '../../hooks/useFetch';
@@ -20,31 +20,24 @@ const STAT_ITEMS = [
 
 export default function ManageTicketsTab({ onToast }) {
   const [statusFilter, setFilter] = useState('');
-  const [updating, setUpdating] = useState(null);
   const [showPerf, setShowPerf] = useState(false);
+  const [selectedTicket, setSelectedTicket] = useState(null);
 
   const { data: rawTickets, loading, execute: reloadTickets } =
     useFetch(`/officers/tickets${statusFilter ? `?status=${statusFilter}&limit=100` : '?limit=100'}`);
-  const tickets = rawTickets || [];
+  const tickets = useMemo(() => {
+    const list = Array.isArray(rawTickets) ? [...rawTickets] : [];
+    return list.sort((a, b) => {
+      const aTime = new Date(a?.created_at || 0).getTime();
+      const bTime = new Date(b?.created_at || 0).getTime();
+      return bTime - aTime;
+    });
+  }, [rawTickets]);
 
   const { data: perf, execute: loadPerf } = useFetch('/officers/performance', {}, false);
   const { mutate: checkEscalation, loading: escalating } = useMutation('post');
-  const { mutate: updateTicketStatus } = useMutation('put');
 
   useEffect(() => { reloadTickets(); }, [statusFilter, reloadTickets]);
-
-  const handleUpdateStatus = async (id, status) => {
-    setUpdating(id);
-    try {
-      await updateTicketStatus(`/grievances/${id}/status?status=${status}`);
-      reloadTickets();
-      onToast('Status updated', 'success');
-    } catch (err) {
-      onToast(`Update failed: ${err.message}`, 'error');
-    } finally {
-      setUpdating(null);
-    }
-  };
 
   const runAutoEscalation = async () => {
     try {
@@ -68,17 +61,86 @@ export default function ManageTicketsTab({ onToast }) {
 
   const getCount = (key) => key === '__total__' ? tickets.length : (counts[key] || 0);
 
+  const formatComplaintDate = (isoDate) => {
+    if (!isoDate) return null;
+    const dt = new Date(isoDate);
+    if (Number.isNaN(dt.getTime())) return null;
+    return dt.toLocaleString('en-IN', {
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+    });
+  };
+
+  const formatGroupDate = (isoDate) => {
+    if (!isoDate) return 'Unknown Date';
+    const dt = new Date(isoDate);
+    if (Number.isNaN(dt.getTime())) return 'Unknown Date';
+    return dt.toLocaleDateString('en-IN', {
+      day: '2-digit',
+      month: 'long',
+      year: 'numeric',
+    });
+  };
+
+  const groupedTickets = useMemo(() => {
+    const groups = [];
+    let currentKey = null;
+
+    for (const ticket of tickets) {
+      const dt = ticket?.created_at ? new Date(ticket.created_at) : null;
+      const key = dt && !Number.isNaN(dt.getTime())
+        ? dt.toISOString().slice(0, 10)
+        : 'unknown-date';
+
+      if (key !== currentKey) {
+        groups.push({
+          key,
+          label: formatGroupDate(ticket?.created_at),
+          items: [ticket],
+        });
+        currentKey = key;
+      } else {
+        groups[groups.length - 1].items.push(ticket);
+      }
+    }
+
+    return groups;
+  }, [tickets]);
+
+  const detectComplaintLanguage = (text) => {
+    const value = String(text || '').trim();
+    if (!value) return 'Not available';
+
+    if (/[\u0B80-\u0BFF]/.test(value)) return 'Tamil';
+    if (/[\u0C00-\u0C7F]/.test(value)) return 'Telugu';
+    if (/[\u0900-\u097F]/.test(value)) return 'Hindi';
+    if (/[\u0D00-\u0D7F]/.test(value)) return 'Malayalam';
+    if (/[\u0A80-\u0AFF]/.test(value)) return 'Gujarati';
+    if (/[\u0A00-\u0A7F]/.test(value)) return 'Punjabi';
+    if (/[\u0980-\u09FF]/.test(value)) return 'Bengali';
+    if (/[\u0C80-\u0CFF]/.test(value)) return 'Kannada';
+    if (/[a-zA-Z]/.test(value)) return 'English';
+
+    return 'Unknown';
+  };
+
+  const closeDetails = () => setSelectedTicket(null);
+
   return (
     <div>
       {/* Header */}
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: 12, marginBottom: 20 }}>
+      <div className="ud-manage-header">
         <div>
           <p className="ud-title">Manage Tickets</p>
           <p className="ud-subtitle" style={{ marginBottom: 0 }}>
             {tickets.length} ticket{tickets.length !== 1 ? 's' : ''} · {statusFilter ? `Filter: ${STATUS_LABEL[statusFilter]}` : 'All statuses'}
           </p>
         </div>
-        <div style={{ display: 'flex', gap: 8 }}>
+        <div className="ud-manage-actions">
           <Button variant="secondary" size="sm" onClick={runAutoEscalation} isLoading={escalating}>
             🔺 Auto-Escalate
           </Button>
@@ -176,44 +238,76 @@ export default function ManageTicketsTab({ onToast }) {
           </div>
         </Card>
       ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
-          {tickets.map(t => (
-            <Card key={t.id}>
-              <div style={{ display: 'flex', gap: 16, justifyContent: 'space-between', flexWrap: 'wrap' }}>
-                {/* Left: info */}
-                <div style={{ flex: 1, minWidth: 200 }}>
-                  <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: 6 }}>{t.title || '—'}</div>
-                  <div className="ud-ticket-meta">
-                    {t.tracking_id && <span className="ud-tracking-id">{t.tracking_id}</span>}
-                    {t.ai_category && <span>📂 {t.ai_category}</span>}
-                    {t.priority && <span className={`ud-pri-${t.priority}`}>{t.priority.toUpperCase()}</span>}
-                    {t.escalation_level > 0 && (
-                      <span style={{ color: 'var(--color-danger-text)', fontWeight: 700 }}>🔺 L{t.escalation_level}</span>
-                    )}
-                  </div>
-                  {t.description && (
-                    <div style={{ marginTop: 8, fontSize: '0.82rem', color: 'var(--text-muted)', lineHeight: 1.5 }}>
-                      {String(t.description).slice(0, 120)}{String(t.description).length > 120 ? '…' : ''}
+        <div className="ud-ticket-list">
+          {groupedTickets.map(group => (
+            <div key={group.key} className="ud-ticket-group">
+              <div className="ud-ticket-group-date">{group.label}</div>
+              <Card className="ud-ticket-day-card">
+                <div className="ud-ticket-group-list">
+                  {group.items.map((t, idx) => (
+                    <div key={t.id} className="ud-ticket-row">
+                      <div className="ud-ticket-inline-row">
+                        <div className="ud-ticket-inline-main">
+                          <span className="ud-ticket-order">{idx + 1}.</span>
+                          <div className="ud-ticket-title ud-ticket-title-inline">{t.title || '—'}</div>
+                        </div>
+                        <div className="ud-ticket-col ud-ticket-col-dept">
+                          <span className="ud-ticket-inline-chip">📂 {t.ai_category || 'General'}</span>
+                        </div>
+                        <div className="ud-ticket-col ud-ticket-col-priority">
+                          <span className={`ud-pri-${t.priority || 'medium'}`}>{(t.priority || 'medium').toUpperCase()}</span>
+                        </div>
+                        <button
+                          type="button"
+                          className="ud-full-details-btn"
+                          onClick={() => setSelectedTicket(t)}
+                        >
+                          Full Details
+                        </button>
+                      </div>
                     </div>
-                  )}
+                  ))}
                 </div>
-                {/* Right: status select */}
-                <div style={{ display: 'flex', alignItems: 'center' }}>
-                  <select
-                    className="ud-status-select"
-                    value={t.status || 'open'}
-                    onChange={e => handleUpdateStatus(t.id, e.target.value)}
-                    disabled={updating === t.id}
-                    aria-label={`Status for ticket ${t.tracking_id}`}
-                  >
-                    {['open', 'assigned', 'in_progress', 'resolved', 'escalated'].map(s => (
-                      <option key={s} value={s}>{STATUS_LABEL[s]}</option>
-                    ))}
-                  </select>
-                </div>
-              </div>
-            </Card>
+              </Card>
+            </div>
           ))}
+        </div>
+      )}
+
+      {selectedTicket && (
+        <div className="ud-ticket-detail-overlay" onClick={closeDetails}>
+          <div className="ud-ticket-detail-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="ud-ticket-detail-header">
+              <div>
+                <div className="ud-ticket-detail-title">{selectedTicket.title || 'Complaint Details'}</div>
+                <div className="ud-ticket-detail-subtitle">Tracking ID {selectedTicket.tracking_id || '—'}</div>
+              </div>
+              <button className="ud-ticket-detail-close" onClick={closeDetails} aria-label="Close details">×</button>
+            </div>
+
+            <div className="ud-ticket-detail-grid">
+              <div className="ud-ticket-detail-item"><span>Language</span><strong>{selectedTicket.language || detectComplaintLanguage(selectedTicket.description)}</strong></div>
+              <div className="ud-ticket-detail-item"><span>Category</span><strong>{selectedTicket.ai_category || 'General'}</strong></div>
+              <div className="ud-ticket-detail-item"><span>Priority</span><strong>{(selectedTicket.priority || 'medium').toUpperCase()}</strong></div>
+              <div className="ud-ticket-detail-item"><span>Status</span><strong>{STATUS_LABEL[selectedTicket.status] || selectedTicket.status || 'Open'}</strong></div>
+              <div className="ud-ticket-detail-item"><span>Created Time</span><strong>{formatComplaintDate(selectedTicket.created_at) || '—'}</strong></div>
+              <div className="ud-ticket-detail-item"><span>Updated Time</span><strong>{formatComplaintDate(selectedTicket.updated_at) || '—'}</strong></div>
+              <div className="ud-ticket-detail-item"><span>Location</span><strong>{selectedTicket.location || selectedTicket.ward || 'Not provided'}</strong></div>
+              <div className="ud-ticket-detail-item"><span>SLA Deadline</span><strong>{formatComplaintDate(selectedTicket.sla_deadline) || '—'}</strong></div>
+            </div>
+
+            <div className="ud-ticket-detail-block">
+              <div className="ud-ticket-detail-label">Complaint Text</div>
+              <div className="ud-ticket-detail-text">{selectedTicket.description || 'No complaint description provided.'}</div>
+            </div>
+
+            {selectedTicket.photo_url && (
+              <div className="ud-ticket-detail-block">
+                <div className="ud-ticket-detail-label">Submitted Photo</div>
+                <img src={selectedTicket.photo_url} alt="Complaint evidence" className="ud-ticket-detail-photo" />
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

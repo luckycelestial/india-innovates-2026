@@ -1,8 +1,8 @@
 ﻿import axios from 'axios'
 
 const api = axios.create({
-  baseURL: (import.meta.env.VITE_API_URL || 'https://prajavox-backend.vercel.app') + '/api',
-  timeout: 15000,
+  baseURL: (import.meta.env.VITE_API_URL || 'https://backend-topaz-one-69.vercel.app') + '/api',
+  timeout: 45000,  // Increased timeout to 45 seconds for slow networks
 })
 
 api.interceptors.request.use((config) => {
@@ -22,6 +22,16 @@ api.interceptors.response.use(
       // localStorage.removeItem('praja_token')
       // window.location.href = '/login'
     }
+    
+    // Add better error messages for network issues
+    if (!err.response) {
+      // Network error
+      const msg = err.code === 'ECONNABORTED' 
+        ? 'Request timeout. Server may be slow. Retrying...' 
+        : 'Network connection error. Retrying...';
+      err.message = msg;
+    }
+    
     return Promise.reject(err)
   }
 )
