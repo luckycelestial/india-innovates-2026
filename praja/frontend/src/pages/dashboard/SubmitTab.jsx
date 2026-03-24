@@ -34,7 +34,7 @@ export default function SubmitTab({ onToast }) {
 
       mediaRecorderRef.current.start();
       setIsRecording(true);
-      onToast('✅ Submitted - ID: ' + data.tracking_id, 'success');
+      
     } catch (err) {
       onToast('❌ ' + err.message, 'error');
     }
