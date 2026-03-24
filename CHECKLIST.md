@@ -12,7 +12,7 @@
 - [x] FastAPI backend scaffolded (`praja/backend`)
 - [x] React + Vite frontend scaffolded (`praja/frontend`)
 - [x] Backend deployed on Vercel (`praja-backend.vercel.app`)
-- [x] Frontend deployed on Vercel (`prajavox.vercel.app`)
+- [x] Frontend deployed on Vercel (`frontend-theta-seven-29.vercel.app`)
 - [x] Custom domain (optional)
 
 ---
@@ -104,7 +104,7 @@
 
 | Resource | URL |
 |---|---|
-| Frontend | https://prajavox.vercel.app |
+| Frontend | https://frontend-theta-seven-29.vercel.app/dashboard |
 | Backend API | https://praja-backend.vercel.app |
 | Supabase Dashboard | https://supabase.com/dashboard/project/bbakxtofuxkxzfbexlll |
 | Backend Vercel | https://vercel.com/luckycelestials-projects/praja-backend |
