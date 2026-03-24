@@ -27,7 +27,7 @@ async def transcribe_audio(audio: UploadFile = File(...)):
                     "taskType": "asr",
                     "config": {
                         "language": {"sourceLanguage": "hi"},
-                        "serviceId": "ai4bharat/conformer-hi-gpu--t4", # Fixed Model ID from pipeline response
+                        "serviceId": "ai4bharat/conformer-multilingual-indo_aryan-gpu--t4", # Fixed Model ID from pipeline response
                         "audioFormat": "webm"
                     }
                 }
