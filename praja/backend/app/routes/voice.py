@@ -13,7 +13,7 @@ from twilio.twiml.voice_response import VoiceResponse, Gather
 from app.db.database import get_supabase
 from app.routes.whatsapp import get_or_create_user, check_registration_and_get_user
 from app.routes.sms import send_sms_via_twilio
-from app.utils.ai import CATEGORIES, agentic_chat_with_groq, translate_to_english, detect_language
+from app.utils.ai import CATEGORIES, agentic_chat_with_groq, translate_to_english, detect_language, classify_with_groq
 import json
 
 router = APIRouter()
@@ -391,7 +391,8 @@ async def voice_outbound_language(request: Request, Digits: str = Form(default="
     
     # Determine Citizen's Phone (In outbound calls From=Twilio, To=User)
     form_data = await request.form()
-    phone = (form_data.get("To") or Form).replace("whatsapp:", "").strip()
+    print(f"DEBUG: Outbound Language Webhook. Digits: {Digits}, To: {form_data.get('To')}, From: {From}")
+    phone = (form_data.get("To") or "").replace("whatsapp:", "").strip()
     if phone.startswith("+") and len(phone) > 10:
         pass # looks like a user phone
     else:
