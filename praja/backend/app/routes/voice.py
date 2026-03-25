@@ -60,11 +60,11 @@ def _detect_language(text: str) -> str:
 def _voice_for_lang(lang_code: str) -> str:
     voices = {
         "hi-IN": "Polly.Aditi",
-        "ta-IN": "Google.ta-IN-Wavenet-A",
-        "te-IN": "Google.te-IN-Wavenet-A",
-        "kn-IN": "Google.kn-IN-Wavenet-A",
-        "ml-IN": "Google.ml-IN-Wavenet-A",
-        "bn-IN": "Google.bn-IN-Wavenet-A",
+        "ta-IN": "Google.ta-IN-Wavenet-C",
+        "te-IN": "Google.te-IN-Wavenet-B",
+        "kn-IN": "Google.kn-IN-Standard-A",
+        "ml-IN": "Google.ml-IN-Standard-A",
+        "bn-IN": "Google.bn-IN-Standard-A",
         "en-IN": "alice"
     }
     return voices.get(lang_code, "alice")
