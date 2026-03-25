@@ -58,7 +58,16 @@ def _detect_language(text: str) -> str:
 
 
 def _voice_for_lang(lang_code: str) -> str:
-    return "alice"
+    voices = {
+        "hi-IN": "Polly.Aditi",
+        "ta-IN": "Google.ta-IN-Standard-A",
+        "te-IN": "Google.te-IN-Standard-A",
+        "kn-IN": "Google.kn-IN-Standard-A",
+        "ml-IN": "Google.ml-IN-Standard-A",
+        "bn-IN": "Google.bn-IN-Standard-A",
+        "en-IN": "alice"
+    }
+    return voices.get(lang_code, "alice")
 
 
 def _say(resp: VoiceResponse, text: str, lang_code: str = "en-IN"):
@@ -116,7 +125,7 @@ async def voice_inbound(From: str = Form(...), To: str = Form(...), CallSid: str
     gather.say(
         "Welcome to Praja voice assistant. Please speak naturally. "
         "Say file complaint to register a new complaint, or say track ticket to check status.",
-        voice="alice",
+        voice=_voice_for_lang("en-IN"),
         language="en-IN",
     )
     resp.append(gather)
@@ -371,12 +380,12 @@ async def voice_outbound_start():
         timeout=10
     )
     # Multilingual selection: Each in its native language/voice
-    gather.append(Say("Welcome to Praja. Press 1 for English.", voice="alice", language="en-IN"))
-    gather.append(Say("Hindi ke liye 2 dabaaye.", voice="alice", language="hi-IN"))
-    gather.append(Say("Tamizhukku en moon-drai azhuthavum.", voice="alice", language="ta-IN"))
+    gather.append(Say("Welcome to Praja. Press 1 for English.", voice=_voice_for_lang("en-IN"), language="en-IN"))
+    gather.append(Say("Hindi ke liye 2 dabaaye.", voice=_voice_for_lang("hi-IN"), language="hi-IN"))
+    gather.append(Say("Tamizhukku en moon-drai azhuthavum.", voice=_voice_for_lang("ta-IN"), language="ta-IN"))
     
     resp.append(gather)
-    resp.say("No input received. Goodbye.", voice="alice", language="en-IN")
+    resp.say("No input received. Goodbye.", voice=_voice_for_lang("en-IN"), language="en-IN")
     resp.hangup()
     return _xml(resp)
 
@@ -430,9 +439,9 @@ async def voice_outbound_language(request: Request, Digits: str = Form(default="
         speech_timeout="auto",
         language=lang_code
     )
-    gather.say(prompt, voice="alice", language=lang_code)
+    gather.say(prompt, voice=_voice_for_lang(lang_code), language=lang_code)
     resp.append(gather)
-    resp.say("I didn't hear anything. Goodbye.", voice="alice", language=lang_code)
+    resp.say("I didn't hear anything. Goodbye.", voice=_voice_for_lang(lang_code), language=lang_code)
     resp.hangup()
     return _xml(resp)
 
@@ -446,7 +455,7 @@ async def voice_outbound_chat(
     """The interactive loop turn."""
     resp = VoiceResponse()
     if not SpeechResult:
-        resp.say("I couldn't hear you clearly. Please try calling again.", voice="alice", language=lang)
+        resp.say("I couldn't hear you clearly. Please try calling again.", voice=_voice_for_lang(lang), language=lang)
         resp.hangup()
         return _xml(resp)
 
@@ -461,7 +470,7 @@ async def voice_outbound_chat(
     # Get Draft
     drafts = sb.table("grievances").select("*").eq("citizen_id", user_id).eq("status", "closed").eq("title", "Draft Ticket").execute()
     if not drafts.data:
-        resp.say("Session expired. Please try again.", voice="alice", language=lang)
+        resp.say("Session expired. Please try again.", voice=_voice_for_lang(lang), language=lang)
         resp.hangup()
         return _xml(resp)
     
@@ -489,7 +498,7 @@ async def voice_outbound_chat(
             language=lang,
             enhanced=True
         )
-        gather.say(ans, voice="alice", language=lang)
+        gather.say(ans, voice=_voice_for_lang(lang), language=lang)
         resp.append(gather)
     else:
         # Complete!
@@ -511,7 +520,7 @@ async def voice_outbound_chat(
             "hi-IN": f"आपकी शिकायत दर्ज कर ली गई है। आपकी टिकट आई डी {' '.join(tracking_id)} है। धन्यवाद।",
             "ta-IN": f"உங்கள் புகார் பதிவு செய்யப்பட்டுள்ளது. உங்கள் டிக்கெட் ஐடி {' '.join(tracking_id)}. நன்றி."
         }
-        resp.say(success_prompts.get(lang, success_prompts["en-IN"]), voice="alice", language=lang)
+        resp.say(success_prompts.get(lang, success_prompts["en-IN"]), voice=_voice_for_lang(lang), language=lang)
         resp.hangup()
 
     return _xml(resp)
