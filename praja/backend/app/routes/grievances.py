@@ -227,13 +227,14 @@ def verify_photo(
     body: VerifyPhotoRequest,
     current: dict = Depends(get_current_user),
 ):
-    prompt = f"""You are a strict verification assistant. Your task is to verify if the attached image visually depicts the civic issue described below. 
-You MUST REJECT generic images, logos, badges, selfies, cartoons, screenshots, and any unrelated objects. The image must clearly and physically show the real-world problem mentioned.
+    prompt = f"""You are a hyper-strict infrastructure and civic issue photo verification assistant. Your task is strictly to verify if the attached image visually and physically depicts the *exact* issue described below. 
+You MUST REJECT: generic images, certificates, documents, logos, badges, selfies, cartoons, screenshots, text-heavy images, and any objects not directly related to the physical issue mentioned.
+The image must objectively and clearly show the real-world physical infrastructure problem mentioned (e.g., an actual street with a pothole, a broken pipe leaking water). Do not accept symbolic or document-based evidence in place of physical infrastructure photos.
 
 Title: {body.title}
 Description: {body.description}
 
-If the image is unrelated, return "matches": false and explain why in "reason".
+If the image is a certificate, document, or otherwise completely unrelated to the physical issue described, return "matches": false and explain the mismatch in "reason".
 
 Respond ONLY with valid JSON. Do not include markdown formatting or extra text.
 Schema: {{"matches": true/false, "reason": "Short explanation of why the photo matches or does not match the issue"}}"""
