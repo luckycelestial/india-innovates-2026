@@ -397,6 +397,7 @@ async def whatsapp_webhook(
             print("Rejected non-Twilio webhook call: invalid signature")
             return Response(content="Forbidden", status_code=403)
 
+        public_base_url = str(request.base_url).rstrip("/")
         text_body = Body.strip()
         
         # If user sent a voice note, transcribe it
@@ -415,15 +416,53 @@ async def whatsapp_webhook(
             resp.message("⚠️ It seems you sent an empty message I couldn't process. Please send a text or voice note.")
             return xml_response(resp)
 
-        # Fully synchronous execution properly supported by standard Vercel Lambda limits!
-        await _handle_message(text_body, From, resp, detected_voice_language, received_voice_note)
+        # Fully bypass 15s Twilio limits and 10s Vercel limits natively by heavily exploiting Twilio's HTTP State Machine `<Redirect>`
+        # Twilio sends the Message and instantly redirects to stage 2 securely!
+        resp.message("⏳ I'm processing your request natively... Please expect your response momentarily.")
+        
+        payload_state = {
+            "text_body": text_body,
+            "detected_lang": detected_voice_language,
+            "is_voice": "1" if received_voice_note else "0"
+        }
+        qs = urlencode(payload_state)
+        redirect_url = f"{public_base_url}/api/whatsapp/process-step-2?{qs}"
+        resp.redirect(redirect_url, method="POST")
 
     except Exception as exc:
         import traceback
         tb = traceback.format_exc()
         print(tb)
         resp.message(
-            f"⚠️ PRAJA encountered an error processing your message.\n"
+            f"⚠️ PRAJA encountered an error parsing your message.\n"
+            f"Error ref: {type(exc).__name__}\n\n{str(exc)}"
+        )
+    return xml_response(resp)
+
+@router.post("/process-step-2")
+async def whatsapp_process_step_2(
+    request: Request,
+    x_twilio_signature: str = Header(default=""),
+    text_body: str = Query(""),
+    detected_lang: str = Query("English"),
+    is_voice: str = Query("0"),
+    From: str = Form(...),
+):
+    resp = MessagingResponse()
+    try:
+        form_data = await request.form()
+        params = {k: str(v) for k, v in form_data.items()}
+        if not _is_valid_twilio_signature(request, x_twilio_signature, params):
+            return Response(content="Forbidden", status_code=403)
+            
+        await _handle_message(text_body, From, resp, detected_lang, is_voice == "1")
+
+    except Exception as exc:
+        import traceback
+        tb = traceback.format_exc()
+        print(tb)
+        resp.message(
+            f"⚠️ PRAJA encountered an error computing your response.\n"
             f"Please try again or send *help* for commands.\n"
             f"Error ref: {type(exc).__name__}\n\n{str(exc)}"
         )
