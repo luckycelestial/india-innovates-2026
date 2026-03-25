@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { Card } from '../../components/ui/Card';
@@ -11,6 +11,39 @@ export default function SubmitTab({ onToast }) {
   const [photoDataUrl, setPhotoDataUrl] = useState('');
   const [photoFileName, setPhotoFileName] = useState('');
   const [submitted, setSubmitted] = useState(null);
+
+  const [photoReq, setPhotoReq] = useState({ need: 'optional', prompt: 'Upload from gallery/files (auto-compressed before submit)' });
+  const [isEvaluating, setIsEvaluating] = useState(false);
+
+  useEffect(() => {
+    if (title.length < 5 && description.length < 5) {
+      setPhotoReq({ need: 'optional', prompt: 'Upload from gallery/files (auto-compressed before submit)' });
+      return;
+    }
+    const timer = setTimeout(async () => {
+      setIsEvaluating(true);
+      try {
+        const token = localStorage.getItem('praja_token');
+        const res = await fetch((import.meta.env.VITE_API_URL || 'https://backend-topaz-one-69.vercel.app') + '/api/grievances/photo-need', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          },
+          body: JSON.stringify({ title, description, ai_category: '' })
+        });
+        if (res.ok) {
+          const data = await res.json();
+          setPhotoReq({ need: data.photo_need, prompt: data.prompt_to_user });
+        }
+      } catch (err) {
+        // ignore errors to not interrupt UI
+      } finally {
+        setIsEvaluating(false);
+      }
+    }, 1000);
+    return () => clearTimeout(timer);
+  }, [title, description]);
 
   const [isRecording, setIsRecording] = useState(false);
   const [isTranscribing, setIsTranscribing] = useState(false);
@@ -172,6 +205,10 @@ export default function SubmitTab({ onToast }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (photoReq.need === 'required' && !photoDataUrl) {
+      onToast('Photo evidence is required for this complaint type.', 'error');
+      return;
+    }
     setSubmitted(null);
     try {
       const body = { title, description };
@@ -289,32 +326,45 @@ export default function SubmitTab({ onToast }) {
             </button>
           </div>
 
-          <div className="ud-field-wrapper">
-            <label htmlFor="complaint-photo" className="ud-label">📷 Photo Evidence (optional)</label>
-            <input
-              id="complaint-photo"
-              ref={photoInputRef}
-              type="file"
-              accept="image/*"
-              onChange={handlePhotoFileChange}
-              className="ud-photo-input-hidden"
-            />
-            <div className="ud-photo-upload-shell" role="group" aria-label="Photo evidence upload">
-              <button type="button" className="ud-photo-upload-btn" onClick={openPhotoPicker}>
-                📁 Choose Image
-              </button>
-              <div className="ud-photo-upload-name" title={photoFileName || 'No image selected'}>
-                {photoFileName || 'No image selected'}
+          {photoReq.need !== 'not_needed' && (
+            <div className="ud-field-wrapper">
+              <label htmlFor="complaint-photo" className="ud-label" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                📷 Photo Evidence
+                {photoReq.need === 'required' ? 
+                  <span style={{color: '#fff', fontSize: '0.65rem', fontWeight: 'bold', background: 'var(--color-danger)', padding: '2px 6px', borderRadius: '4px'}}>REQUIRED</span> : 
+                  <span style={{color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 'normal'}}>(optional)</span>
+                }
+              </label>
+              
+              <div style={{fontSize: '0.8rem', color: isEvaluating ? 'var(--text-muted)' : (photoReq.need === 'required' ? 'var(--color-danger)' : 'var(--color-primary)'), marginBottom: '8px', minHeight: '18px', transition: 'color 0.2s'}}>
+                {isEvaluating ? 'Evaluating photo requirement...' : photoReq.prompt}
               </div>
-              {photoFileName && (
-                <button type="button" className="ud-photo-clear-btn" onClick={clearPhoto}>
-                  Remove
+
+              <input
+                id="complaint-photo"
+                ref={photoInputRef}
+                type="file"
+                accept="image/*"
+                onChange={handlePhotoFileChange}
+                className="ud-photo-input-hidden"
+              />
+              <div className="ud-photo-upload-shell" role="group" aria-label="Photo evidence upload">
+                <button type="button" className="ud-photo-upload-btn" onClick={openPhotoPicker}>
+                  📁 Choose Image
                 </button>
-              )}
+                <div className="ud-photo-upload-name" title={photoFileName || 'No image selected'}>
+                  {photoFileName || 'No image selected'}
+                </div>
+                {photoFileName && (
+                  <button type="button" className="ud-photo-clear-btn" onClick={clearPhoto}>
+                    Remove
+                  </button>
+                )}
+              </div>
             </div>
-            <span className="ud-field-hint">Upload from gallery/files (auto-compressed before submit)</span>
-          </div>
-          {photoDataUrl && (
+          )}
+          
+          {photoDataUrl && photoReq.need !== 'not_needed' && (
             <div className="ud-photo-preview-wrap">
               <div className="ud-photo-preview-label">Preview</div>
               <img
