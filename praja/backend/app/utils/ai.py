@@ -127,7 +127,7 @@ def classify_with_groq(text: str) -> dict:
         prompt = f"""Classify this grievance, responding ONLY with valid JSON.
 Text: "{text}"
 JSON Format:
-{{"category": "Water Supply|Roads|Electricity|Sanitation|General", "priority": "low|medium|high|critical", "sentiment": "negative|neutral|positive", "title": "...", "clean_description": "..."}}
+{{"category": "Water Supply|Roads|Electricity|Sanitation|General", "priority": "low|medium|high|critical", "sentiment": "negative|neutral|positive", "title": "...", "location": "...", "clean_description": "..."}}
 """
         response = groq_client.chat.completions.create(
             model="llama-3.3-70b-versatile",
@@ -141,4 +141,4 @@ JSON Format:
             return json.loads(match.group(0))
         raise Exception("No JSON found")
     except Exception:
-        return {"category": "General", "priority": "medium", "sentiment": "neutral", "title": text[:40], "clean_description": text}
+        return {"category": "General", "priority": "medium", "sentiment": "neutral", "title": text[:40], "location": "Unknown", "clean_description": text}

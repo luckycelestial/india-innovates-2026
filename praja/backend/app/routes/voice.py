@@ -96,6 +96,7 @@ def _create_voice_grievance(sb, phone: str, issue_text: str, location_text: str)
         "priority": classification.get("priority", "medium"),
         "status": "open",
         "channel": "voice",
+        "location": classification.get("location", location_text.strip())
     }).execute()
 
     return {
@@ -509,6 +510,7 @@ async def voice_outbound_chat(
             "ai_category":  data.get("category", "General"),
             "priority":     data.get("priority", "medium"),
             "ai_sentiment": data.get("sentiment", "negative"),
+            "location":     data.get("location", "Unknown Location"),
             "status":       "open",
             "resolution_note": None
         }).eq("id", draft["id"]).execute()
