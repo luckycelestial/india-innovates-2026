@@ -240,15 +240,12 @@ Respond ONLY with valid JSON. Do not include markdown formatting or extra text.
 Schema: {{"matches": true/false, "reason": "Short explanation of why the photo matches or does not match the issue"}}"""
 
     try:
-        # Final Emergency Fix: Groq 11B/90B are dead, Gemini flash key leaked today.
-        # Switching to Llama-3.3-70b-versatile and asking for internal vision reasoning
-        # until the vision model availability stabilizes.
-        # Actually, let's use the Llama-4-Scout again but with BETTER PARSING.
-        
+        # Final Emergency Fix: Llama-4-Scout is the ONLY working vision model on Groq.
+        # JSON formatting is unreliable, so we move to binary classification.
         messages = [{
             "role": "user",
             "content": [
-                {"type": "text", "text": prompt},
+                {"type": "text", "text": "Task: Identify the content of this image. Respond with ONLY ONE of these two words: 'PHYSICAL' if it shows a real-world infrastructure/utility issue like a pothole, leak, or debris, OR 'DOCUMENT' if it shows a certificate, screenshot, text, badge, or generic photo."},
                 {"type": "image_url", "image_url": {"url": body.photo_url}}
             ]
         }]
@@ -256,38 +253,46 @@ Schema: {{"matches": true/false, "reason": "Short explanation of why the photo m
         r = _groq.chat.completions.create(
             model="meta-llama/llama-4-scout-17b-16e-instruct",
             messages=messages,
-            max_tokens=250,
+            max_tokens=5,
             temperature=0.0
         )
         
-        content = (r.choices[0].message.content or "").strip()
+        classification = (r.choices[0].message.content or "").strip().upper()
         
-        # Robust JSON Extraction
-        match = re.search(r'\{.*\}', content, re.DOTALL)
-        if match:
-            try:
-                data = json.loads(match.group(0))
-                return {
-                    "matches": bool(data.get("matches", False)),
-                    "reason": str(data.get("reason", "No reason provided."))
-                }
-            except:
-                pass
+        if "DOCUMENT" in classification:
+            return {
+                "matches": False,
+                "reason": "Image rejected: Identified as a document, screenshot, or certificate. Please upload a physical photo of the issue."
+            }
+            
+        if "PHYSICAL" in classification:
+            # Second stage: check if it matches the specific issue words
+            verify_messages = [{
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": f"Task: Does this physical issue image match these words: '{body.title} {body.description}'? Respond ONLY with 'YES' or 'NO'."},
+                    {"type": "image_url", "image_url": {"url": body.photo_url}}
+                ]
+            }]
+            
+            r2 = _groq.chat.completions.create(
+                model="meta-llama/llama-4-scout-17b-16e-instruct",
+                messages=verify_messages,
+                max_tokens=5,
+                temperature=0.0
+            )
+            
+            match_val = (r2.choices[0].message.content or "").strip().upper()
+            if "YES" in match_val:
+                return {"matches": True, "reason": "Photo evidence verified."}
+            else:
+                return {"matches": False, "reason": f"Photo does not seem to match the described issue: {body.title}"}
 
-        # Fallback parsing for text based rejection
-        if "false" in content.lower() or "reject" in content.lower() or "document" in content.lower() or "certificate" in content.lower():
-             return {"matches": False, "reason": "Identified as a document or non-civil issue."}
-
-        # If it says yes or match, or we can't tell, then treat as match ONLY if no reject keywords found
-        if "true" in content.lower() or "match" in content.lower():
-             return {"matches": True, "reason": "Verified by AI."}
-
-        return {"matches": False, "reason": "AI could not verify the image content."}
+        return {"matches": False, "reason": "AI could not definitively verify the image. Please try a clearer physical photo."}
 
     except Exception as e:
         print("Vision API Error:", str(e))
-        # Logic to handle if Groq model still fails
-        return {"matches": False, "reason": "Verification failed due to server error. Please try a clearer physical photo."}
+        return {"matches": False, "reason": "Verification service temporarily unstable. Please re-upload a clear physical photo."}
 @router.post("/submit", status_code=201)
 @router.post("/", status_code=201)
 def create_grievance(
