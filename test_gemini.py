@@ -6,7 +6,7 @@ import re
 with open('praja/frontend/src/assets/azure.png', 'rb') as f:
     b64_data = base64.b64encode(f.read()).decode('utf-8')
 
-gemini_url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=AIzaSyDyItytJkG8uUwOZUcygzYGoGtxYmOfEew'
+gemini_url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=AIzaSyDyItytJkG8uUwOZUcygzYGoGtxYmOfEew'
 
 prompt = '''You are a strict verification assistant. Your task is to verify if the attached image visually depicts the civic issue described below. 
 You MUST REJECT generic images, logos, badges, selfies, cartoons, screenshots, and any unrelated objects. The image must clearly and physically show the real-world problem mentioned.

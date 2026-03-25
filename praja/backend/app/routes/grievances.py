@@ -247,7 +247,7 @@ Schema: {{"matches": true/false, "reason": "Short explanation of why the photo m
             
         mime_type = prefix.split(";")[0].split(":")[1] if ":" in prefix else "image/jpeg"
 
-        gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={settings.GEMINI_API_KEY}"
+        gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key={settings.GEMINI_API_KEY}"
         
         payload = {
             "contents": [{
