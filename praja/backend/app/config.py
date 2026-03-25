@@ -21,6 +21,7 @@ class Settings(BaseSettings):
     GROQ_API_KEY:      str = ""
     OPENAI_API_KEY:    str = ""
     OPENAI_MODEL:      str = "gpt-4o-mini"
+    GEMINI_API_KEY:    str = "AIzaSyDyItytJkG8uUwOZUcygzYGoGtxYmOfEew"
     BHASHINI_USER_ID:  str = ""
     BHASHINI_API_KEY:  str = ""
     ENVIRONMENT:  str = "development"

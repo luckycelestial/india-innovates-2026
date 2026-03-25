@@ -235,23 +235,43 @@ Respond ONLY with valid JSON. Do not include markdown formatting or extra text.
 Schema: {{"matches": true/false, "reason": "Short explanation of why it matches or not"}}"""
 
     try:
-        r = _groq.chat.completions.create(
-            model="llama-3.2-11b-vision-preview",
-            messages=[{
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": prompt},
-                    {"type": "image_url", "image_url": {"url": body.photo_url}}
+        # Extract base64 and mime_type from data URL (e.g. data:image/jpeg;base64,...)
+        if "," in body.photo_url:
+            prefix, b64_data = body.photo_url.split(",", 1)
+        else:
+            prefix, b64_data = "data:image/jpeg;base64", body.photo_url
+            
+        mime_type = prefix.split(";")[0].split(":")[1] if ":" in prefix else "image/jpeg"
+
+        gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={settings.GEMINI_API_KEY}"
+        
+        payload = {
+            "contents": [{
+                "parts": [
+                    {"text": prompt},
+                    {
+                        "inline_data": {
+                            "mime_type": mime_type,
+                            "data": b64_data
+                        }
+                    }
                 ]
             }],
-            max_tokens=150,
-            temperature=0.1
-        )
-        raw = (r.choices[0].message.content or "").strip()
+            "generationConfig": {
+                "temperature": 0.1,
+                "response_mime_type": "application/json"
+            }
+        }
+        
+        with httpx.Client(timeout=15.0) as client:
+            res = client.post(gemini_url, json=payload)
+            res.raise_for_status()
+            res_data = res.json()
+            
+        raw = res_data["candidates"][0]["content"]["parts"][0]["text"].strip()
         if raw.startswith("```"):
             raw = re.sub(r"^```(json)?\n?|```$", "", raw, flags=re.IGNORECASE | re.MULTILINE).strip()
-        
-        data = json.loads(raw)
+            
         return {
             "matches": data.get("matches", True),
             "reason": data.get("reason", "Verified.")
