@@ -284,7 +284,7 @@ Schema: {{"matches": true/false, "reason": "Short explanation of why the photo m
             
             match_val = (r2.choices[0].message.content or "").strip().upper()
             if "YES" in match_val:
-                return {"matches": True, "reason": "Photo evidence verified."}
+                return {"matches": True, "reason": "Photo evidence verified by L4-Scout (v97f601)."}
             else:
                 return {"matches": False, "reason": f"Photo does not seem to match the described issue: {body.title}"}
 
