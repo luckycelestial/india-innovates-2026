@@ -165,7 +165,25 @@
   width: 100%;
   box-sizing: border-box;
 }
-.ud-input-base::placeholder { color: color-mix(in srgb, var(--text-muted) 78%, white 22%); }
+.ud-input-base::placeholder,
+.ud-input::placeholder,
+.ud-textarea::placeholder {
+  color: rgba(0, 0, 0, 0.48) !important;
+  opacity: 1;
+}
+
+.ud-input-base::-webkit-input-placeholder,
+.ud-input::-webkit-input-placeholder,
+.ud-textarea::-webkit-input-placeholder {
+  color: rgba(0, 0, 0, 0.48) !important;
+}
+
+.ud-input-base::-moz-placeholder,
+.ud-input::-moz-placeholder,
+.ud-textarea::-moz-placeholder {
+  color: rgba(0, 0, 0, 0.48) !important;
+  opacity: 1;
+}
 .ud-input-base:hover {
   border-color: var(--color-gray-400);
 }
