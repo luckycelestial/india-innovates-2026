@@ -364,7 +364,7 @@ export default function SubmitTab({ onToast }) {
                 📷 Photo Evidence
                 {photoReq.need === 'required' ? 
                   <span style={{color: '#fff', fontSize: '0.65rem', fontWeight: 'bold', background: 'var(--color-danger)', padding: '2px 6px', borderRadius: '4px'}}>REQUIRED</span> : 
-                  <span style={{color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 'normal'}}>(optional)</span>
+                  <span style={{color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 'normal'}}>(based on the complaint)</span>
                 }
               </label>
               
