@@ -13,7 +13,7 @@ from twilio.twiml.voice_response import VoiceResponse, Gather, Say
 from app.db.database import get_supabase
 from app.routes.whatsapp import get_or_create_user, check_registration_and_get_user
 from app.routes.sms import send_sms_via_twilio
-from app.utils.ai import CATEGORIES, agentic_chat_with_groq, translate_to_english, detect_language, classify_with_groq
+from app.utils.ai import CATEGORIES, agentic_chat_with_groq, translate_to_english, translate_from_english, detect_language, classify_with_groq
 import json
 
 router = APIRouter()
@@ -486,8 +486,14 @@ async def voice_outbound_chat(
     groq_resp = agentic_chat_with_groq(history, "Citizen")
     
     if groq_resp["type"] == "question":
-        ans = groq_resp["text"]
-        history.append({"role": "assistant", "content": ans})
+        ans_english = groq_resp["text"]
+        
+        # Translate the answer back to the detected user language
+        lang_map_reverse = {"hi-IN": "Hindi", "ta-IN": "Tamil", "te-IN": "Telugu", "kn-IN": "Kannada", "ml-IN": "Malayalam", "bn-IN": "Bengali", "en-IN": "English"}
+        target_lang_name = lang_map_reverse.get(lang, "English")
+        ans_translated = translate_from_english(ans_english, target_lang_name)
+        
+        history.append({"role": "assistant", "content": ans_english})
         sb.table("grievances").update({"resolution_note": json.dumps(history)}).eq("id", draft["id"]).execute()
         
         gather = Gather(
@@ -499,7 +505,7 @@ async def voice_outbound_chat(
             language=lang,
             enhanced=True
         )
-        gather.say(ans, voice=_voice_for_lang(lang), language=lang)
+        gather.say(ans_translated, voice=_voice_for_lang(lang), language=lang)
         resp.append(gather)
     else:
         # Complete!

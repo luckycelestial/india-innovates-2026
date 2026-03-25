@@ -12,7 +12,7 @@ from twilio.twiml.messaging_response import MessagingResponse
 from twilio.twiml.voice_response import VoiceResponse, Gather
 from groq import Groq
 from xml.sax.saxutils import escape as xml_escape
-from app.utils.ai import CATEGORIES, detect_language, agentic_chat_with_groq, classify_with_groq
+from app.utils.ai import CATEGORIES, detect_language, agentic_chat_with_groq, classify_with_groq, translate_to_english, translate_from_english
 
 try:
     from twilio.rest import Client as TwilioClient
@@ -447,7 +447,7 @@ async def whatsapp_webhook(
             resp.message("⚠️ It seems you sent a message I couldn't process. Please send a text or voice note.")
             return xml_response(resp)
 
-        await _handle_message(text_body, From, resp)
+        await _handle_message(text_body, From, resp, detected_voice_language)
         if received_voice_note:
             voice_result = _trigger_voice_reply_call(
                 From,
@@ -562,13 +562,15 @@ async def whatsapp_voice_followup_collect(
     return voice_xml_response(vr)
 
 
-async def _handle_message(Body: str, From: str, resp: MessagingResponse) -> None:
+async def _handle_message(Body: str, From: str, resp: MessagingResponse, user_lang: str = None) -> None:
     sb = get_supabase()
     text = Body.strip()
     sender = From
+    detected_lang = user_lang or detect_language(text)
+    english_text = translate_to_english(text) if detect_language(text) != "English" else text
 
     if text.lower() in ("help", "hi", "hello", "helo", "hai"):
-        resp.message(HELP_MSG)
+        resp.message(translate_from_english(HELP_MSG, detected_lang))
         return
 
     if text.upper() == "CALL ME":
@@ -582,7 +584,7 @@ async def _handle_message(Body: str, From: str, resp: MessagingResponse) -> None
             client = TwilioClient(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
             client.calls.create(url=xml_url, to=to_phone, from_=settings.TWILIO_PHONE_NUMBER)
             
-            resp.message("📞 *Initiating Voice Call...*\n\nPlease answer your phone to file your complaint via our IVR system.")
+            resp.message(translate_from_english("📞 *Initiating Voice Call...*\n\nPlease answer your phone to file your complaint via our IVR system.", detected_lang))
         except Exception as e:
             resp.message(f"⚠️ *Call Failed:* {str(e)}")
         return
@@ -668,14 +670,14 @@ async def _handle_message(Body: str, From: str, resp: MessagingResponse) -> None
         except:
             history = []
         
-        history.append({"role": "user", "content": text})
+        history.append({"role": "user", "content": english_text})
         groq_resp = agentic_chat_with_groq(history, user_name)
 
         if groq_resp["type"] == "question":
             ans = groq_resp["text"]
             history.append({"role": "assistant", "content": ans})
             sb.table("grievances").update({"resolution_note": json.dumps(history)}).eq("id", draft["id"]).execute()
-            resp.message(ans)
+            resp.message(translate_from_english(ans, detected_lang))
             return
         elif groq_resp["type"] == "complete":
             classification = groq_resp["data"]
@@ -704,7 +706,7 @@ async def _handle_message(Body: str, From: str, resp: MessagingResponse) -> None
             reply = (
                 f"🤖 *AI Processing Complete*\n"
                 f"───────────────────\n\n"
-                f"✅ Language: *{lang}*\n"
+                f"✅ Language: *{detected_lang}*\n"
                 f"🏷️ Department: *{classification.get('category', 'General')}*\n"
                 f"⚡ Priority: *{prio.title()} ({prio_label})*\n"
                 f"📍 Location: *{location_text}*\n"
@@ -716,12 +718,12 @@ async def _handle_message(Body: str, From: str, resp: MessagingResponse) -> None
                 f"🎯 *SLA Timeline:* 72 hours to resolve\n\n"
                 f"Track: reply *track {tracking_id}*"
             )
-            resp.message(reply)
+            resp.message(translate_from_english(reply, detected_lang))
             return
 
     else:
         # No draft exists, start fresh
-        history = [{"role": "user", "content": text}]
+        history = [{"role": "user", "content": english_text}]
         groq_resp = agentic_chat_with_groq(history, user_name)
 
         if groq_resp["type"] == "question":
@@ -733,12 +735,12 @@ async def _handle_message(Body: str, From: str, resp: MessagingResponse) -> None
                 "tracking_id":  tracking_id,
                 "citizen_id":   user_id,
                 "title":        "Draft Ticket",
-                "description":  text,
+                "description":  english_text,
                 "status":       "closed",
                 "channel":      "whatsapp",
                 "resolution_note": json.dumps(history)
             }).execute()
-            resp.message(ans)
+            resp.message(translate_from_english(ans, detected_lang))
             return
         elif groq_resp["type"] == "complete":
             classification = groq_resp["data"]
@@ -767,7 +769,7 @@ async def _handle_message(Body: str, From: str, resp: MessagingResponse) -> None
             reply = (
                 f"🤖 *AI Processing Complete*\n"
                 f"───────────────────\n\n"
-                f"✅ Language: *{lang}*\n"
+                f"✅ Language: *{detected_lang}*\n"
                 f"🏷️ Department: *{classification.get('category', 'General')}*\n"
                 f"⚡ Priority: *{prio.title()} ({prio_label})*\n"
                 f"📍 Location: *{location_text}*\n"
@@ -779,5 +781,5 @@ async def _handle_message(Body: str, From: str, resp: MessagingResponse) -> None
                 f"🎯 *SLA Timeline:* 72 hours to resolve\n\n"
                 f"Track: reply *track {tracking_id}*"
             )
-            resp.message(reply)
+            resp.message(translate_from_english(reply, detected_lang))
             return

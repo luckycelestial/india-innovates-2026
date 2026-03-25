@@ -66,6 +66,52 @@ def translate_to_english(text: str) -> str:
         print(f"Bhashini failed: {e}")
     return text
 
+def translate_from_english(text: str, target_lang: str) -> str:
+    """Uses Bhashini for Translating Text from English to target language."""
+    if target_lang == "English":
+        return text
+        
+    bhashini_url = "https://dhruva-api.bhashini.gov.in/services/inference/pipeline"
+    bhashini_lang_mapping = {
+        "Hindi": "hi", "Tamil": "ta", "Telugu": "te", "Kannada": "kn", 
+        "Malayalam": "ml", "Bengali": "bn"
+    }
+    target_code = bhashini_lang_mapping.get(target_lang)
+    if not target_code:
+        return text
+
+    payload = {
+        "pipelineTasks": [
+            {
+                "taskType": "translation",
+                "config": {
+                    "language": {
+                        "sourceLanguage": "en",
+                        "targetLanguage": target_code
+                    },
+                    "serviceId": "ai4bharat/indictrans-v2-all-gpu--t4"
+                }
+            }
+        ],
+        "inputData": {
+            "input": [{"source": text}]
+        }
+    }
+    headers = {
+        "Content-Type": "application/json",
+        "Authorization": settings.BHASHINI_API_KEY
+    }
+
+    try:
+        with httpx.Client(timeout=10) as client:
+            res = client.post(bhashini_url, json=payload, headers=headers)
+            if res.status_code == 200:
+                data = res.json()
+                return data["pipelineResponse"][0]["output"][0]["target"]
+    except Exception as e:
+        print(f"Bhashini reverse translation failed: {e}")
+    return text
+
 def agentic_chat_with_groq(history: list, user_name: str = "Citizen") -> dict:
     prompt = f"""You are PRAJA Bot, an official Voice Assistant for Indian Citizens to register grievances.
 The citizen's name is {user_name}.
