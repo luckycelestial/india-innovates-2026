@@ -3,7 +3,7 @@ import json
 import httpx
 import re
 
-with open('praja/frontend/src/assets/azure.png', 'rb') as f:
+with open('praja/frontend/src/assets/test_pothole.jpg', 'rb') as f:
     b64_data = base64.b64encode(f.read()).decode('utf-8')
 
 gemini_url = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-flash-latest:generateContent?key=AIzaSyDyItytJkG8uUwOZUcygzYGoGtxYmOfEew'
@@ -25,7 +25,7 @@ payload = {
             {'text': prompt},
             {
                 'inline_data': {
-                    'mime_type': 'image/png',
+                    'mime_type': 'image/jpeg',
                     'data': b64_data
                 }
             }
