@@ -158,14 +158,14 @@
   background: var(--bg-surface);
   border: 1px solid var(--border-color-hover);
   border-radius: var(--radius-md);
-  color: var(--text-primary);
+  color: var(--text-secondary);
   font-family: var(--font-primary);
   font-size: 0.9375rem;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
   width: 100%;
   box-sizing: border-box;
 }
-.ud-input-base::placeholder { color: var(--text-muted); }
+.ud-input-base::placeholder { color: color-mix(in srgb, var(--text-muted) 78%, white 22%); }
 .ud-input-base:hover {
   border-color: var(--color-gray-400);
 }
@@ -185,6 +185,93 @@
 
 .ud-field-error { font-size: 0.8rem; color: var(--color-danger-text); margin-top: 2px; }
 .ud-field-hint  { font-size: 0.8rem; color: var(--text-muted); margin-top: 2px; }
+
+/* ── Photo upload shell (Submit grievance) ───────────────────── */
+.ud-photo-input-hidden {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.ud-photo-upload-shell {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: var(--spacing-2);
+  align-items: center;
+  background: var(--bg-surface);
+  border: 1px dashed var(--border-color-hover);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-2);
+}
+
+.ud-photo-upload-btn,
+.ud-photo-clear-btn {
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface-2);
+  color: var(--text-secondary);
+  font-family: var(--font-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+
+.ud-photo-upload-btn:hover,
+.ud-photo-clear-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary-glow) 45%, white 55%);
+}
+
+.ud-photo-upload-name {
+  min-width: 0;
+  color: color-mix(in srgb, var(--text-muted) 75%, white 25%);
+  font-size: 0.86rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.ud-photo-preview-wrap {
+  margin-top: var(--spacing-3);
+  padding: var(--spacing-3);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+}
+
+.ud-photo-preview-label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--text-muted);
+  margin-bottom: var(--spacing-2);
+}
+
+.ud-photo-preview {
+  width: 100%;
+  max-height: 240px;
+  object-fit: cover;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-color);
+}
+
+@media (max-width: 560px) {
+  .ud-photo-upload-shell {
+    grid-template-columns: 1fr;
+  }
+  .ud-photo-upload-btn,
+  .ud-photo-clear-btn {
+    width: 100%;
+  }
+}
 
 /* ── Spinner ──────────────────────────────────────── */
 .ud-spinner {
