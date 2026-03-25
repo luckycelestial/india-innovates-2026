@@ -8,10 +8,11 @@ from urllib.parse import urlencode
 from datetime import datetime, timezone
 from fastapi import APIRouter, Form, Request, Header, Query
 from fastapi.responses import Response
-from twilio.twiml.messaging_response import MessagingResponse
+from twilio.twiml.messaging_response import MessagingResponse, Message
 from twilio.twiml.voice_response import VoiceResponse, Gather
 from groq import Groq
 from xml.sax.saxutils import escape as xml_escape
+import urllib.parse
 from app.utils.ai import CATEGORIES, detect_language, agentic_chat_with_groq, classify_with_groq, translate_to_english, translate_from_english
 
 try:
@@ -407,56 +408,16 @@ async def whatsapp_webhook(
                 if transcription_result.get("text"):
                     text_body = transcription_result.get("text", "")
                     detected_voice_language = transcription_result.get("language", "English")
-                    if _needs_followup_details(text_body):
-                        resp.message("📞 We need a bit more detail. You will receive an automated call now to collect exact location and ward.")
-                        voice_result = _trigger_voice_reply_call(
-                            From,
-                            text_body,
-                            detected_voice_language,
-                            public_base_url=public_base_url,
-                            require_followup=True,
-                        )
-                        if not voice_result.get("ok"):
-                            print(f"Twilio interactive follow-up call failed: {voice_result.get('reason')}")
-                            resp.message("⚠️ Could not place callback. Please send location and ward in WhatsApp text.")
-                        return xml_response(resp)
                 else:
-                    resp.message("⚠️ Apologies, transcription failed. You will now receive an automated call to collect details by voice.")
-                    detected_voice_language = detect_language(Body or "")
-                    voice_result = _trigger_voice_reply_call(
-                        From,
-                        "Voice note transcription failed. Collecting grievance details by call.",
-                        detected_voice_language,
-                        public_base_url=public_base_url,
-                        require_followup=True,
-                    )
-                    if not voice_result.get("ok"):
-                        print(f"Twilio interactive callback failed after transcription error: {voice_result.get('reason')}")
-                        # Fallback plain callback message if interactive call cannot be started.
-                        fallback_voice_result = _trigger_voice_reply_call(
-                            From,
-                            _localized_voice_line(detected_voice_language, "transcription_failed"),
-                            detected_voice_language,
-                        )
-                        if not fallback_voice_result.get("ok"):
-                            print(f"Twilio fallback callback also failed: {fallback_voice_result.get('reason')}")
-                            resp.message("⚠️ Could not place callback right now. Please send location and ward as WhatsApp text.")
+                    resp.message("⚠️ Apologies, transcription failed. Please try again.")
                     return xml_response(resp)
 
         if not text_body:
             resp.message("⚠️ It seems you sent a message I couldn't process. Please send a text or voice note.")
             return xml_response(resp)
 
-        await _handle_message(text_body, From, resp, detected_voice_language)
-        if received_voice_note:
-            voice_result = _trigger_voice_reply_call(
-                From,
-                _localized_voice_line(detected_voice_language, "processed"),
-                detected_voice_language,
-            )
-            if not voice_result.get("ok"):
-                print(f"Twilio voice callback failed: {voice_result.get('reason')}")
-                resp.message("⚠️ Voice callback could not be placed right now. Please verify your call-enabled Twilio number and trial permissions.")
+        await _handle_message(text_body, From, resp, detected_voice_language, received_voice_note)
+
     except Exception as exc:
         import traceback
         tb = traceback.format_exc()
@@ -562,15 +523,22 @@ async def whatsapp_voice_followup_collect(
     return voice_xml_response(vr)
 
 
-async def _handle_message(Body: str, From: str, resp: MessagingResponse, user_lang: str = None) -> None:
+async def _handle_message(Body: str, From: str, resp: MessagingResponse, user_lang: str = None, is_voice: bool = False) -> None:
     sb = get_supabase()
     text = Body.strip()
     sender = From
     detected_lang = user_lang or detect_language(text)
     english_text = translate_to_english(text) if detect_language(text) != "English" else text
 
+    def _reply_with_voice_if_needed(text_en: str, text_native: str):
+        msg = resp.message(text_native)
+        if is_voice:
+            # Generate the dynamic Bhashini TTS URL and attach as Media
+            url = f"{settings.BACKEND_URL}/api/tts/generate?text={urllib.parse.quote(text_native)}&lang={detected_lang}"
+            msg.media(url)
+            
     if text.lower() in ("help", "hi", "hello", "helo", "hai"):
-        resp.message(translate_from_english(HELP_MSG, detected_lang))
+        _reply_with_voice_if_needed("Help message", translate_from_english(HELP_MSG, detected_lang))
         return
 
     if text.upper() == "CALL ME":
@@ -677,7 +645,7 @@ async def _handle_message(Body: str, From: str, resp: MessagingResponse, user_la
             ans = groq_resp["text"]
             history.append({"role": "assistant", "content": ans})
             sb.table("grievances").update({"resolution_note": json.dumps(history)}).eq("id", draft["id"]).execute()
-            resp.message(translate_from_english(ans, detected_lang))
+            _reply_with_voice_if_needed(ans, translate_from_english(ans, detected_lang))
             return
         elif groq_resp["type"] == "complete":
             classification = groq_resp["data"]
@@ -718,7 +686,7 @@ async def _handle_message(Body: str, From: str, resp: MessagingResponse, user_la
                 f"🎯 *SLA Timeline:* 72 hours to resolve\n\n"
                 f"Track: reply *track {tracking_id}*"
             )
-            resp.message(translate_from_english(reply, detected_lang))
+            _reply_with_voice_if_needed("Processing Complete", translate_from_english(reply, detected_lang))
             return
 
     else:
@@ -740,7 +708,7 @@ async def _handle_message(Body: str, From: str, resp: MessagingResponse, user_la
                 "channel":      "whatsapp",
                 "resolution_note": json.dumps(history)
             }).execute()
-            resp.message(translate_from_english(ans, detected_lang))
+            _reply_with_voice_if_needed(ans, translate_from_english(ans, detected_lang))
             return
         elif groq_resp["type"] == "complete":
             classification = groq_resp["data"]
@@ -781,5 +749,5 @@ async def _handle_message(Body: str, From: str, resp: MessagingResponse, user_la
                 f"🎯 *SLA Timeline:* 72 hours to resolve\n\n"
                 f"Track: reply *track {tracking_id}*"
             )
-            resp.message(translate_from_english(reply, detected_lang))
+            _reply_with_voice_if_needed("Processing Complete", translate_from_english(reply, detected_lang))
             return
