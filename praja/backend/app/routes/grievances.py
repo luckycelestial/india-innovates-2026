@@ -5,6 +5,7 @@ from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from typing import Optional, Any
+import httpx
 from groq import Groq
 from app.config import settings
 from app.db.database import get_supabase
@@ -58,6 +59,161 @@ class GrievanceCreate(BaseModel):
     title: str
     description: str
     photo_url: Optional[str] = None
+
+
+class PhotoNeedRequest(BaseModel):
+    title: str
+    description: str
+    ai_category: Optional[str] = None
+
+
+class PhotoNeedResponse(BaseModel):
+    photo_need: str
+    confidence: float
+    reason: str
+    prompt_to_user: str
+    source: str
+
+
+PHOTO_NEED_VALUES = {"required", "optional", "not_needed"}
+
+
+def _photo_prompt_to_user(photo_need: str) -> str:
+    if photo_need == "required":
+        return "Please upload a clear photo that shows the issue and nearby landmark."
+    if photo_need == "optional":
+        return "A photo is optional, but it can help us verify and resolve faster."
+    return "No photo is needed for this complaint type."
+
+
+def _fallback_photo_need(title: str, description: str, ai_category: Optional[str]) -> dict:
+    text = f"{title} {description} {ai_category or ''}".lower()
+
+    required_keywords = [
+        "pothole", "garbage", "overflow", "leak", "broken", "crack", "damage",
+        "sewage", "drain", "street light", "encroachment", "blocked road", "waterlogging",
+    ]
+    optional_keywords = [
+        "no water", "water supply", "power cut", "electricity", "irregular",
+        "delay", "collection not done", "missed pickup",
+    ]
+    not_needed_keywords = [
+        "status", "track", "tracking", "id update", "escalation request",
+        "certificate", "document delay", "benefit not received",
+    ]
+
+    if any(k in text for k in required_keywords):
+        need = "required"
+        confidence = 0.9
+        reason = "Visual evidence is important to verify location/physical severity."
+    elif any(k in text for k in not_needed_keywords):
+        need = "not_needed"
+        confidence = 0.85
+        reason = "This complaint is mostly process/status based and does not require imagery."
+    elif any(k in text for k in optional_keywords):
+        need = "optional"
+        confidence = 0.75
+        reason = "A photo can help, but the issue is still actionable from text."
+    else:
+        need = "optional"
+        confidence = 0.6
+        reason = "Insufficient visual cues; defaulting to optional photo policy."
+
+    return {
+        "photo_need": need,
+        "confidence": confidence,
+        "reason": reason,
+        "prompt_to_user": _photo_prompt_to_user(need),
+        "source": "fallback_rules",
+    }
+
+
+def _openai_photo_need(title: str, description: str, ai_category: Optional[str]) -> Optional[dict]:
+    if not settings.OPENAI_API_KEY:
+        return None
+
+    system_prompt = (
+        "You are a civic complaint triage assistant. Decide whether photo evidence is required, optional, or not needed. "
+        "Return strict JSON only. Policy: required for physical damage/visible hazards, optional for utility interruptions, "
+        "not_needed for purely administrative or status requests."
+    )
+    user_prompt = {
+        "title": title,
+        "description": description,
+        "ai_category": ai_category or "",
+        "allowed_values": ["required", "optional", "not_needed"],
+        "output_format": {
+            "photo_need": "required|optional|not_needed",
+            "confidence": "0.0 to 1.0",
+            "reason": "short reason",
+            "prompt_to_user": "single sentence for citizen",
+        },
+    }
+
+    try:
+        with httpx.Client(timeout=15.0) as client:
+            res = client.post(
+                "https://api.openai.com/v1/chat/completions",
+                headers={
+                    "Authorization": f"Bearer {settings.OPENAI_API_KEY}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": settings.OPENAI_MODEL,
+                    "temperature": 0,
+                    "response_format": {"type": "json_object"},
+                    "messages": [
+                        {"role": "system", "content": system_prompt},
+                        {"role": "user", "content": json.dumps(user_prompt)},
+                    ],
+                },
+            )
+            res.raise_for_status()
+            content = (res.json().get("choices") or [{}])[0].get("message", {}).get("content", "{}")
+            data = json.loads(content)
+
+        photo_need = str(data.get("photo_need", "")).strip().lower()
+        if photo_need not in PHOTO_NEED_VALUES:
+            return None
+
+        confidence = data.get("confidence", 0.0)
+        try:
+            confidence = float(confidence)
+        except Exception:
+            confidence = 0.0
+        confidence = max(0.0, min(1.0, confidence))
+
+        reason = str(data.get("reason", "Photo guidance generated by model.")).strip() or "Photo guidance generated by model."
+        prompt_to_user = str(data.get("prompt_to_user", _photo_prompt_to_user(photo_need))).strip() or _photo_prompt_to_user(photo_need)
+
+        return {
+            "photo_need": photo_need,
+            "confidence": confidence,
+            "reason": reason,
+            "prompt_to_user": prompt_to_user,
+            "source": "openai",
+        }
+    except Exception:
+        return None
+
+
+@router.post("/photo-need", response_model=PhotoNeedResponse)
+def decide_photo_need(
+    body: PhotoNeedRequest,
+    current: dict = Depends(get_current_user),
+):
+    fallback = _fallback_photo_need(body.title, body.description, body.ai_category)
+    llm = _openai_photo_need(body.title, body.description, body.ai_category)
+
+    if not llm:
+        return fallback
+
+    # Low-confidence model output falls back to deterministic rules.
+    if llm["confidence"] < 0.55:
+        fallback["source"] = "openai_low_confidence_fallback"
+        return fallback
+
+    return llm
 
 
 @router.post("/submit", status_code=201)

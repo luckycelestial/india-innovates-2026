@@ -19,6 +19,8 @@ class Settings(BaseSettings):
     MSG91_API_KEY:           str = ""
     MSG91_SENDER_ID:         str = "PRAJA2"
     GROQ_API_KEY:      str = ""
+    OPENAI_API_KEY:    str = ""
+    OPENAI_MODEL:      str = "gpt-4o-mini"
     BHASHINI_USER_ID:  str = ""
     BHASHINI_API_KEY:  str = ""
     ENVIRONMENT:  str = "development"
