@@ -6,7 +6,7 @@ import json
 import secrets
 from urllib.parse import urlencode
 from datetime import datetime, timezone
-from fastapi import APIRouter, Form, Request, Header, Query, BackgroundTasks
+from fastapi import APIRouter, Form, Request, Header, Query
 from fastapi.responses import Response
 from twilio.twiml.messaging_response import MessagingResponse, Message
 from twilio.twiml.voice_response import VoiceResponse, Gather
@@ -380,7 +380,6 @@ def _trigger_voice_reply_call(
 @router.post("/webhook")
 async def whatsapp_webhook(
     request: Request,
-    background_tasks: BackgroundTasks,
     x_twilio_signature: str = Header(default=""),
     Body: str = Form(""),
     From: str = Form(...),
@@ -401,22 +400,24 @@ async def whatsapp_webhook(
         text_body = Body.strip()
         public_base_url = str(request.base_url).rstrip("/")
         
-        # If user sent a voice note, transcribe it asynchronously because it times out Twilio
+        # If user sent a voice note, transcribe it
         if NumMedia > 0 and MediaUrl0:
             if "audio" in MediaContentType0 or "video" in MediaContentType0:
                 received_voice_note = True
-                resp.message("⏳ I'm listening to your voice note and processing it... Please hold on a few seconds.")
-                background_tasks.add_task(_process_voice_note_bg, MediaUrl0, From)
-                return xml_response(resp)
+                transcription_result = _download_and_transcribe(MediaUrl0)
+                if transcription_result.get("text"):
+                    text_body = transcription_result.get("text", "")
+                    detected_voice_language = transcription_result.get("language", "English")
+                else:
+                    resp.message("⚠️ Apologies, transcription failed. Please try again.")
+                    return xml_response(resp)
 
         if not text_body:
             resp.message("⚠️ It seems you sent a message I couldn't process. Please send a text or voice note.")
             return xml_response(resp)
 
-        # Offload text processing to prevent Twilio timeouts
-        background_tasks.add_task(_process_text_msg_bg, text_body, From, detected_voice_language, received_voice_note)
-        # Reply immediately if needed, or just return empty 200 XML and let background tasks push via REST
-        return Response(content="<Response/>", media_type="text/xml")
+        # Fully synchronous execution properly supported by Vercel Serverless
+        await _handle_message(text_body, From, resp, detected_voice_language, received_voice_note)
 
     except Exception as exc:
         import traceback
