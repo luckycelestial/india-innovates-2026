@@ -227,12 +227,16 @@ def verify_photo(
     body: VerifyPhotoRequest,
     current: dict = Depends(get_current_user),
 ):
-    prompt = f"""You are a verification assistant. Determine if the attached photo logically matches the civic complaint described below.
+    prompt = f"""You are a strict verification assistant. Your task is to verify if the attached image visually depicts the civic issue described below. 
+You MUST REJECT generic images, logos, badges, selfies, cartoons, screenshots, and any unrelated objects. The image must clearly and physically show the real-world problem mentioned.
+
 Title: {body.title}
 Description: {body.description}
 
+If the image is unrelated, return "matches": false and explain why in "reason".
+
 Respond ONLY with valid JSON. Do not include markdown formatting or extra text.
-Schema: {{"matches": true/false, "reason": "Short explanation of why it matches or not"}}"""
+Schema: {{"matches": true/false, "reason": "Short explanation of why the photo matches or does not match the issue"}}"""
 
     try:
         # Extract base64 and mime_type from data URL (e.g. data:image/jpeg;base64,...)
