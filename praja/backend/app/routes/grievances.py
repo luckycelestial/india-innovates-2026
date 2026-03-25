@@ -240,32 +240,54 @@ Respond ONLY with valid JSON. Do not include markdown formatting or extra text.
 Schema: {{"matches": true/false, "reason": "Short explanation of why the photo matches or does not match the issue"}}"""
 
     try:
-        r = _groq.chat.completions.create(
-            model="llama-3.2-90b-vision-preview",
-            messages=[{
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": prompt},
-                    {"type": "image_url", "image_url": {"url": body.photo_url}}
+        # Use Gemini Flash for ultra-reliable vision verification (Groq Vision models take too long to deploy)
+        gemini_url = f"https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key={settings.GEMINI_API_KEY}"
+        
+        # Extract base64 data from data URL
+        mime_type = "image/jpeg"
+        b64_data = body.photo_url
+        if "," in body.photo_url:
+            parts = body.photo_url.split(",", 1)
+            header = parts[0]
+            b64_data = parts[1]
+            if "image/png" in header: mime_type = "image/png"
+            elif "image/webp" in header: mime_type = "image/webp"
+
+        payload = {
+            "contents": [{
+                "parts": [
+                    {"text": prompt},
+                    {
+                        "inline_data": {
+                            "mime_type": mime_type,
+                            "data": b64_data
+                        }
+                    }
                 ]
             }],
-            max_tokens=150,
-            temperature=0.1
-        )
-        raw = (r.choices[0].message.content or "").strip()
-        if raw.startswith("```"):
-            raw = re.sub(r"^```(json)?\n?|```$", "", raw, flags=re.IGNORECASE | re.MULTILINE).strip()
-            
-        data = json.loads(raw)
-        return {
-            "matches": data.get("matches", True),
-            "reason": data.get("reason", "Verified.")
+            "generationConfig": {
+                "temperature": 0.1,
+                "response_mime_type": "application/json"
+            }
         }
+
+        with httpx.Client(timeout=30.0) as client:
+            res = client.post(gemini_url, json=payload)
+            if res.status_code != 200:
+                raise Exception(f"Gemini API Error: {res.text}")
+            
+            res_data = res.json()
+            raw = res_data["candidates"][0]["content"]["parts"][0]["text"].strip()
+            
+            data = json.loads(raw)
+            return {
+                "matches": data.get("matches", False),
+                "reason": data.get("reason", "No reason provided.")
+            }
     except Exception as e:
         print("Vision API Error:", str(e))
         # Fallback for hackathon demo: accept if API fails, so users are not blocked by platform quotas
-        return {"matches": True, "reason": "Verified automatically (Server fallback)."}
-
+        return {"matches": True, "reason": "Verified automatically (Server fallback due to API error)."}
 
 @router.post("/submit", status_code=201)
 @router.post("/", status_code=201)
