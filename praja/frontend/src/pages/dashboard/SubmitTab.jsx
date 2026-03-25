@@ -173,11 +173,6 @@ export default function SubmitTab({ onToast }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitted(null);
-    const token = localStorage.getItem('praja_token') || '';
-    if (token.startsWith('mock-token-')) {
-      onToast('Session outdated. Please sign out and sign in again.', 'error');
-      return;
-    }
     try {
       const body = { title, description };
       if (photoDataUrl) body.photo_url = photoDataUrl;
