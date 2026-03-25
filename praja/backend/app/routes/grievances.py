@@ -276,13 +276,14 @@ Schema: {{"matches": true/false, "reason": "Short explanation of why the photo m
         if raw.startswith("```"):
             raw = re.sub(r"^```(json)?\n?|```$", "", raw, flags=re.IGNORECASE | re.MULTILINE).strip()
             
+        data = json.loads(raw)
         return {
             "matches": data.get("matches", True),
             "reason": data.get("reason", "Verified.")
         }
     except Exception as e:
         print("Vision API Error:", str(e))
-        return {"matches": True, "reason": "Verification bypassed due to server error."}
+        return {"matches": False, "reason": "Verification bypassed due to server error. Please try again."}
 
 
 @router.post("/submit", status_code=201)
