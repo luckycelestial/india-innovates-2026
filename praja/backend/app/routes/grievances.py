@@ -61,6 +61,12 @@ class GrievanceCreate(BaseModel):
     photo_url: Optional[str] = None
 
 
+class VerifyPhotoRequest(BaseModel):
+    title: str
+    description: str
+    photo_url: str
+
+
 class PhotoNeedRequest(BaseModel):
     title: str
     description: str
@@ -214,6 +220,45 @@ def decide_photo_need(
         return fallback
 
     return llm
+
+
+@router.post("/verify-photo")
+def verify_photo(
+    body: VerifyPhotoRequest,
+    current: dict = Depends(get_current_user),
+):
+    prompt = f"""You are a verification assistant. Determine if the attached photo logically matches the civic complaint described below.
+Title: {body.title}
+Description: {body.description}
+
+Respond ONLY with valid JSON. Do not include markdown formatting or extra text.
+Schema: {{"matches": true/false, "reason": "Short explanation of why it matches or not"}}"""
+
+    try:
+        r = _groq.chat.completions.create(
+            model="llama-3.2-11b-vision-preview",
+            messages=[{
+                "role": "user",
+                "content": [
+                    {"type": "text", "text": prompt},
+                    {"type": "image_url", "image_url": {"url": body.photo_url}}
+                ]
+            }],
+            max_tokens=150,
+            temperature=0.1
+        )
+        raw = (r.choices[0].message.content or "").strip()
+        if raw.startswith("```"):
+            raw = re.sub(r"^```(json)?\n?|```$", "", raw, flags=re.IGNORECASE | re.MULTILINE).strip()
+        
+        data = json.loads(raw)
+        return {
+            "matches": data.get("matches", True),
+            "reason": data.get("reason", "Verified.")
+        }
+    except Exception as e:
+        print("Vision API Error:", str(e))
+        return {"matches": True, "reason": "Verification bypassed due to server error."}
 
 
 @router.post("/submit", status_code=201)

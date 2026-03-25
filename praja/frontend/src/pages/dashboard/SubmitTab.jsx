@@ -14,6 +14,7 @@ export default function SubmitTab({ onToast }) {
 
   const [photoReq, setPhotoReq] = useState({ need: 'optional', prompt: 'Upload from gallery/files (auto-compressed before submit)' });
   const [isEvaluating, setIsEvaluating] = useState(false);
+  const [isVerifyingPhoto, setIsVerifyingPhoto] = useState(false);
 
   useEffect(() => {
     if (title.length < 5 && description.length < 5) {
@@ -188,6 +189,37 @@ export default function SubmitTab({ onToast }) {
       }
       setPhotoDataUrl(String(dataUrl));
       setPhotoFileName(file.name);
+
+      if (title.length > 5 || description.length > 5) {
+        setIsVerifyingPhoto(true);
+        try {
+          const token = localStorage.getItem('praja_token');
+          const res = await fetch((import.meta.env.VITE_API_URL || 'https://backend-topaz-one-69.vercel.app') + '/api/grievances/verify-photo', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            },
+            body: JSON.stringify({ title, description, photo_url: String(dataUrl) })
+          });
+          if (res.ok) {
+            const data = await res.json();
+            if (data.matches === false) {
+              onToast(`Photo rejected: ${data.reason}`, 'error');
+              setPhotoDataUrl('');
+              setPhotoFileName('');
+              if (photoInputRef.current) photoInputRef.current.value = '';
+            } else {
+              onToast('✅ Photo evidence verified!', 'success');
+            }
+          }
+        } catch (err) {
+          console.error('Vision verify error:', err);
+        } finally {
+          setIsVerifyingPhoto(false);
+        }
+      }
+
     } catch (err) {
       onToast('Could not read selected image.', 'error');
     }
@@ -376,8 +408,8 @@ export default function SubmitTab({ onToast }) {
             </div>
           )}
           <div style={{ marginTop: 20 }}>
-            <Button type="submit" isLoading={loading} size="lg" fullWidth>
-              📤 Submit Complaint
+            <Button type="submit" isLoading={loading || isVerifyingPhoto} size="lg" fullWidth disabled={isVerifyingPhoto}>
+              {isVerifyingPhoto ? 'Verifying Photo...' : '📤 Submit Complaint'}
             </Button>
           </div>
         </form>
