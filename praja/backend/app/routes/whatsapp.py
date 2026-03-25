@@ -6,7 +6,7 @@ import json
 import secrets
 from urllib.parse import urlencode
 from datetime import datetime, timezone
-from fastapi import APIRouter, Form, Request, Header, Query
+from fastapi import APIRouter, Form, Request, Header, Query, BackgroundTasks
 from fastapi.responses import Response
 from twilio.twiml.messaging_response import MessagingResponse, Message
 from twilio.twiml.voice_response import VoiceResponse, Gather
@@ -380,6 +380,7 @@ def _trigger_voice_reply_call(
 @router.post("/webhook")
 async def whatsapp_webhook(
     request: Request,
+    background_tasks: BackgroundTasks,
     x_twilio_signature: str = Header(default=""),
     Body: str = Form(""),
     From: str = Form(...),
@@ -400,23 +401,22 @@ async def whatsapp_webhook(
         text_body = Body.strip()
         public_base_url = str(request.base_url).rstrip("/")
         
-        # If user sent a voice note, transcribe it
+        # If user sent a voice note, transcribe it asynchronously because it times out Twilio
         if NumMedia > 0 and MediaUrl0:
             if "audio" in MediaContentType0 or "video" in MediaContentType0:
                 received_voice_note = True
-                transcription_result = _download_and_transcribe(MediaUrl0)
-                if transcription_result.get("text"):
-                    text_body = transcription_result.get("text", "")
-                    detected_voice_language = transcription_result.get("language", "English")
-                else:
-                    resp.message("⚠️ Apologies, transcription failed. Please try again.")
-                    return xml_response(resp)
+                resp.message("⏳ I'm listening to your voice note and processing it... Please hold on a few seconds.")
+                background_tasks.add_task(_process_voice_note_bg, MediaUrl0, From)
+                return xml_response(resp)
 
         if not text_body:
             resp.message("⚠️ It seems you sent a message I couldn't process. Please send a text or voice note.")
             return xml_response(resp)
 
-        await _handle_message(text_body, From, resp, detected_voice_language, received_voice_note)
+        # Offload text processing to prevent Twilio timeouts
+        background_tasks.add_task(_process_text_msg_bg, text_body, From, detected_voice_language, received_voice_note)
+        # Reply immediately if needed, or just return empty 200 XML and let background tasks push via REST
+        return Response(content="<Response/>", media_type="text/xml")
 
     except Exception as exc:
         import traceback
@@ -523,6 +523,58 @@ async def whatsapp_voice_followup_collect(
     return voice_xml_response(vr)
 
 
+async def _process_voice_note_bg(media_url: str, From: str):
+    from twilio.twiml.messaging_response import MessagingResponse
+    import xml.etree.ElementTree as ET
+    twilio_client = TwilioClient(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+
+    try:
+        transcription_result = _download_and_transcribe(media_url)
+        if not transcription_result.get("text"):
+             twilio_client.messages.create(
+                 to=From, from_=settings.TWILIO_WHATSAPP_NUMBER,
+                 body="⚠️ Apologies, transcription failed. Please try again."
+             )
+             return
+             
+        text_body = transcription_result.get("text", "")
+        detected_voice_language = transcription_result.get("language", "English")
+        
+        resp = MessagingResponse()
+        await _handle_message(text_body, From, resp, detected_voice_language, is_voice=True)
+        
+        root = ET.fromstring(str(resp))
+        for msg in root.findall('Message'):
+            body_text = msg.text or ""
+            medias = [m.text for m in msg.findall('Media')]
+            kwargs = {"to": From, "from_": settings.TWILIO_WHATSAPP_NUMBER, "body": body_text}
+            if medias:
+                kwargs["media_url"] = medias
+            twilio_client.messages.create(**kwargs)
+            
+    except Exception as e:
+        print(f"Background Voice Processing Error: {e}")
+
+async def _process_text_msg_bg(text_body: str, From: str, lang: str, is_voice: bool):
+    from twilio.twiml.messaging_response import MessagingResponse
+    import xml.etree.ElementTree as ET
+    try:
+        resp = MessagingResponse()
+        await _handle_message(text_body, From, resp, lang, is_voice)
+        
+        root = ET.fromstring(str(resp))
+        twilio_client = TwilioClient(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
+        for msg in root.findall('Message'):
+            body_text = msg.text or ""
+            medias = [m.text for m in msg.findall('Media')]
+            kwargs = {"to": From, "from_": settings.TWILIO_WHATSAPP_NUMBER, "body": body_text}
+            if medias:
+                kwargs["media_url"] = medias
+            twilio_client.messages.create(**kwargs)
+            
+    except Exception as e:
+        print(f"Background Text Processing Error: {e}")
+
 async def _handle_message(Body: str, From: str, resp: MessagingResponse, user_lang: str = None, is_voice: bool = False) -> None:
     sb = get_supabase()
     text = Body.strip()
@@ -533,8 +585,8 @@ async def _handle_message(Body: str, From: str, resp: MessagingResponse, user_la
     def _reply_with_voice_if_needed(text_en: str, text_native: str):
         msg = resp.message(text_native)
         if is_voice:
-            # Generate the dynamic Bhashini TTS URL and attach as Media
-            url = f"{settings.BACKEND_URL}/api/tts/generate?text={urllib.parse.quote(text_native)}&lang={detected_lang}"
+            # We enforce a pseudo file extension for Twilio's strict WhatsApp media validators
+            url = f"{settings.BACKEND_URL}/api/tts/generate.mp3?text={urllib.parse.quote(text_native)}&lang={detected_lang}"
             msg.media(url)
             
     if text.lower() in ("help", "hi", "hello", "helo", "hai"):

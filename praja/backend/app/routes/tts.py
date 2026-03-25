@@ -6,7 +6,7 @@ from app.config import settings
 
 router = APIRouter()
 
-@router.get("/generate")
+@router.get("/generate.mp3")
 async def generate_tts(text: str = Query(...), lang: str = Query("hi")):
     """
     Generate audio perfectly translating the supplied text into the targeted regional language TTS via Bhashini.
