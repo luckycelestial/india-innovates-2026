@@ -388,6 +388,8 @@ async def whatsapp_webhook(
     MediaContentType0: str = Form(""),
 ):
     resp = MessagingResponse()
+    received_voice_note = False
+    detected_voice_language = "English"
     try:
         form_data = await request.form()
         params = {k: str(v) for k, v in form_data.items()}
@@ -395,45 +397,9 @@ async def whatsapp_webhook(
             print("Rejected non-Twilio webhook call: invalid signature")
             return Response(content="Forbidden", status_code=403)
 
-        public_base_url = str(request.base_url).rstrip("/")
+        text_body = Body.strip()
         
-        # We must fire a self-ping to offload processing to a dedicated thread on Vercel to bypass Twilio's 15s timeout
-        import httpx
-        try:
-            async with httpx.AsyncClient() as client:
-                await client.post(
-                    f"{public_base_url}/api/whatsapp/internal-process",
-                    data=params,
-                    timeout=0.2
-                )
-        except httpx.ReadTimeout:
-            pass
-        except httpx.ConnectTimeout:
-            pass
-        except Exception as e:
-            print("Self-ping minor exception:", e)
-
-    except Exception as exc:
-        print("Webhook Error:", exc)
-
-    # Return immediately to stop Twilio from abandoning the message loop due to Serverless function CPU suspensions!
-    resp.message("⏳ System processing natively... Note: Heavy LLM AI and Neural TTS translation takes ~10 seconds.")
-    return xml_response(resp)
-
-@router.post("/internal-process")
-async def whatsapp_internal_process(
-    Body: str = Form(""),
-    From: str = Form(...),
-    NumMedia: int = Form(0),
-    MediaUrl0: str = Form(""),
-    MediaContentType0: str = Form(""),
-):
-    text_body = Body.strip()
-    received_voice_note = False
-    detected_voice_language = "English"
-    twilio_client = TwilioClient(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN)
-
-    try:
+        # If user sent a voice note, transcribe it
         if NumMedia > 0 and MediaUrl0:
             if "audio" in MediaContentType0 or "video" in MediaContentType0:
                 received_voice_note = True
@@ -442,38 +408,26 @@ async def whatsapp_internal_process(
                     text_body = transcription_result.get("text", "")
                     detected_voice_language = transcription_result.get("language", "English")
                 else:
-                    twilio_client.messages.create(
-                        to=From, from_=settings.TWILIO_WHATSAPP_NUMBER, body="⚠️ Apologies, transcription failed. Please try again."
-                    )
-                    return Response(content="Failed")
+                    resp.message("⚠️ Apologies, transcription failed. Please try again.")
+                    return xml_response(resp)
 
         if not text_body:
-            twilio_client.messages.create(
-                to=From, from_=settings.TWILIO_WHATSAPP_NUMBER, body="⚠️ It seems you sent an empty message."
-            )
-            return Response(content="Empty")
+            resp.message("⚠️ It seems you sent an empty message I couldn't process. Please send a text or voice note.")
+            return xml_response(resp)
 
-        resp = MessagingResponse()
+        # Fully synchronous execution properly supported by standard Vercel Lambda limits!
         await _handle_message(text_body, From, resp, detected_voice_language, received_voice_note)
-        
-        import xml.etree.ElementTree as ET
-        root = ET.fromstring(str(resp))
-        for msg in root.findall('Message'):
-            body_text = msg.text or ""
-            medias = [m.text for m in msg.findall('Media')]
-            kwargs = {"to": From, "from_": settings.TWILIO_WHATSAPP_NUMBER, "body": body_text}
-            if medias:
-                kwargs["media_url"] = medias
-            twilio_client.messages.create(**kwargs)
 
     except Exception as exc:
         import traceback
-        print(traceback.format_exc())
-        twilio_client.messages.create(
-            to=From, from_=settings.TWILIO_WHATSAPP_NUMBER,
-            body=f"⚠️ PRAJA encountered an error processing your message.\nError ref: {type(exc).__name__}\n\n{str(exc)}"
+        tb = traceback.format_exc()
+        print(tb)
+        resp.message(
+            f"⚠️ PRAJA encountered an error processing your message.\n"
+            f"Please try again or send *help* for commands.\n"
+            f"Error ref: {type(exc).__name__}\n\n{str(exc)}"
         )
-    return Response(content="OK")
+    return xml_response(resp)
 
 
 @router.post("/voice-followup/start")
