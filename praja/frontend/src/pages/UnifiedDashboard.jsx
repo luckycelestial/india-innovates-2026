@@ -96,6 +96,7 @@ export default function UnifiedDashboard() {
 
   const role      = user?.role || 'citizen';
   const roleLabel = ROLE_LABELS[role] || role;
+  const showAlerts = !['citizen', 'sarpanch'].includes(role);
 
     const IconMap = {
     FileText: <FileText size={20} />,
@@ -114,12 +115,16 @@ export default function UnifiedDashboard() {
 
   // Load priority alerts silently
   useEffect(() => {
+    if (!showAlerts) {
+      setNotifications([]);
+      return;
+    }
     let alive = true;
     api.get('/sentinel/alerts')
       .then(r => { if (alive && Array.isArray(r.data)) setNotifications(r.data.slice(0, 5)); })
       .catch(() => {});
     return () => { alive = false; };
-  }, []);
+  }, [showAlerts]);
 
   // Close notification popover when clicking outside
   useEffect(() => {
@@ -186,39 +191,40 @@ export default function UnifiedDashboard() {
           </div>
 
           <div className="ud-topbar-right">
-            {/* Notification bell */}
-            <div style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
-              <button
-                className="ud-notif-btn"
-                onClick={() => setShowNotifs(s => !s)}
-                aria-label="Notifications"
-                aria-expanded={showNotifs}
-              >
-                🔔
-                {notifications.length > 0 && (
-                  <span className="ud-notif-badge">{notifications.length}</span>
+            {showAlerts && (
+              <div style={{ position: 'relative' }} onClick={e => e.stopPropagation()}>
+                <button
+                  className="ud-notif-btn"
+                  onClick={() => setShowNotifs(s => !s)}
+                  aria-label="Notifications"
+                  aria-expanded={showNotifs}
+                >
+                  🔔
+                  {notifications.length > 0 && (
+                    <span className="ud-notif-badge">{notifications.length}</span>
+                  )}
+                </button>
+
+                {showNotifs && (
+                  <div className="ud-notif-dropdown">
+                    <div className="ud-notif-header">
+                      <span>Priority Alerts</span>
+                      <span className="ud-notif-count">{notifications.length}</span>
+                    </div>
+                    <div className="ud-notif-body">
+                      {notifications.length === 0 ? (
+                        <div className="ud-notif-empty">No active alerts</div>
+                      ) : notifications.map((n, i) => (
+                        <div key={i} className={`ud-notif-item ${n.severity === 'critical' ? 'critical' : 'warning'}`}>
+                          <div className="title">{n.title || 'Alert'}</div>
+                          <div className="desc">{n.description || 'Action required immediately.'}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 )}
-              </button>
-              
-              {showNotifs && (
-                <div className="ud-notif-dropdown">
-                  <div className="ud-notif-header">
-                    <span>Priority Alerts</span>
-                    <span className="ud-notif-count">{notifications.length}</span>
-                  </div>
-                  <div className="ud-notif-body">
-                    {notifications.length === 0 ? (
-                      <div className="ud-notif-empty">No active alerts</div>
-                    ) : notifications.map((n, i) => (
-                      <div key={i} className={`ud-notif-item ${n.severity === 'critical' ? 'critical' : 'warning'}`}>
-                        <div className="title">{n.title || 'Alert'}</div>
-                        <div className="desc">{n.description || 'Action required immediately.'}</div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
 
             {/* Vertical Divider */}
             <div className="ud-topbar-divider" />
