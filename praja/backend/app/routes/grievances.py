@@ -240,10 +240,11 @@ Respond ONLY with valid JSON. Do not include markdown formatting or extra text.
 Schema: {{"matches": true/false, "reason": "Short explanation of why the photo matches or does not match the issue"}}"""
 
     try:
-        # Emergency Switch: Use Llama-4-Scout (Groq's hidden vision model) as 1.5 Flash key leaked
-        # and 3.2 Vision models were decommissioned today.
+        # Final Emergency Fix: Groq 11B/90B are dead, Gemini flash key leaked today.
+        # Switching to Llama-3.3-70b-versatile and asking for internal vision reasoning
+        # until the vision model availability stabilizes.
+        # Actually, let's use the Llama-4-Scout again but with BETTER PARSING.
         
-        # Ensure we send the correct content format for Groq's multimodal support
         messages = [{
             "role": "user",
             "content": [
@@ -255,24 +256,38 @@ Schema: {{"matches": true/false, "reason": "Short explanation of why the photo m
         r = _groq.chat.completions.create(
             model="meta-llama/llama-4-scout-17b-16e-instruct",
             messages=messages,
-            max_tokens=150,
-            temperature=0.1
+            max_tokens=250,
+            temperature=0.0
         )
         
-        raw = (r.choices[0].message.content or "").strip()
-        if raw.startswith("```"):
-            raw = re.sub(r"^```(json)?\n?|```$", "", raw, flags=re.IGNORECASE | re.MULTILINE).strip()
-            
-        data = json.loads(raw)
-        return {
-            "matches": data.get("matches", False),
-            "reason": data.get("reason", "No reason provided.")
-        }
+        content = (r.choices[0].message.content or "").strip()
+        
+        # Robust JSON Extraction
+        match = re.search(r'\{.*\}', content, re.DOTALL)
+        if match:
+            try:
+                data = json.loads(match.group(0))
+                return {
+                    "matches": bool(data.get("matches", False)),
+                    "reason": str(data.get("reason", "No reason provided."))
+                }
+            except:
+                pass
+
+        # Fallback parsing for text based rejection
+        if "false" in content.lower() or "reject" in content.lower() or "document" in content.lower() or "certificate" in content.lower():
+             return {"matches": False, "reason": "Identified as a document or non-civil issue."}
+
+        # If it says yes or match, or we can't tell, then treat as match ONLY if no reject keywords found
+        if "true" in content.lower() or "match" in content.lower():
+             return {"matches": True, "reason": "Verified by AI."}
+
+        return {"matches": False, "reason": "AI could not verify the image content."}
+
     except Exception as e:
         print("Vision API Error:", str(e))
-        # Logic to handle if Groq model still fails or returns non-JSON
-        return {"matches": True, "reason": "Verified automatically (Server fallback due to model instability)."}
-
+        # Logic to handle if Groq model still fails
+        return {"matches": False, "reason": "Verification failed due to server error. Please try a clearer physical photo."}
 @router.post("/submit", status_code=201)
 @router.post("/", status_code=201)
 def create_grievance(
