@@ -9,20 +9,21 @@
   <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&display=swap" rel="stylesheet">
   <style>
     *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
-    body{min-height:100vh;display:grid;place-items:center;background:#fff;font-family:"Space Grotesk",sans-serif}
+    body{min-height:100vh;display:grid;place-items:center;background:#dde3ec;font-family:"Space Grotesk",sans-serif}
     .slide{
-      width:100vw;
-      height:100vh;
-      background:#fff;position:relative;overflow:hidden;
+      width:min(98vw,calc(98vh*16/9));
+      height:min(98vh,calc(98vw*9/16));
+      aspect-ratio:16/9;background:#f8fafc;position:relative;overflow:hidden;
+      border:1px solid #c8d4e0;box-shadow:0 4px 28px rgba(15,23,42,.16)
     }
-    .title{position:absolute;left:50%;top:2.2%;transform:translateX(-50%);font-size:clamp(16px,2.8vh,32px);font-weight:700;color:#0f172a;white-space:nowrap}
-    .sub{position:absolute;left:50%;top:6.2%;transform:translateX(-50%);font-size:clamp(7px,.95vh,11px);color:#64748b;text-transform:uppercase;letter-spacing:.08em;z-index:12;white-space:nowrap}
+    .title{position:absolute;left:1%;top:1%;font-size:clamp(13px,2.2vh,26px);font-weight:700;color:#0f172a}
+    .sub{position:absolute;left:1%;top:4.5%;font-size:clamp(7px,.95vh,11px);color:#64748b;text-transform:uppercase;letter-spacing:.08em}
     .sec{
       position:absolute;top:7.8%;
       font-size:clamp(6.5px,.85vh,9px);font-weight:700;text-transform:uppercase;letter-spacing:.1em;color:#475569;
-      padding-bottom:2px;border-bottom:1.5px dashed #94a3b8;z-index:12
+      padding-bottom:2px;border-bottom:1.5px dashed #94a3b8;z-index:5
     }
-    .s1{left:1.2%;width:20.8%} .s2{left:26%;width:21%} .s3{left:51%;width:21%} .s4{left:76%;width:22%}
+    .s1{left:1%;width:21%} .s2{left:26%;width:21%} .s3{left:51%;width:21%} .s4{left:76%;width:22%}
     /*
       Layout (SVG viewBox 1600x900):
       Cols: c1 left=1% w=21% right=22% -> cx=184 rx=352
@@ -30,41 +31,41 @@
             c3 left=51% w=21% right=72% -> cx=984 lx=816 rx=1152
             c4 left=76% w=22% right=98% -> cx=1392 lx=1216 rx=1568
       Horiz gaps: 352->416=64  752->816=64  1152->1216=64
-      Rows (top%, h=16%):
-        r1 top=9%    bot=25%   cy=17%     SVGcy=153  SVGbot=225
-        r2 top=26.5% bot=42.5% cy=34.5%   SVGcy=311  SVGtop=239
-        r3 top=44%   bot=60%   cy=52%     SVGcy=468  SVGtop=396 SVGbot=540
-        r4 top=61.5% bot=77.5% cy=69.75%  SVGcy=628  SVGtop=554 SVGbot=698
-        r5 top=79%   bot=95%   cy=87%     SVGcy=783  SVGtop=711
+      Rows (top%, h=14%):
+        r1 top=10%  bot=24%  cy=17%  SVGcy=153  SVGbot=216
+        r2 top=26%  bot=40%  cy=33%  SVGcy=297  SVGtop=234
+        r3 top=42%  bot=56%  cy=49%  SVGcy=441  SVGtop=378 SVGbot=504
+        r4 top=58%  bot=72%  cy=65%  SVGcy=585  SVGtop=522 SVGbot=648
+        r5 top=74%  bot=88%  cy=81%  SVGcy=729  SVGtop=666
     */
     .blk{
-      position:absolute;height:16%;overflow:hidden;
+      position:absolute;height:14%;overflow:hidden;
       background:#fff;border:1.5px solid #cbd5e1;border-radius:9px;
       box-shadow:0 1px 6px rgba(15,23,42,.07);
-      padding:.5vh .4vw;
-      display:grid;grid-template-columns:52px 1fr;gap:.22vw;
+      padding:.45vh .35vw;
+      display:grid;grid-template-columns:52px 1fr;gap:.2vw;
       align-items:start;z-index:10
     }
     .c1{left:1%;width:21%} .c2{left:26%;width:21%} .c3{left:51%;width:21%} .c4{left:76%;width:22%}
-    .r1{top:10.5%} .r2{top:28%} .r3{top:45.5%} .r4{top:63%} .r5{top:80.5%}
+    .r1{top:10%} .r2{top:26%} .r3{top:42%} .r4{top:58%} .r5{top:74%}
     .logo{
       width:52px;height:52px;border:1px solid #e2e8f0;border-radius:8px;
       display:grid;place-items:center;background:#fff;
-      font-size:12px;font-weight:700;color:#334155;overflow:hidden;flex-shrink:0
+      font-size:10px;font-weight:700;color:#334155;overflow:hidden;flex-shrink:0
     }
     .logo img{width:42px;height:42px;display:block;object-fit:contain}
     .logo.cover img{width:52px;height:52px;display:block;object-fit:cover}
-    .blk h3{font-size:clamp(12px,1.5vh,17px);font-weight:700;line-height:1.15;color:#0f172a;margin-bottom:.06vh}
-    .chips{display:flex;flex-wrap:wrap;gap:2px;margin-top:.12vh}
+    .blk h3{font-size:clamp(10px,1.2vh,14px);font-weight:700;line-height:1.15;color:#0f172a;margin-bottom:.06vh}
+    .chips{display:flex;flex-wrap:wrap;gap:2px;margin-top:.1vh}
     .chip{
-      height:27px;min-width:27px;padding:0 5px;
+      height:23px;min-width:23px;padding:0 4px;
       border:1px solid #e2e8f0;border-radius:4px;
       display:grid;place-items:center;background:#f8fafc;
-      font-size:9.5px;font-weight:700;color:#475569;overflow:hidden
+      font-size:8px;font-weight:700;color:#475569;overflow:hidden
     }
-    .chip img{width:21px;height:21px;display:block;object-fit:contain}
-    .cap{margin-top:.1vh;font-size:clamp(8.5px,1.1vh,13px);color:#334155;font-weight:700;letter-spacing:.03em;line-height:1.15}
-    .cap2{margin-top:.06vh;font-size:clamp(7.5px,.95vh,11px);color:#475569;font-weight:600;letter-spacing:.03em;line-height:1.1}
+    .chip img{width:17px;height:17px;display:block;object-fit:contain}
+    .cap{margin-top:.08vh;font-size:clamp(7px,.85vh,10px);color:#64748b;text-transform:uppercase;letter-spacing:.03em;line-height:1.15}
+    .cap2{margin-top:.05vh;font-size:clamp(6px,.75vh,8.5px);color:#94a3b8;text-transform:uppercase;letter-spacing:.03em;line-height:1.1}
     .wires{position:absolute;inset:0;width:100%;height:100%;z-index:6;pointer-events:none}
     .wires path{fill:none;stroke:#334155;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
     .wires .soft{stroke:#94a3b8;stroke-dasharray:5 4;stroke-width:1.4}
@@ -74,7 +75,7 @@
 <body>
 <main class="slide">
 
-  <h1 class="title">PRAJA &#x2014; System Architecture &amp; Technology Used</h1>
+  <h1 class="title">PRAJA &#x2014; System Architecture</h1>
   <p class="sub">Full-stack flow: intake &rarr; AI &rarr; data &rarr; frontend + delivery</p>
 
   <div class="sec s1">Intake Channels</div>
@@ -84,85 +85,85 @@
 
   <!-- === COLUMN 1 === -->
   <article class="blk c1 r1">
-    <div class="logo"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/chrome/chrome-original.svg" alt="web"></div>
+    <div class="logo"><img src="https://cdn.simpleicons.org/googlechrome/4285F4" alt="web"></div>
     <div>
       <h3>Citizen Sources</h3>
       <div class="chips">
         <span class="chip"><img src="https://cdn.simpleicons.org/whatsapp/25D366" alt="wa"></span>
         <span class="chip"><img src="https://cdn.simpleicons.org/googlemessages/1A73E8" alt="sms"></span>
-        <span class="chip"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/chrome/chrome-original.svg" alt="web"></span>
-        <span class="chip">Voice</span><span class="chip">Web Form</span><span class="chip">REST API</span>
+        <span class="chip"><img src="https://cdn.simpleicons.org/googlechrome/4285F4" alt="web"></span>
+        <span class="chip">IVR</span><span class="chip">FORM</span><span class="chip">API</span>
       </div>
-      <div class="cap">Citizens submit complaints via any channel</div>
-      <div class="cap2">React 18 &middot; Vite 5 &middot; JWT Auth &middot; Axios</div>
+      <div class="cap">web &middot; whatsapp &middot; sms &middot; voice &middot; api</div>
+      <div class="cap2">react 18 &middot; vite 5 &middot; jwt auth &middot; axios</div>
     </div>
   </article>
 
   <article class="blk c1 r2">
-    <div class="logo"><img src="frontend/src/assets/twillio.png" alt="twilio"></div>
+    <div class="logo">TW</div>
     <div>
       <h3>Twilio Channels</h3>
       <div class="chips">
         <span class="chip"><img src="https://cdn.simpleicons.org/whatsapp/25D366" alt="wa"></span>
         <span class="chip"><img src="https://cdn.simpleicons.org/googlemessages/1A73E8" alt="sms"></span>
-        <span class="chip">Voice</span><span class="chip">Chatbot</span>
-        <span class="chip">Webhook</span><span class="chip">Reply</span>
+        <span class="chip">IVR</span><span class="chip">BOT</span>
+        <span class="chip">WH</span><span class="chip">ACK</span>
       </div>
-      <div class="cap">Handles WhatsApp, SMS &amp; voice callbacks</div>
-      <div class="cap2">Twilio Messaging API &middot; Free Sandbox Tier</div>
+      <div class="cap">webhook &middot; twiml &middot; callback &middot; sandbox</div>
+      <div class="cap2">twilio messaging api &middot; free sandbox tier</div>
     </div>
   </article>
 
   <article class="blk c1 r3">
-    <div class="logo"><img src="bhashini.png" alt="Bhashini" style="padding:4px"></div>
+    <div class="logo"><img src="frontend/src/assets/bhashini.png" alt="bhashini"></div>
     <div>
       <h3>Language Normalizer</h3>
       <div class="chips">
-        <span class="chip">Hindi</span><span class="chip">Tamil</span><span class="chip">Telugu</span>
-        <span class="chip">English</span><span class="chip">Kannada</span><span class="chip">+17 more</span>
+        <span class="chip">HI</span><span class="chip">TA</span><span class="chip">TE</span>
+        <span class="chip">EN</span><span class="chip">ML</span><span class="chip">KN</span><span class="chip">BN</span>
       </div>
       <div class="cap">Translates all 22 Indian languages to English</div>
-      <div class="cap2">Azure Cognitive Translator &middot; 2M chars/mo free</div>
+      <div class="cap2">Bhashini API &middot; indic + tanglish</div>
     </div>
   </article>
 
   <article class="blk c1 r4">
-    <div class="logo"><img src="https://cdn.simpleicons.org/linear/5E6AD2" alt="tracking"></div>
+    <div class="logo"><img src="https://cdn.simpleicons.org/googlemessages/1A73E8" alt="ticket"></div>
     <div>
       <h3>Tracking + Routing</h3>
       <div class="chips">
-        <span class="chip">Ticket</span><span class="chip">Deadline</span><span class="chip">Officer</span>
-        <span class="chip">Dept</span><span class="chip">Ward</span><span class="chip">Priority</span>
+        <span class="chip">TKT</span><span class="chip">SLA</span><span class="chip">OFF</span>
+        <span class="chip">DEPT</span><span class="chip">WARD</span><span class="chip">PRIO</span>
       </div>
-      <div class="cap">Assigns tickets to the right dept &amp; officer</div>
-      <div class="cap2">Hierarchical Escalation &middot; Ward-based Routing</div>
+      <div class="cap">ticket id &middot; dept &middot; authority assign</div>
+      <div class="cap2">hierarchical escalation &middot; ward routing</div>
     </div>
   </article>
 
   <article class="blk c1 r5">
-    <div class="logo"><img src="SS.jpg" alt="GrievanceOS"></div>
+    <div class="logo">G-OS</div>
     <div>
       <h3>GrievanceOS</h3>
       <div class="chips">
-        <span class="chip">Classify</span><span class="chip">Track</span><span class="chip">Resolve</span>
-        <span class="chip">Deadline</span><span class="chip">Notify</span><span class="chip">Escalate</span><span class="chip">Close</span>
+        <span class="chip">CLS</span><span class="chip">TRK</span><span class="chip">RES</span>
+        <span class="chip">SLA</span><span class="chip">ACK</span><span class="chip">ESC</span><span class="chip">CLO</span>
       </div>
-      <div class="cap">Full lifecycle: open &rarr; assign &rarr; resolve &rarr; close</div>
-      <div class="cap2">Auto-notify Citizens &middot; Escalation Engine</div>
+      <div class="cap">open &rarr; assign &rarr; resolve &rarr; close</div>
+      <div class="cap2">status notify &middot; escalation &middot; citizen ack</div>
     </div>
   </article>
 
   <!-- === COLUMN 2 === -->
   <article class="blk c2 r1">
-    <div class="logo"><img src="frontend/src/assets/groq.png" alt="groq"></div>
+    <div class="logo">GROQ</div>
     <div>
       <h3>LLM Extractor</h3>
       <div class="chips">
-        <span class="chip">LLaMA 70B</span><span class="chip">Category</span><span class="chip">Priority</span>
-        <span class="chip">Sentiment</span><span class="chip">Summary</span><span class="chip">Location</span>
+        <span class="chip">70B</span><span class="chip">CAT</span><span class="chip">PRI</span>
+        <span class="chip">SEN</span><span class="chip">SUM</span><span class="chip">LOC</span>
       </div>
-      <div class="cap">AI reads complaints &amp; extracts key fields</div>
-      <div class="cap2">Groq &middot; LLaMA-3.3-70B &middot; 14K req/day free</div>
+      <div class="cap">title &middot; category &middot; priority &middot; sentiment</div>
+      <div class="cap2">llama-3.3-70b-versatile &middot; 14k req/day free</div>
     </div>
   </article>
 
@@ -171,11 +172,11 @@
     <div>
       <h3>Classifier + SLA</h3>
       <div class="chips">
-        <span class="chip">Critical</span><span class="chip">High</span><span class="chip">Medium</span>
-        <span class="chip">Low</span><span class="chip">24 Hrs</span><span class="chip">48 Hrs</span><span class="chip">7 Days</span>
+        <span class="chip">P0</span><span class="chip">P1</span><span class="chip">P2</span>
+        <span class="chip">P3</span><span class="chip">24H</span><span class="chip">48H</span><span class="chip">7D</span>
       </div>
-      <div class="cap">Sets urgency level &amp; resolution deadline</div>
-      <div class="cap2">Auto-escalation &middot; Breach Detection &middot; Alerts</div>
+      <div class="cap">severity &middot; escalation &middot; sla breach timer</div>
+      <div class="cap2">auto-escalation &middot; breach detection &middot; alerts</div>
     </div>
   </article>
 
@@ -184,41 +185,40 @@
     <div>
       <h3>FastAPI Gateway</h3>
       <div class="chips">
-        <span class="chip">Login</span><span class="chip">Grievance</span><span class="chip">Users</span>
-        <span class="chip">AI Tools</span><span class="chip">Sentinel</span><span class="chip">Officers</span>
-        <span class="chip">WhatsApp</span><span class="chip">SMS</span><span class="chip">Voice</span>
+        <span class="chip">AUTH</span><span class="chip">GRV</span><span class="chip">USER</span>
+        <span class="chip">AI</span><span class="chip">SNT</span><span class="chip">OFF</span>
+        <span class="chip">WA</span><span class="chip">SMS</span><span class="chip">VOICE</span>
       </div>
-      <div class="cap">Central API server handling all routes</div>
-      <div class="cap2">Python 3.11 &middot; Uvicorn &middot; CORS &middot; Rate-limit</div>
+      <div class="cap">route handlers &middot; pydantic v2 &middot; middleware</div>
+      <div class="cap2">python 3.11 &middot; uvicorn &middot; cors &middot; rate-limit</div>
     </div>
   </article>
 
   <article class="blk c2 r4">
-    <div class="logo"><img src="https://cdn.simpleicons.org/jsonwebtokens/000000" alt="jwt"></div>
+    <div class="logo">JWT</div>
     <div>
       <h3>Security Layer</h3>
       <div class="chips">
-        <span class="chip">Token</span><span class="chip">Hashing</span><span class="chip">Roles</span>
-        <span class="chip">Permissions</span><span class="chip">Expiry</span>
+        <span class="chip">JWT</span><span class="chip">PBKDF2</span><span class="chip">ROLES</span>
+        <span class="chip">SCOPE</span><span class="chip">EXP</span>
       </div>
-      <div class="cap">Auth tokens, passwords &amp; role-based access</div>
+      <div class="cap">token &middot; role guards &middot; expiry &middot; refresh</div>
       <div class="cap2">python-jose &middot; passlib &middot; bcrypt</div>
     </div>
   </article>
-  
+
   <article class="blk c2 r5">
-    <div class="logo"><img src="https://cdn.simpleicons.org/socketdotio/010101" alt="sockets"></div>
+    <div class="logo">MCP</div>
     <div>
-      <h3>Real-time Sync</h3>
+      <h3>MCP Gateway</h3>
       <div class="chips">
-        <span class="chip">WebSockets</span><span class="chip">Real-time</span><span class="chip">Push</span>
-        <span class="chip">Live Feed</span><span class="chip">Status Update</span>
+        <span class="chip">AI</span><span class="chip">SNT</span><span class="chip">GRV</span>
+        <span class="chip">COM</span><span class="chip">RTE</span><span class="chip">MAP</span>
       </div>
-      <div class="cap">Instant state syncing across all dashboards</div>
-      <div class="cap2">Uvicorn &middot; WebSockets &middot; Supabase Realtime</div>
+      <div class="cap">microservice routing &middot; tool registry</div>
+      <div class="cap2">node.js &middot; stdio transport &middot; mcp sdk</div>
     </div>
   </article>
-
 
   <!-- === COLUMN 3 === -->
   <article class="blk c3 r1">
@@ -228,10 +228,10 @@
       <div class="chips">
         <span class="chip"><img src="https://cdn.simpleicons.org/supabase/3ECF8E" alt="sb"></span>
         <span class="chip"><img src="https://cdn.simpleicons.org/postgresql/4169E1" alt="pg"></span>
-        <span class="chip">REST API</span><span class="chip">Client SDK</span><span class="chip">Row Security</span>
+        <span class="chip">API</span><span class="chip">SDK</span><span class="chip">RLS</span>
       </div>
-      <div class="cap">Cloud database with built-in auth &amp; API</div>
-      <div class="cap2">Region: AP-South-1 &middot; Free Tier</div>
+      <div class="cap">client sdk &middot; service key &middot; rls policies</div>
+      <div class="cap2">ap-south-1 &middot; project bbakxtofuxkxzfbexlll</div>
     </div>
   </article>
 
@@ -240,24 +240,24 @@
     <div>
       <h3>Postgres Model</h3>
       <div class="chips">
-        <span class="chip">Users</span><span class="chip">Grievances</span><span class="chip">Logs</span>
-        <span class="chip">Wards</span><span class="chip">Schedule</span><span class="chip">Hierarchy</span>
+        <span class="chip">users</span><span class="chip">grv</span><span class="chip">logs</span>
+        <span class="chip">ward</span><span class="chip">sch</span><span class="chip">hier</span><span class="chip">deps</span>
       </div>
-      <div class="cap">All tables: users, complaints, wards, logs</div>
-      <div class="cap2">Supabase Migrations &middot; Enums &middot; Triggers</div>
+      <div class="cap">relational entities &middot; fk refs &middot; indexes</div>
+      <div class="cap2">supabase migrations &middot; enum types &middot; triggers</div>
     </div>
   </article>
 
   <article class="blk c3 r3">
-    <div class="logo"><img src="frontend/src/assets/powerbi.jpg" alt="powerbi"></div>
+    <div class="logo">BI</div>
     <div>
       <h3>Analytics + BI</h3>
       <div class="chips">
-        <span class="chip">Deadlines</span><span class="chip">Categories</span><span class="chip">Wards</span>
-        <span class="chip">Complaints</span><span class="chip">Alerts</span><span class="chip">Depts</span>
+        <span class="chip">SLA</span><span class="chip">CAT</span><span class="chip">WARD</span>
+        <span class="chip">CMP</span><span class="chip">ALRT</span><span class="chip">GRV</span><span class="chip">DEPT</span>
       </div>
-      <div class="cap">Charts: SLA breaches, dept stats, ward trends</div>
-      <div class="cap2">Recharts &middot; Real-time Feed &middot; Ward Heatmap</div>
+      <div class="cap">metrics &middot; sla breach &middot; dept performance</div>
+      <div class="cap2">recharts &middot; realtime feed &middot; ward heatmap</div>
     </div>
   </article>
 
@@ -266,24 +266,24 @@
     <div>
       <h3>Smart Schedule</h3>
       <div class="chips">
-        <span class="chip">Briefing</span><span class="chip">Events</span><span class="chip">Prep</span>
-        <span class="chip">AI Draft</span><span class="chip">Summary</span><span class="chip">Speech</span>
+        <span class="chip">BRF</span><span class="chip">EVT</span><span class="chip">PREP</span>
+        <span class="chip">AI</span><span class="chip">SUMM</span><span class="chip">SPCH</span>
       </div>
-      <div class="cap">AI writes briefings &amp; speeches for leaders</div>
-      <div class="cap2">Morning Brief &middot; Groq LLM &middot; NayakAI</div>
+      <div class="cap">briefing &middot; speech draft &middot; event prep</div>
+      <div class="cap2">morning brief &middot; groq &middot; nayakai module</div>
     </div>
   </article>
 
   <article class="blk c3 r5">
-    <div class="logo"><img src="https://cdn.simpleicons.org/grafana/F46800" alt="sentinel"></div>
+    <div class="logo">SP</div>
     <div>
       <h3>SentinelPulse</h3>
       <div class="chips">
-        <span class="chip">Alerts</span><span class="chip">Topics</span><span class="chip">Trends</span>
-        <span class="chip">Heatmap</span><span class="chip">Wards</span><span class="chip">Mood</span>
+        <span class="chip">ALR</span><span class="chip">TOP</span><span class="chip">TREND</span>
+        <span class="chip">HEAT</span><span class="chip">WARD</span><span class="chip">SENT</span>
       </div>
-      <div class="cap">Tracks public mood per ward in real-time</div>
-      <div class="cap2">Geospatial &middot; Social Posts &middot; Leaflet Map</div>
+      <div class="cap">ward sentiment &middot; trend &middot; mood alert</div>
+      <div class="cap2">geospatial &middot; social posts &middot; leaflet map</div>
     </div>
   </article>
 
@@ -297,10 +297,10 @@
         <span class="chip"><img src="https://cdn.simpleicons.org/vite/646CFF" alt="vite"></span>
         <span class="chip"><img src="https://cdn.simpleicons.org/reactrouter/CA4245" alt="router"></span>
         <span class="chip"><img src="https://cdn.simpleicons.org/axios/5A29E4" alt="axios"></span>
-        <span class="chip">Grievance</span><span class="chip">Heatmap</span><span class="chip">State</span>
+        <span class="chip">GRV</span><span class="chip">HEAT</span><span class="chip">CTX</span>
       </div>
-      <div class="cap">Main web app shell with page routing</div>
-      <div class="cap2">React 18 &middot; Vite 5 &middot; Tailwind &middot; CLSX</div>
+      <div class="cap">frontend shell &middot; context &middot; spa routing</div>
+      <div class="cap2">react 18 &middot; vite 5 &middot; tailwind &middot; clsx</div>
     </div>
   </article>
 
@@ -309,11 +309,11 @@
     <div>
       <h3>Dashboards</h3>
       <div class="chips">
-        <span class="chip">MLA</span><span class="chip">MP</span><span class="chip">Councillor</span>
-        <span class="chip">Officer</span><span class="chip">Citizen</span>
+        <span class="chip">CIT</span><span class="chip">OFF</span><span class="chip">LDR</span>
+        <span class="chip">UNI</span><span class="chip">NOTI</span><span class="chip">STAT</span>
       </div>
-      <div class="cap">Each political role gets a tailored dashboard</div>
-      <div class="cap2">MLA / MP / Councillor / Officer / Citizen Views</div>
+      <div class="cap">citizen &middot; officer &middot; leader &middot; unified</div>
+      <div class="cap2">role-specific ui &middot; real-time status &middot; notifs</div>
     </div>
   </article>
 
@@ -325,10 +325,10 @@
         <span class="chip"><img src="https://cdn.simpleicons.org/leaflet/199900" alt="leaflet"></span>
         <span class="chip"><img src="https://cdn.simpleicons.org/openstreetmap/7EBC6F" alt="osm"></span>
         <span class="chip"><img src="https://cdn.simpleicons.org/chartdotjs/FF6384" alt="chart"></span>
-        <span class="chip">Wards</span><span class="chip">Live Feed</span>
+        <span class="chip">WARD</span><span class="chip">LIVE</span>
       </div>
-      <div class="cap">Color-coded ward map showing public mood</div>
-      <div class="cap2">Leaflet.heat &middot; OpenStreetMap &middot; Sentinel Feed</div>
+      <div class="cap">ward map &middot; sentiment heat &middot; chart layer</div>
+      <div class="cap2">leaflet.heat &middot; openstreetmap &middot; sentinel feed</div>
     </div>
   </article>
 
@@ -338,27 +338,27 @@
       <h3>Deployment</h3>
       <div class="chips">
         <span class="chip"><img src="https://cdn.simpleicons.org/vercel/000000" alt="vercel"></span>
-        <span class="chip"><img src="https://cdn.simpleicons.org/vercel/000000" alt="vercel"></span>
-        <span class="chip">Env Vars</span><span class="chip">CI/CD</span><span class="chip">GitHub</span>
+        <span class="chip"><img src="https://cdn.simpleicons.org/render/46E3B7" alt="render"></span>
+        <span class="chip">ENV</span><span class="chip">CI</span><span class="chip">GH</span>
       </div>
-      <div class="cap">Vercel hosts frontend, Vercel hosts backend</div>
-      <div class="cap2">Auto-deploy on Push &middot; Free Tier</div>
+      <div class="cap">vercel (frontend) &middot; render (backend)</div>
+      <div class="cap2">env vars &middot; github actions &middot; free tier</div>
     </div>
   </article>
 
   <article class="blk c4 r5">
-    <div class="logo"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg" alt="python"></div>
+    <div class="logo"><img src="https://cdn.simpleicons.org/python/3776AB" alt="python"></div>
     <div>
       <h3>Runtime + Delivery</h3>
       <div class="chips">
-        <span class="chip"><img src="https://cdn.jsdelivr.net/gh/devicons/devicon/icons/python/python-original.svg" alt="py"></span>
+        <span class="chip"><img src="https://cdn.simpleicons.org/python/3776AB" alt="py"></span>
         <span class="chip"><img src="https://cdn.simpleicons.org/fastapi/009688" alt="fa"></span>
         <span class="chip"><img src="https://cdn.simpleicons.org/whatsapp/25D366" alt="wa"></span>
         <span class="chip"><img src="https://cdn.simpleicons.org/googlemessages/1A73E8" alt="sms"></span>
-        <span class="chip">Confirm</span><span class="chip">Ticket ID</span>
+        <span class="chip">ACK</span><span class="chip">TKT</span>
       </div>
-      <div class="cap">Sends citizens updates via WA &amp; SMS</div>
-      <div class="cap2">Twilio SMS &middot; WhatsApp Notify &middot; Ticket Reply</div>
+      <div class="cap">python runtime &middot; wa &middot; sms &middot; ack loop</div>
+      <div class="cap2">twilio sms &middot; whatsapp notify &middot; ticket reply</div>
     </div>
   </article>
 
@@ -366,10 +366,11 @@
     SVG WIRES  viewBox 1600x900
     Col edges: c1_right=352  c2_left=416  c2_right=752  c3_left=816  c3_right=1152  c4_left=1216  c4_right=1568
     Col cx: c1=184  c2=584  c3=984  c4=1392
-    Row geometry (h=16%, tops at 10.5/28/45.5/63/80.5%):
-      r1 cy=167 bot=239   r2 top=252 cy=324 bot=396
-      r3 top=410 cy=482 bot=554   r4 top=567 cy=639 bot=711
-      r5 top=725 cy=797
+    Row geometry (h=14%, tops at 10/26/42/58/74%):
+      r1 cy=153 bot=216   r2 top=234 cy=297 bot=360
+      r3 top=378 cy=441 bot=504   r4 top=522 cy=585 bot=648
+      r5 top=666 cy=729
+    Vert gaps = 18 SVG units each
   -->
   <svg class="wires" viewBox="0 0 1600 900" preserveAspectRatio="none" aria-hidden="true">
     <defs>
@@ -386,55 +387,56 @@
     </defs>
 
     <!-- HORIZ c1->c2 -->
-    <path marker-end="url(#arr)" d="M 352 167 L 416 167"/>
-    <path marker-end="url(#arr)" d="M 352 324 L 416 324"/>
-    <path marker-end="url(#arr)" d="M 352 482 L 416 482"/>
-    <path marker-end="url(#arr)" d="M 352 639 L 416 639"/>
-    <path marker-end="url(#arr)" d="M 352 797 L 416 797"/>
+    <path marker-end="url(#arr)" d="M 352 153 L 416 153"/>
+    <path marker-end="url(#arr)" d="M 352 297 L 416 297"/>
+    <path marker-end="url(#arr)" d="M 352 441 L 416 441"/>
+    <path marker-end="url(#arr)" d="M 352 585 L 416 585"/>
+    <path marker-end="url(#arr)" d="M 352 729 L 416 729"/>
 
     <!-- HORIZ c2->c3 -->
-    <path marker-end="url(#arr)" d="M 752 167 L 816 167"/>
-    <path marker-end="url(#arr)" d="M 752 324 L 816 324"/>
-    <path marker-end="url(#arr)" d="M 752 482 L 816 482"/>
-    <path marker-end="url(#arr)" d="M 752 639 L 816 639"/>
-    <path marker-end="url(#arr)" d="M 752 797 L 816 797"/>
+    <path marker-end="url(#arr)" d="M 752 153 L 816 153"/>
+    <path marker-end="url(#arr)" d="M 752 297 L 816 297"/>
+    <path marker-end="url(#arr)" d="M 752 441 L 816 441"/>
+    <path marker-end="url(#arr)" d="M 752 585 L 816 585"/>
+    <path marker-end="url(#arr)" d="M 752 729 L 816 729"/>
 
     <!-- HORIZ c3->c4 -->
-    <path marker-end="url(#arr)" d="M 1152 167 L 1216 167"/>
-    <path marker-end="url(#arr)" d="M 1152 324 L 1216 324"/>
-    <path marker-end="url(#arr)" d="M 1152 482 L 1216 482"/>
-    <path marker-end="url(#arr)" d="M 1152 639 L 1216 639"/>
-    <path marker-end="url(#arr)" d="M 1152 797 L 1216 797"/>
+    <path marker-end="url(#arr)" d="M 1152 153 L 1216 153"/>
+    <path marker-end="url(#arr)" d="M 1152 297 L 1216 297"/>
+    <path marker-end="url(#arr)" d="M 1152 441 L 1216 441"/>
+    <path marker-end="url(#arr)" d="M 1152 585 L 1216 585"/>
+    <path marker-end="url(#arr)" d="M 1152 729 L 1216 729"/>
 
     <!-- VERT col1 cx=184 -->
-    <path marker-end="url(#arr)" d="M 184 239 L 184 252"/>
-    <path marker-end="url(#arr)" d="M 184 396 L 184 410"/>
-    <path marker-end="url(#arr)" d="M 184 554 L 184 567"/>
-    <path marker-end="url(#arr)" d="M 184 711 L 184 725"/>
+    <path marker-end="url(#arr)" d="M 184 216 L 184 234"/>
+    <path marker-end="url(#arr)" d="M 184 360 L 184 378"/>
+    <path marker-end="url(#arr)" d="M 184 504 L 184 522"/>
+    <path marker-end="url(#arr)" d="M 184 648 L 184 666"/>
 
     <!-- VERT col2 cx=584 -->
-    <path marker-end="url(#arr)" d="M 584 239 L 584 252"/>
-    <path marker-end="url(#arr)" d="M 584 396 L 584 410"/>
-    <path marker-end="url(#arr)" d="M 584 554 L 584 567"/>
-    <path marker-end="url(#arr)" d="M 584 711 L 584 725"/>
+    <path marker-end="url(#arr)" d="M 584 216 L 584 234"/>
+    <path marker-end="url(#arr)" d="M 584 360 L 584 378"/>
+    <path marker-end="url(#arr)" d="M 584 504 L 584 522"/>
+    <path marker-end="url(#arr)" d="M 584 648 L 584 666"/>
 
     <!-- VERT col3 cx=984 -->
-    <path marker-end="url(#arr)" d="M 984 239 L 984 252"/>
-    <path marker-end="url(#arr)" d="M 984 396 L 984 410"/>
-    <path marker-end="url(#arr)" d="M 984 554 L 984 567"/>
-    <path marker-end="url(#arr)" d="M 984 711 L 984 725"/>
+    <path marker-end="url(#arr)" d="M 984 216 L 984 234"/>
+    <path marker-end="url(#arr)" d="M 984 360 L 984 378"/>
+    <path marker-end="url(#arr)" d="M 984 504 L 984 522"/>
+    <path marker-end="url(#arr)" d="M 984 648 L 984 666"/>
 
     <!-- VERT col4 cx=1392 -->
-    <path marker-end="url(#arr)" d="M 1392 239 L 1392 252"/>
-    <path marker-end="url(#arr)" d="M 1392 396 L 1392 410"/>
-    <path marker-end="url(#arr)" d="M 1392 554 L 1392 567"/>
-    <path marker-end="url(#arr)" d="M 1392 711 L 1392 725"/>
+    <path marker-end="url(#arr)" d="M 1392 216 L 1392 234"/>
+    <path marker-end="url(#arr)" d="M 1392 360 L 1392 378"/>
+    <path marker-end="url(#arr)" d="M 1392 504 L 1392 522"/>
+    <path marker-end="url(#arr)" d="M 1392 648 L 1392 666"/>
 
-    <!-- FEEDBACK LOOP: r5c4 right -> r1c1 left (routed above visible area) -->
+    <!-- FEEDBACK LOOP: r5c4 right -> r1c1 left -->
     <path class="soft" marker-end="url(#arr-soft)"
-          d="M 1568 797 L 1585 797 L 1585 10 L 8 10 L 8 167 L 16 167"/>
+          d="M 1568 729 L 1585 729 L 1585 38 L 15 38 L 15 153"/>
   </svg>
 
+  <div class="foot">Supabase: bbakxtofuxkxzfbexlll &middot; FastAPI + Groq + Twilio + React &middot; Vercel + Render &middot; India Innovates 2026</div>
 </main>
 </body>
 </html>
