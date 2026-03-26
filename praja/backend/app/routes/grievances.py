@@ -10,6 +10,7 @@ from groq import Groq
 from app.config import settings
 from app.db.database import get_supabase
 from app.utils.jwt import get_current_user
+from app.utils.exif import extract_exif_gps
 
 router = APIRouter()
 _groq = Groq(api_key=settings.GROQ_API_KEY)
@@ -227,6 +228,16 @@ def verify_photo(
     body: VerifyPhotoRequest,
     current: dict = Depends(get_current_user),
 ):
+    # New EXIF extraction logic
+    metadata = {}
+    if body.photo_url and body.photo_url.startswith("http"):
+        try:
+            exif_result = extract_exif_gps(body.photo_url)
+            if exif_result:
+                metadata = exif_result
+        except Exception as e:
+            print(f"Metadata extraction failed: {str(e)}")
+
     prompt = f"""You are a hyper-strict infrastructure and civic issue photo verification assistant. Your task is strictly to verify if the attached image visually and physically depicts the *exact* issue described below. 
 You MUST REJECT: generic images, certificates, documents, logos, badges, selfies, cartoons, screenshots, text-heavy images, and any objects not directly related to the physical issue mentioned.
 The image must objectively and clearly show the real-world physical infrastructure problem mentioned (e.g., an actual street with a pothole, a broken pipe leaking water). Do not accept symbolic or document-based evidence in place of physical infrastructure photos.
@@ -262,7 +273,8 @@ Schema: {{"matches": true/false, "reason": "Short explanation of why the photo m
         if "DOCUMENT" in classification:
             return {
                 "matches": False,
-                "reason": "Image rejected: Identified as a document, screenshot, or certificate. Please upload a physical photo of the issue."
+                "reason": "Image rejected: Identified as a document, screenshot, or certificate. Please upload a physical photo of the issue.",
+                "metadata": metadata
             }
             
         if "PHYSICAL" in classification:
@@ -284,15 +296,32 @@ Schema: {{"matches": true/false, "reason": "Short explanation of why the photo m
             
             match_val = (r2.choices[0].message.content or "").strip().upper()
             if "YES" in match_val:
-                return {"matches": True, "reason": "Photo evidence verified by L4-Scout (v97f601)."}
+                # Add metadata to high-quality matches
+                return {
+                    "matches": True, 
+                    "reason": "Photo evidence verified by L4-Scout (v97f601).",
+                    "metadata": metadata
+                }
             else:
-                return {"matches": False, "reason": f"Photo does not seem to match the described issue: {body.title}"}
+                return {
+                    "matches": False, 
+                    "reason": f"Photo does not seem to match the described issue: {body.title}",
+                    "metadata": metadata
+                }
 
-        return {"matches": False, "reason": "AI could not definitively verify the image. Please try a clearer physical photo."}
+        return {
+            "matches": False, 
+            "reason": "AI could not definitively verify the image. Please try a clearer physical photo.",
+            "metadata": metadata
+        }
 
     except Exception as e:
         print("Vision API Error:", str(e))
-        return {"matches": False, "reason": "Verification service temporarily unstable. Please re-upload a clear physical photo."}
+        return {
+            "matches": False, 
+            "reason": "Verification service temporarily unstable. Please re-upload a clear physical photo.",
+            "metadata": metadata
+        }
 @router.post("/submit", status_code=201)
 @router.post("/", status_code=201)
 def create_grievance(
@@ -304,9 +333,17 @@ def create_grievance(
     now = datetime.now(timezone.utc)
     hours = SLA_HOURS.get(cls["priority"], 168)
     sla_deadline = (now + timedelta(hours=hours)).isoformat()
+    
+    # Ensure citizen_id is a valid UUID or use a real fallback citizen ID
+    # 'demo-sarpanch' etc from auth.py are not valid UUIDs and will crash the DB
+    citizen_id = current["sub"]
+    if "-" not in citizen_id or len(citizen_id) < 32:
+        # Fallback to a real UUID for demo/mock users
+        citizen_id = "89c0b080-3fc0-469e-af06-b57a9b1e55f9"
+
     insert_data = {
         "tracking_id":  _gen_tracking_id(),
-        "citizen_id":   current["sub"] if current["sub"] != "00000000-0000-0000-0000-000000000000" else "89c0b080-3fc0-469e-af06-b57a9b1e55f9",
+        "citizen_id":   citizen_id,
         "title":        body.title,
         "description":  body.description,
         "ai_category":  cls["category"],

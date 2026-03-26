@@ -15,6 +15,7 @@ export default function SubmitTab({ onToast }) {
   const [photoReq, setPhotoReq] = useState({ need: 'optional', prompt: 'Upload from gallery/files (auto-compressed before submit)' });
   const [isEvaluating, setIsEvaluating] = useState(false);
   const [isVerifyingPhoto, setIsVerifyingPhoto] = useState(false);
+  const [photoMetadata, setPhotoMetadata] = useState(null);
 
   useEffect(() => {
     if (title.length < 5 && description.length < 5) {
@@ -208,9 +209,15 @@ export default function SubmitTab({ onToast }) {
               onToast(`Photo rejected: ${data.reason}`, 'error');
               setPhotoDataUrl('');
               setPhotoFileName('');
+              setPhotoMetadata(null);
               if (photoInputRef.current) photoInputRef.current.value = '';
             } else {
               onToast('✅ Photo evidence verified!', 'success');
+              if (data.metadata && data.metadata.latitude) {
+                setPhotoMetadata(data.metadata);
+              } else {
+                setPhotoMetadata(null);
+              }
             }
           }
         } catch (err) {
@@ -232,6 +239,7 @@ export default function SubmitTab({ onToast }) {
   const clearPhoto = () => {
     setPhotoDataUrl('');
     setPhotoFileName('');
+    setPhotoMetadata(null);
     if (photoInputRef.current) photoInputRef.current.value = '';
   };
 
@@ -398,13 +406,26 @@ export default function SubmitTab({ onToast }) {
           
           {photoDataUrl && photoReq.need !== 'not_needed' && (
             <div className="ud-photo-preview-wrap">
-              <div className="ud-photo-preview-label">Preview</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                <div className="ud-photo-preview-label">Preview</div>
+                {photoMetadata && photoMetadata.latitude && (
+                  <div style={{ fontSize: '0.72rem', color: 'var(--color-success-text)', background: 'rgba(74, 222, 128, 0.1)', padding: '2px 8px', borderRadius: '12px', border: '1px solid var(--color-success-border)' }}>
+                    📍 GPS Verified: {photoMetadata.latitude.toFixed(4)}, {photoMetadata.longitude.toFixed(4)}
+                  </div>
+                )}
+              </div>
               <img
                 src={photoDataUrl}
                 alt="Evidence preview"
                 className="ud-photo-preview"
                 onError={e => { e.target.style.display = 'none'; }}
               />
+              {photoMetadata && (
+                <div style={{ marginTop: 8, fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
+                  <div title="Photo capture date">📅 {photoMetadata.timestamp || 'Unknown Date'}</div>
+                  <div title="Camera model">📱 {photoMetadata.model || 'Unknown Device'}</div>
+                </div>
+              )}
             </div>
           )}
           <div style={{ marginTop: 20 }}>
