@@ -338,8 +338,8 @@ def create_grievance(
     # 'demo-sarpanch' etc from auth.py are not valid UUIDs and will crash the DB
     citizen_id = current["sub"]
     if "-" not in citizen_id or len(citizen_id) < 32:
-        # Fallback to a real UUID for demo/mock users
-        citizen_id = "89c0b080-3fc0-469e-af06-b57a9b1e55f9"
+        # Fallback to a real UUID for demo/mock users (Ramesh Kumar in DB)
+        citizen_id = "8fc290a5-bfa3-4348-b674-40ab2425c492"
 
     insert_data = {
         "tracking_id":  _gen_tracking_id(),
