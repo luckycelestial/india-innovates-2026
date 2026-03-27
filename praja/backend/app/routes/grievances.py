@@ -355,6 +355,18 @@ def create_grievance(
     }
     if body.photo_url:
         insert_data["photo_url"] = body.photo_url
+        # Extract and save EXIF metadata if photo is provided
+        try:
+            exif_result = extract_exif_gps(body.photo_url)
+            if exif_result:
+                if exif_result.get("latitude") and exif_result.get("longitude"):
+                    # Supabase PostGIS location format: 'POINT(long lat)'
+                    insert_data["location"] = f"POINT({exif_result['longitude']} {exif_result['latitude']})"
+                # You might also want to store raw metadata if a column exists, 
+                # but 'location' is the standard for mapping.
+        except Exception as e:
+            print(f"Post-submission EXIF extraction failed: {str(e)}")
+            
     row = sb.table("grievances").insert(insert_data).execute()
     g = row.data[0]
     return {**g, "tracking_id": g["tracking_id"], "priority": g["priority"]}
