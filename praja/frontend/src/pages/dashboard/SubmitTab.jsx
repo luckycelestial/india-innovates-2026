@@ -8,6 +8,7 @@ import { useMutation } from '../../hooks/useFetch';
 export default function SubmitTab({ onToast }) {
   const [title, setTitle] = useState('');
   const [description, setDesc] = useState('');
+  const [userLocation, setUserLocation] = useState('');
   const [photoDataUrl, setPhotoDataUrl] = useState('');
   const [photoFileName, setPhotoFileName] = useState('');
   const [submitted, setSubmitted] = useState(null);
@@ -251,12 +252,17 @@ export default function SubmitTab({ onToast }) {
     }
     setSubmitted(null);
     try {
-      const body = { title, description };
+      const body = { 
+        title, 
+        description, 
+        user_location_text: userLocation // Added stated location
+      };
       if (photoDataUrl) body.photo_url = photoDataUrl;
       const data = await submitGrievance('/grievances/submit', body);
       setSubmitted(data);
       setTitle('');
       setDesc('');
+      setUserLocation(''); // Clear location
       setPhotoDataUrl('');
       setPhotoFileName('');
       if (photoInputRef.current) photoInputRef.current.value = '';
@@ -326,6 +332,15 @@ export default function SubmitTab({ onToast }) {
             placeholder="e.g. No water supply in our area"
             value={title}
             onChange={e => setTitle(e.target.value)}
+            required
+          />
+
+          <Input
+            label="Location (Ward / Area Name)"
+            id="complaint-location"
+            placeholder="e.g. Ward 12, Jubilee Hills, Near Water Tank"
+            value={userLocation}
+            onChange={e => setUserLocation(e.target.value)}
             required
           />
           

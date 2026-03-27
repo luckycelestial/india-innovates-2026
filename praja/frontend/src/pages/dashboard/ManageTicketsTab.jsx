@@ -290,6 +290,16 @@ export default function ManageTicketsTab({ onToast }) {
               <div className="ud-ticket-detail-item"><span>Category</span><strong>{selectedTicket.ai_category || 'General'}</strong></div>
               <div className="ud-ticket-detail-item"><span>Priority</span><strong>{(selectedTicket.priority || 'medium').toUpperCase()}</strong></div>
               <div className="ud-ticket-detail-item"><span>Status</span><strong>{STATUS_LABEL[selectedTicket.status] || selectedTicket.status || 'Open'}</strong></div>
+              <div className="ud-ticket-detail-item"><span>User Location</span><strong>{selectedTicket.user_location_text || 'Not provided'}</strong></div>
+              <div className="ud-ticket-detail-item"><span>Verification</span>
+                <strong style={{ 
+                  color: selectedTicket.location_verification_status === 'verified' ? 'var(--color-success-text)' : 
+                         selectedTicket.location_verification_status === 'mismatch' ? 'var(--color-danger-text)' : 'inherit' 
+                }}>
+                  {selectedTicket.location_verification_status ? selectedTicket.location_verification_status.toUpperCase() : 'PENDING'}
+                </strong>
+              </div>
+              <div className="ud-ticket-detail-item"><span>GPS Data</span><strong>{selectedTicket.gps_latitude ? `${selectedTicket.gps_latitude.toFixed(4)}, ${selectedTicket.gps_longitude.toFixed(4)}` : 'No GPS info'}</strong></div>
               <div className="ud-ticket-detail-item"><span>Created Time</span><strong>{formatComplaintDate(selectedTicket.created_at) || '—'}</strong></div>
               <div className="ud-ticket-detail-item"><span>Updated Time</span><strong>{formatComplaintDate(selectedTicket.updated_at) || '—'}</strong></div>
               <div className="ud-ticket-detail-item"><span>Location</span><strong>{selectedTicket.location || selectedTicket.ward || 'Not provided'}</strong></div>

@@ -56,10 +56,32 @@ def _gen_tracking_id() -> str:
     return f"PRJ-{datetime.now(timezone.utc).strftime('%y%m%d')}-{secrets.token_hex(3).upper()}"
 
 
+def _extract_llm_location(text: str) -> Optional[dict]:
+    """Extract approximate lat/lon from user's location text using Groq."""
+    if not text: return None
+    prompt = f"Extract approximate latitude and longitude for this location: '{text}'. Return ONLY valid JSON: {{'lat': ..., 'lon': ...}}. If unknown, return {{}}."
+    try:
+        r = _groq.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            max_tokens=60, temperature=0,
+        )
+        content = r.choices[0].message.content or ""
+        # Basic cleanup in case of markdown or extra text
+        content = re.sub(r"```.*?```", "", content, flags=re.DOTALL).strip()
+        data = json.loads(content)
+        if data.get("lat") and data.get("lon"):
+            return data
+    except Exception:
+        pass
+    return None
+
+
 class GrievanceCreate(BaseModel):
     title: str
     description: str
     photo_url: Optional[str] = None
+    user_location_text: Optional[str] = None
 
 
 class VerifyPhotoRequest(BaseModel):
@@ -360,8 +382,23 @@ def create_grievance(
             exif_result = extract_exif_gps(body.photo_url)
             if exif_result:
                 if exif_result.get("latitude") and exif_result.get("longitude"):
+                    exif_lat = exif_result['latitude']
+                    exif_lon = exif_result['longitude']
                     # Supabase PostGIS location format: 'POINT(long lat)'
-                    insert_data["location"] = f"POINT({exif_result['longitude']} {exif_result['latitude']})"
+                    insert_data["location"] = f"POINT({exif_lon} {exif_lat})"
+                    
+                    # ─── New Location Logic ───────────────────
+                    # If user also provided text location, cross-verify
+                    if body.user_location_text:
+                        llm_coords = _extract_llm_location(body.user_location_text)
+                        if llm_coords:
+                            # 1 degree is ~111km, so 0.05 is ~5.5km range
+                            lat_diff = abs(float(exif_lat) - float(llm_coords['lat']))
+                            lon_diff = abs(float(exif_lon) - float(llm_coords['lon']))
+                            is_match = lat_diff < 0.05 and lon_diff < 0.05
+                            
+                            insert_data["user_stated_location"] = body.user_location_text
+                            insert_data["location_verification_status"] = "verified" if is_match else "mismatch"
                 # You might also want to store raw metadata if a column exists, 
                 # but 'location' is the standard for mapping.
         except Exception as e:
