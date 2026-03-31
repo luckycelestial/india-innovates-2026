@@ -2,7 +2,7 @@ from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.config import settings
-from app.routes import auth, mic, grievances, officers, sentinel, whatsapp, sms, voice, tts
+from app.routes import auth, mic, grievances, officers, sentinel, whatsapp, whatsapp_voice, sms, voice, tts
 import traceback, logging
 
 logger = logging.getLogger(__name__)
@@ -36,7 +36,8 @@ app.include_router(auth.router,        prefix="/api/auth",       tags=["Auth"])
 app.include_router(grievances.router,  prefix="/api/grievances", tags=["Grievances"])
 app.include_router(officers.router,    prefix="/api/officers",   tags=["Officers"])
 app.include_router(sentinel.router,    prefix="/api/sentinel",   tags=["SentinelPulse"])
-app.include_router(whatsapp.router,    prefix="/api/whatsapp",   tags=["WhatsApp"])
+app.include_router(whatsapp.router,       prefix="/api/whatsapp",   tags=["WhatsApp"])
+app.include_router(whatsapp_voice.router, prefix="/api/whatsapp",   tags=["WhatsApp Voice"])
 app.include_router(sms.router,         prefix="/api/sms",        tags=["SMS"])
 app.include_router(voice.router,       prefix="/api/voice",      tags=["Voice"])
 app.include_router(mic.router,         prefix="/api/mic",        tags=["Mic"])

@@ -2,7 +2,7 @@ import axios from 'axios'
 
 const api = axios.create({
   baseURL: (import.meta.env.VITE_API_URL || 'https://backend-topaz-one-69.vercel.app') + '/api',
-  timeout: 45000,  // Increased timeout to 45 seconds for slow networks
+  timeout: 45000,
 })
 
 api.interceptors.request.use((config) => {
@@ -14,24 +14,20 @@ api.interceptors.request.use((config) => {
 api.interceptors.response.use(
   (res) => res,
   (err) => {
-    // Disable strict 401 logout for the prototype/demo, because 
-    // mock tokens or out-of-sync backends will constantly kick the user out
+    // 401 = invalid/expired token → force re-login
     if (err.response?.status === 401) {
-      console.warn('API returned 401, but keeping user logged in for prototype mode.')
-      // localStorage.removeItem('praja_user')
-      // localStorage.removeItem('praja_token')
-      // window.location.href = '/login'
+      localStorage.removeItem('praja_user')
+      localStorage.removeItem('praja_token')
+      window.location.href = '/login'
     }
-    
-    // Add better error messages for network issues
+
+    // Friendly error messages for network issues
     if (!err.response) {
-      // Network error
-      const msg = err.code === 'ECONNABORTED' 
-        ? 'Request timeout. Server may be slow. Retrying...' 
-        : 'Network connection error. Retrying...';
-      err.message = msg;
+      err.message = err.code === 'ECONNABORTED'
+        ? 'Request timeout. Server may be slow. Retrying...'
+        : 'Network connection error. Retrying...'
     }
-    
+
     return Promise.reject(err)
   }
 )

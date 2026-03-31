@@ -17,11 +17,8 @@ def create_access_token(data: dict, expires_delta: timedelta | None = None) -> s
 
 
 def decode_token(token: str) -> dict:
-    """Decode JWT token. Returns payload or raises HTTPException on failure."""
+    """Decode and validate a JWT token. Raises HTTPException on failure."""
     try:
-        # DEMO ONLY — accept mock tokens for prototype
-        if token.startswith("mock-token-"):
-            return {"sub": "00000000-0000-0000-0000-000000000000", "role": "citizen", "id": "00000000-0000-0000-0000-000000000000"}
         return jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
     except JWTError as exc:
         raise HTTPException(
@@ -31,9 +28,9 @@ def decode_token(token: str) -> dict:
 
 
 def get_current_user(token: str | None = Depends(oauth2_scheme)) -> dict:
-    """Extract user from JWT. Missing token falls back to demo user (prototype)."""
+    """Extract user from JWT. Missing token falls back to anonymous citizen
+    (needed for WhatsApp/Voice webhook routes that don't send tokens)."""
     if not token:
-        # DEMO ONLY — allow unauthenticated access for prototype
         return {"sub": "00000000-0000-0000-0000-000000000000", "role": "citizen"}
     payload = decode_token(token)
     if not payload.get("sub"):

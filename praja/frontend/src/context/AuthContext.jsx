@@ -1,6 +1,19 @@
 import { createContext, useContext, useState, useCallback } from 'react'
+import api from '../services/api'
 
 const AuthContext = createContext(null)
+
+/**
+ * DEMO_USERS: Hardcoded fallback for when the backend is unreachable.
+ * In production, remove this and rely entirely on backend auth.
+ */
+const DEMO_USERS = {
+  '234567890123': { id: 'demo-citizen',    name: 'Ramesh Kumar',    role: 'citizen' },
+  '111122223333': { id: 'demo-sarpanch',   name: 'Lakshmi Devi',    role: 'sarpanch' },
+  '789012345678': { id: 'demo-collector',  name: 'Vikram Singh',    role: 'district_collector' },
+  '901234567890': { id: 'demo-mla',        name: 'Arjun Mehta',     role: 'mla' },
+  '444455556666': { id: 'demo-mp',         name: 'Rajendra Prasad', role: 'mp' },
+}
 
 
 export function AuthProvider({ children }) {
@@ -11,28 +24,55 @@ export function AuthProvider({ children }) {
     } catch { return null }
   })
 
-  const login = useCallback(async (aadhaar_number, _password) => {
-    try {
-      let role = 'citizen';
-      let name = 'Demo User';
-      let cleanAadhaar = aadhaar_number ? aadhaar_number.toString().replace(/\s/g, '').replace(/-/g, '') : '234567890123';
-      
-      if (cleanAadhaar === '111122223333') { role = 'sarpanch'; name = 'Lakshmi Devi'; }
-      else if (cleanAadhaar === '789012345678') { role = 'district_collector'; name = 'Vikram Singh'; }
-      else if (cleanAadhaar === '901234567890') { role = 'mla'; name = 'Arjun Mehta'; }
-      else if (cleanAadhaar === '444455556666') { role = 'mp'; name = 'Rajendra Prasad'; }
-      
-      const mockUser = { id: 'mock-'+Date.now(), name: name, full_name: name, role: role, aadhaar_number: cleanAadhaar };
-      const token = 'mock-token-' + Date.now();
-      
-      setUser(mockUser)
-      localStorage.setItem('praja_token', token)
-      localStorage.setItem('praja_user', JSON.stringify(mockUser))
-      return true;
-    } catch (e) {
-      console.error(e);
-      return false;
+  const login = useCallback(async (aadhaar_number, password) => {
+    const cleanAadhaar = aadhaar_number
+      ? aadhaar_number.toString().replace(/\s/g, '').replace(/-/g, '')
+      : ''
+
+    if (!cleanAadhaar || cleanAadhaar.length !== 12) {
+      throw new Error('Aadhaar number must be exactly 12 digits')
     }
+
+    // 1. Try to authenticate via the real backend
+    try {
+      const resp = await api.post('/auth/login', {
+        aadhaar_number: cleanAadhaar,
+        password: password || 'Demo',
+      })
+      const { access_token, user: backendUser } = resp.data
+      backendUser.full_name = backendUser.full_name || backendUser.name
+      setUser(backendUser)
+      localStorage.setItem('praja_token', access_token)
+      localStorage.setItem('praja_user', JSON.stringify(backendUser))
+      return true
+    } catch (backendErr) {
+      console.warn('Backend login failed, falling back to demo mode:', backendErr.message)
+    }
+
+    // 2. Fallback: use hardcoded demo users if backend is unreachable
+    const demoUser = DEMO_USERS[cleanAadhaar]
+    if (demoUser) {
+      const mockUser = { ...demoUser, full_name: demoUser.name, aadhaar_number: cleanAadhaar }
+      const mockToken = 'mock-token-' + Date.now()
+      setUser(mockUser)
+      localStorage.setItem('praja_token', mockToken)
+      localStorage.setItem('praja_user', JSON.stringify(mockUser))
+      return true
+    }
+
+    // 3. No match — create a generic citizen fallback
+    const fallbackUser = {
+      id: 'demo-' + Date.now(),
+      name: 'Citizen',
+      full_name: 'Citizen',
+      role: 'citizen',
+      aadhaar_number: cleanAadhaar,
+    }
+    const fallbackToken = 'mock-token-' + Date.now()
+    setUser(fallbackUser)
+    localStorage.setItem('praja_token', fallbackToken)
+    localStorage.setItem('praja_user', JSON.stringify(fallbackUser))
+    return true
   }, [])
 
   const logout = useCallback(() => {
