@@ -1,18 +1,23 @@
-﻿import re
+import re
 import json
 import secrets
+import logging
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
 from typing import Optional, Any
 import httpx
-from groq import Groq
 from app.config import settings
 from app.db.database import get_supabase
 from app.utils.jwt import get_current_user
 from app.utils.exif import extract_exif_gps
+from app.utils.ai import classify_with_groq as _classify_raw
 
 router = APIRouter()
+logger = logging.getLogger(__name__)
+
+# Shared Groq client for classification and verification
+from groq import Groq
 _groq = Groq(api_key=settings.GROQ_API_KEY)
 
 CATEGORIES = ["Water Supply", "Roads", "Electricity", "Sanitation",
@@ -505,8 +510,8 @@ def update_status(
             "action":       f"status_changed_to_{status}",
             "note":        notes,
         }).execute()
-    except Exception:
-        pass
+    except Exception as exc:
+        logger.warning("Failed to log ticket status change for %s: %s", grievance_id, exc)
     return {"ok": True}
 
 
@@ -558,8 +563,8 @@ def check_escalation(
                     "action": f"auto_escalated_level_{new_level}",
                     "note": f"Auto-escalated: SLA breached by {round(hours_past_sla)}h. Level {current_level}â†’{new_level}.",
                 }).execute()
-            except Exception:
-                pass
+            except Exception as exc:
+                logger.warning("Failed to log escalation for %s: %s", g["id"], exc)
             escalated.append({
                 "id": g["id"],
                 "tracking_id": g.get("tracking_id"),

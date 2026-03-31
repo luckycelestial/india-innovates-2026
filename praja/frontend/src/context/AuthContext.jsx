@@ -1,54 +1,6 @@
 import { createContext, useContext, useState, useCallback } from 'react'
 
-const SUPABASE_URL = 'https://bbakxtofuxkxzfbexlll.supabase.co'
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJiYWt4dG9mdXhreHpmYmV4bGxsIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI1NDk5ODgsImV4cCI6MjA4ODEyNTk4OH0.mIo2NFZxTm_tvXVTH2o0ErNvwXBfaXBkA12N0KIDyAY'
-
 const AuthContext = createContext(null)
-
-/**
- * Look up a user directly from Supabase by Aadhaar number.
- * No backend required — prototype login, no password check.
- */
-async function fetchUserByAadhaar(aadhaar) {
-  const url = `${SUPABASE_URL}/rest/v1/users?aadhaar_number=eq.${aadhaar}&select=*&limit=1`
-  const res = await fetch(url, {
-    headers: {
-      'apikey': SUPABASE_ANON_KEY,
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-    },
-  })
-  if (!res.ok) throw new Error('Database lookup failed')
-  const rows = await res.json()
-  return rows?.[0] || null
-}
-
-/**
- * Get a backend JWT token using the Supabase user.
- * Falls back to a mock token if backend is unreachable.
- */
-
-
-async function getToken(aadhaarNumber) {
-  try {
-    const backendUrl = import.meta.env.VITE_API_URL || 'https://prajavox-backend.vercel.app'
-    if (backendUrl) {
-      const resp = await fetch(backendUrl + '/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ aadhaar_number: aadhaarNumber, password: 'Demo' }),
-        signal: AbortSignal.timeout(5000),
-      })
-      if (resp.ok) {
-        const data = await resp.json()
-        return data.access_token
-      }
-    }
-  } catch (err) {
-    console.warn('Backend login failed, using mock token', err)
-  }
-  return 'mock-token-' + Date.now();
-}
-
 
 
 export function AuthProvider({ children }) {
@@ -79,7 +31,7 @@ export function AuthProvider({ children }) {
       return true;
     } catch (e) {
       console.error(e);
-      return true;
+      return false;
     }
   }, [])
 

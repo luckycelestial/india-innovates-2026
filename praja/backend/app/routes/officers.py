@@ -297,10 +297,6 @@ def get_ai_briefing(
     sb: Any = Depends(get_supabase),
 ):
     """Generate an AI morning briefing based on recent grievances."""
-    from groq import Groq
-    from app.config import settings
-    _groq = Groq(api_key=settings.GROQ_API_KEY)
-    
     # Fetch recent open or escalated tickets
     res = sb.table("grievances").select("title, ai_category, priority, status").neq("status", "resolved").order("created_at", desc=True).limit(50).execute()
     tickets = res.data or []

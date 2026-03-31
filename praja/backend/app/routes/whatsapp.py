@@ -31,10 +31,7 @@ from app.db.database import get_supabase
 router = APIRouter()
 groq_client = Groq(api_key=settings.GROQ_API_KEY)
 
-CATEGORIES = [
-    "Water Supply", "Roads", "Electricity", "Sanitation",
-    "Drainage", "Parks", "Health", "Education", "General"
-]
+# CATEGORIES imported from utils.ai — do not re-declare
 
 HELP_MSG = (
     "\U0001f44b *Welcome to PRAJA!*\n\n"
@@ -66,17 +63,21 @@ def _download_and_transcribe(media_url: str) -> dict:
 
         audio_bytes = resp.content
 
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".ogg") as tmp:
-            tmp.write(audio_bytes)
-            tmp_path = tmp.name
-            
-        with open(tmp_path, "rb") as f:
-            transcription = groq_client.audio.transcriptions.create(
-                file=("audio.ogg", f.read()),
-                model="whisper-large-v3",
-                prompt="Citizen grievance audio. Languages: English, Hindi, Marathi, Tamil, Telugu."
-            )
-        os.remove(tmp_path)
+        tmp_path = None
+        try:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".ogg") as tmp:
+                tmp.write(audio_bytes)
+                tmp_path = tmp.name
+                
+            with open(tmp_path, "rb") as f:
+                transcription = groq_client.audio.transcriptions.create(
+                    file=("audio.ogg", f.read()),
+                    model="whisper-large-v3",
+                    prompt="Citizen grievance audio. Languages: English, Hindi, Marathi, Tamil, Telugu."
+                )
+        finally:
+            if tmp_path and os.path.exists(tmp_path):
+                os.remove(tmp_path)
         
         native_text = transcription.text
         if not native_text:
@@ -726,7 +727,7 @@ async def _handle_message(Body: str, From: str, resp: MessagingResponse, user_la
         history_str = draft.get("resolution_note")
         try:
             history = json.loads(history_str) if history_str else []
-        except:
+        except (json.JSONDecodeError, TypeError):
             history = []
         
         history.append({"role": "user", "content": english_text})

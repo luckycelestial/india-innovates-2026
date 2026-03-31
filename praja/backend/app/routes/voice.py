@@ -15,6 +15,7 @@ from app.routes.whatsapp import get_or_create_user, check_registration_and_get_u
 from app.routes.sms import send_sms_via_twilio
 from app.utils.ai import CATEGORIES, agentic_chat_with_groq, translate_to_english, translate_from_english, detect_language, classify_with_groq
 import json
+import time
 
 router = APIRouter()
 
@@ -31,6 +32,22 @@ NO_SPEECH_MSG = (
 )
 
 CALL_CONTEXTS = {}
+CALL_CTX_MAX_AGE_SECS = 1800  # 30 minutes
+
+
+def _purge_stale_call_contexts():
+    """Remove call contexts older than 30 minutes to prevent memory leaks."""
+    now = time.time()
+    stale_keys = [k for k, v in CALL_CONTEXTS.items() if now - v.get("_ts", 0) > CALL_CTX_MAX_AGE_SECS]
+    for k in stale_keys:
+        CALL_CONTEXTS.pop(k, None)
+
+
+def _set_call_context(call_sid: str, data: dict):
+    """Store call context with a timestamp for TTL-based cleanup."""
+    _purge_stale_call_contexts()
+    data["_ts"] = time.time()
+    CALL_CONTEXTS[call_sid] = data
 
 
 def _xml(resp: VoiceResponse) -> Response:
@@ -41,20 +58,15 @@ def _speak_ticket(ticket_id: str) -> str:
     return " ".join(list(ticket_id or ""))
 
 
-def _detect_language(text: str) -> str:
-    if any('\u0900' <= c <= '\u097F' for c in text):
-        return "hi-IN"
-    if any('\u0B80' <= c <= '\u0BFF' for c in text):
-        return "ta-IN"
-    if any('\u0C00' <= c <= '\u0C7F' for c in text):
-        return "te-IN"
-    if any('\u0C80' <= c <= '\u0CFF' for c in text):
-        return "kn-IN"
-    if any('\u0D00' <= c <= '\u0D7F' for c in text):
-        return "ml-IN"
-    if any('\u0980' <= c <= '\u09FF' for c in text):
-        return "bn-IN"
-    return "en-IN"
+def _detect_voice_language(text: str) -> str:
+    """Map detect_language() output to Twilio locale codes."""
+    lang = detect_language(text)
+    lang_to_locale = {
+        "Hindi": "hi-IN", "Tamil": "ta-IN", "Telugu": "te-IN",
+        "Kannada": "kn-IN", "Malayalam": "ml-IN", "Bengali": "bn-IN",
+        "English": "en-IN",
+    }
+    return lang_to_locale.get(lang, "en-IN")
 
 
 def _voice_for_lang(lang_code: str) -> str:
@@ -112,7 +124,7 @@ async def voice_inbound(From: str = Form(...), To: str = Form(...), CallSid: str
     resp = VoiceResponse()
 
     if CallSid:
-        CALL_CONTEXTS[CallSid] = {"from": From}
+        _set_call_context(CallSid, {"from": From})
 
     gather = Gather(
         input="speech",
@@ -142,14 +154,14 @@ async def voice_menu(
 ):
     resp = VoiceResponse()
     spoken = (SpeechResult or "").strip().lower()
-    lang_code = _detect_language(SpeechResult or "")
+    lang_code = _detect_voice_language(SpeechResult or "")
 
     if CallSid and CallSid not in CALL_CONTEXTS:
-        CALL_CONTEXTS[CallSid] = {"from": From}
+        _set_call_context(CallSid, {"from": From})
     if CallSid:
         ctx = CALL_CONTEXTS.get(CallSid, {"from": From})
         ctx["lang"] = lang_code
-        CALL_CONTEXTS[CallSid] = ctx
+        _set_call_context(CallSid, ctx)
 
     wants_file = any(k in spoken for k in ("file", "complaint", "register", "issue", "புகார்", "शिकायत", "ఫిర్యాదు"))
     wants_track = any(k in spoken for k in ("track", "status", "ticket", "நிலை", "स्थिति", "స్థితి"))
@@ -197,7 +209,7 @@ async def voice_collect_issue(
 ):
     resp = VoiceResponse()
     issue_text = (SpeechResult or "").strip()
-    lang_code = _detect_language(issue_text)
+    lang_code = _detect_voice_language(issue_text)
     if not issue_text:
         _say(resp, FALLBACK_MSG, lang_code)
         resp.hangup()
@@ -207,7 +219,7 @@ async def voice_collect_issue(
         ctx = CALL_CONTEXTS.get(CallSid, {"from": From})
         ctx["issue"] = issue_text
         ctx["lang"] = lang_code
-        CALL_CONTEXTS[CallSid] = ctx
+        _set_call_context(CallSid, ctx)
 
     gather = Gather(
         input="speech",
@@ -232,7 +244,7 @@ async def voice_collect_location(
 ):
     resp = VoiceResponse()
     location_text = (SpeechResult or "").strip()
-    lang_code = _detect_language(location_text)
+    lang_code = _detect_voice_language(location_text)
     if not location_text:
         _say(resp, "Location not received. Please call again and include landmark details.", lang_code)
         resp.hangup()
@@ -289,7 +301,7 @@ async def voice_track_ticket(
 ):
     resp = VoiceResponse()
     raw_ticket = (SpeechResult or "").strip()
-    lang_code = _detect_language(raw_ticket)
+    lang_code = _detect_voice_language(raw_ticket)
     ticket_id = _normalize_ticket_id(raw_ticket)
 
     if not ticket_id:
@@ -331,7 +343,7 @@ async def voice_gather(
     resp = VoiceResponse()
 
     text = (SpeechResult or "").strip()
-    lang_code = _detect_language(text)
+    lang_code = _detect_voice_language(text)
     if not text:
         _say(resp, FALLBACK_MSG, lang_code)
         return _xml(resp)

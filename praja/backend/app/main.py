@@ -3,7 +3,9 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from app.config import settings
 from app.routes import auth, mic, grievances, officers, sentinel, whatsapp, sms, voice, tts
-import re, traceback
+import traceback, logging
+
+logger = logging.getLogger(__name__)
 
 app = FastAPI(title="PRAJA API", description="AI-powered Citizen Grievance Platform", version="1.0.0")
 
@@ -24,9 +26,10 @@ app.add_middleware(
 
 @app.exception_handler(Exception)
 async def global_exception_handler(request: Request, exc: Exception):
+    logger.error("Unhandled exception: %s", traceback.format_exc())
     return JSONResponse(
         status_code=500,
-        content={"error": str(exc), "type": type(exc).__name__, "traceback": traceback.format_exc()},
+        content={"error": "Internal server error", "type": type(exc).__name__},
     )
 
 app.include_router(auth.router,        prefix="/api/auth",       tags=["Auth"])
@@ -47,15 +50,3 @@ def root():
 def health():
     return {"status": "healthy"}
 
-@app.get("/debug-env")
-def debug_env():
-    import os
-    svc = settings.SUPABASE_SERVICE_KEY
-    env_svc = os.environ.get("SUPABASE_SERVICE_KEY", "NOT_IN_OS_ENV")
-    return {
-        "settings_key_prefix": svc[:20] if svc else "EMPTY",
-        "settings_key_suffix": svc[-10:] if svc else "EMPTY",
-        "os_env_key_prefix": env_svc[:20],
-        "os_env_key_suffix": env_svc[-10:],
-        "supabase_url": settings.SUPABASE_URL,
-    }

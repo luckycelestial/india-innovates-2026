@@ -1,8 +1,8 @@
 import os
 import httpx
-import base64
 from fastapi import APIRouter, UploadFile, File, HTTPException, Query
 from app.config import settings
+from app.utils.ai import detect_language
 from groq import Groq
 
 router = APIRouter()
@@ -17,18 +17,22 @@ async def transcribe_audio(audio: UploadFile = File(...), engine: str = Query("b
     try:
         audio_bytes = await audio.read()
         
+        tmp_path = None
         import tempfile
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as tmp:
-            tmp.write(audio_bytes)
-            tmp_path = tmp.name
-            
-        with open(tmp_path, "rb") as f:
-            transcription = groq_client.audio.transcriptions.create(
-                file=("audio.webm", f.read()),
-                model="whisper-large-v3",
-                prompt="Citizen grievance audio. Languages: English, Hindi, Marathi, Tamil, Telugu."
-            )
-        os.remove(tmp_path)
+        try:
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".webm") as tmp:
+                tmp.write(audio_bytes)
+                tmp_path = tmp.name
+                
+            with open(tmp_path, "rb") as f:
+                transcription = groq_client.audio.transcriptions.create(
+                    file=("audio.webm", f.read()),
+                    model="whisper-large-v3",
+                    prompt="Citizen grievance audio. Languages: English, Hindi, Marathi, Tamil, Telugu."
+                )
+        finally:
+            if tmp_path and os.path.exists(tmp_path):
+                os.remove(tmp_path)
         
         native_text = transcription.text
         if not native_text:
@@ -38,14 +42,6 @@ async def transcribe_audio(audio: UploadFile = File(...), engine: str = Query("b
         # Groq Llama fallback if Bhashini fails
         bhashini_url = "https://dhruva-api.bhashini.gov.in/services/inference/pipeline"
         
-        def detect_language(text: str) -> str:
-            if any('\u0900' <= c <= '\u097F' for c in text): return "Hindi"
-            if any('\u0B80' <= c <= '\u0BFF' for c in text): return "Tamil"
-            if any('\u0C00' <= c <= '\u0C7F' for c in text): return "Telugu"
-            if any('\u0C80' <= c <= '\u0CFF' for c in text): return "Kannada"
-            if any('\u0D00' <= c <= '\u0D7F' for c in text): return "Malayalam"
-            if any('\u0980' <= c <= '\u09FF' for c in text): return "Bengali"
-            return "English"
 
         lang = detect_language(native_text)
         bhashini_lang_mapping = {
