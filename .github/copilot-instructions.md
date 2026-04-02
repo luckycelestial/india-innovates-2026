@@ -7,7 +7,7 @@ It is the single source of truth for project constraints and context.
 
 ## Agent Verification Protocol (MANDATORY)
 
-After EVERY code change that is pushed to GitHub:
+After EVERY code change push to GitHub:
 1. Use Chrome DevTools (activate browser tools) to open the live Vercel URL
 2. Check the Console tab for errors
 3. Check the Network tab for failed requests (red rows)

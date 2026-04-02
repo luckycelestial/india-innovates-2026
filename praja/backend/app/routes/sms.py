@@ -7,7 +7,8 @@ from datetime import datetime, timezone
 from twilio.twiml.messaging_response import MessagingResponse
 
 from app.db.database import get_supabase
-from app.routes.whatsapp import get_or_create_user, classify_with_groq
+from app.routes.whatsapp_helpers import get_or_create_user
+from app.utils.ai import classify_with_groq
 from app.config import settings
 
 router = APIRouter()
