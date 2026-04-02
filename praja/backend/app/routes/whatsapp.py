@@ -88,8 +88,6 @@ async def whatsapp_webhook(
             return xml_response(resp)
 
         # Bypass 15s Twilio / 10s Vercel limits via Twilio's HTTP <Redirect>
-        resp.message("⏳ I'm processing your request natively... Please expect your response momentarily.")
-
         payload_state = {
             "text_body": text_body,
             "detected_lang": detected_voice_language,
