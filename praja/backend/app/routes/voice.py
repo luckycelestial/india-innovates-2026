@@ -16,7 +16,7 @@ from app.routes.sms import send_sms_via_twilio
 from app.utils.ai import agentic_chat_with_groq, translate_to_english, translate_from_english
 
 from app.routes.voice_helpers import (
-    CALL_CONTEXTS,
+    get_call_context,
     set_call_context,
     xml,
     speak_ticket,
@@ -82,10 +82,10 @@ async def voice_menu(
     spoken = (SpeechResult or "").strip().lower()
     lang_code = detect_voice_language(SpeechResult or "")
 
-    if CallSid and CallSid not in CALL_CONTEXTS:
-        set_call_context(CallSid, {"from": From})
     if CallSid:
-        ctx = CALL_CONTEXTS.get(CallSid, {"from": From})
+        ctx = get_call_context(CallSid)
+        if not ctx:
+            ctx = {"from": From}
         ctx["lang"] = lang_code
         set_call_context(CallSid, ctx)
 
@@ -134,7 +134,9 @@ async def voice_collect_issue(
         return xml(resp)
 
     if CallSid:
-        ctx = CALL_CONTEXTS.get(CallSid, {"from": From})
+        ctx = get_call_context(CallSid)
+        if not ctx:
+            ctx = {"from": From}
         ctx["issue"] = issue_text
         ctx["lang"] = lang_code
         set_call_context(CallSid, ctx)
@@ -166,7 +168,7 @@ async def voice_collect_location(
     sb = get_supabase()
     issue_text = ""
     if CallSid:
-        ctx = CALL_CONTEXTS.get(CallSid, {}) or {}
+        ctx = get_call_context(CallSid)
         issue_text = ctx.get("issue", "")
         lang_code = ctx.get("lang", lang_code)
     if not issue_text:
@@ -201,8 +203,7 @@ async def voice_collect_location(
     )
     send_sms_via_twilio(From, sms_body)
 
-    if CallSid and CallSid in CALL_CONTEXTS:
-        CALL_CONTEXTS.pop(CallSid, None)
+    # Supabase handles cleanup via the migration we ran.
 
     return xml(resp)
 
@@ -356,6 +357,7 @@ async def voice_outbound_chat(
     request: Request,
     SpeechResult: str = Form(""),
     From: str = Form(""),
+    CallSid: str = Form(default=""),
     lang: str = Query("en-IN"),
 ):
     """The interactive agentic loop turn."""
@@ -373,14 +375,12 @@ async def voice_outbound_chat(
 
     user_id = get_or_create_user(phone, sb)
 
-    drafts = sb.table("grievances").select("*").eq("citizen_id", user_id).eq("status", "closed").eq("title", "Draft Ticket").execute()
-    if not drafts.data:
-        resp.say("Session expired. Please try again.", voice=voice_for_lang(lang), language=lang)
-        resp.hangup()
-        return xml(resp)
-
-    draft = drafts.data[0]
-    history = json.loads(draft.get("resolution_note") or "[]")
+    ctx = get_call_context(CallSid) if CallSid else {}
+    if not ctx and CallSid:
+        ctx = {"from": From, "history": "[]"}
+    
+    current_history_str = ctx.get("history")
+    history = json.loads(current_history_str) if current_history_str else []
 
     english_text = translate_to_english(SpeechResult)
     history.append({"role": "user", "content": english_text})
@@ -389,13 +389,13 @@ async def voice_outbound_chat(
 
     if groq_resp["type"] == "question":
         ans_english = groq_resp["text"]
-
         lang_map_reverse = {"hi-IN": "Hindi", "ta-IN": "Tamil", "te-IN": "Telugu", "kn-IN": "Kannada", "ml-IN": "Malayalam", "bn-IN": "Bengali", "en-IN": "English"}
         target_lang_name = lang_map_reverse.get(lang, "English")
         ans_translated = translate_from_english(ans_english, target_lang_name)
 
-        history.append({"role": "assistant", "content": ans_english})
-        sb.table("grievances").update({"resolution_note": json.dumps(history)}).eq("id", draft["id"]).execute()
+        ctx["history"] = json.dumps(history)
+        if CallSid:
+            set_call_context(CallSid, ctx)
 
         gather = Gather(
             input="speech", action=f"/api/voice/outbound/chat?lang={lang}",
@@ -406,7 +406,12 @@ async def voice_outbound_chat(
     else:
         # Complete!
         data = groq_resp["data"]
-        sb.table("grievances").update({
+        # Use a fresh tracking ID if we didn't have one in context
+        tracking_id = ctx.get("tracking_id") or f"PRJ-{datetime.now(timezone.utc).strftime('%y%m%d')}-{secrets.token_hex(3).upper()}"
+        
+        sb.table("grievances").upsert({
+            "tracking_id":  tracking_id,
+            "citizen_id":   user_id,
             "title":        data.get("title", "Voice Complaint"),
             "description":  data.get("clean_description", SpeechResult),
             "ai_category":  data.get("category", "General"),
@@ -414,14 +419,13 @@ async def voice_outbound_chat(
             "ai_sentiment": data.get("sentiment", "negative"),
             "location":     data.get("location", "Unknown Location"),
             "status":       "open",
-            "resolution_note": None,
-        }).eq("id", draft["id"]).execute()
+            "channel":      "voice",
+        }).execute()
 
-        tracking_id = draft["tracking_id"]
         success_prompts = {
-            "en-IN": f"Your complaint has been filed. Your ticket ID is {' '.join(tracking_id)}. Thank you.",
-            "hi-IN": f"आपकी शिकायत दर्ज कर ली गई है। आपकी टिकट आई डी {' '.join(tracking_id)} है। धन्यवाद।",
-            "ta-IN": f"உங்கள் புகார் பதிவு செய்யப்பட்டுள்ளது. உங்கள் டிக்கெட் ஐடி {' '.join(tracking_id)}. நன்றி.",
+            "en-IN": f"Your complaint has been filed. Your ticket ID is {' '.join(tracking_id or '')}. Thank you.",
+            "hi-IN": f"आपकी शिकायत दर्ज कर ली गई है। आपकी टिकट आई डी {' '.join(tracking_id or '')} है। धन्यवाद।",
+            "ta-IN": f"உங்கள் புகார் பதிவு செய்யப்பட்டுள்ளது. உங்கள் டிக்கெட் ஐடி {' '.join(tracking_id or '')}. நன்றி.",
         }
         resp.say(success_prompts.get(lang, success_prompts["en-IN"]), voice=voice_for_lang(lang), language=lang)
         resp.hangup()

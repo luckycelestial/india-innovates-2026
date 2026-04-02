@@ -166,7 +166,10 @@ async def whatsapp_voice_followup_start(
     locale = profile["locale"]
     voice = profile["voice"] or "Polly.Aditi"
     action_qs = urlencode({"phone": phone, "lang": lang, "base": base[:220], "attempt": 0})
-    action_url = f"{str(request.base_url).rstrip('/')}/api/whatsapp/voice-followup/collect?{action_qs}"
+    
+    # Standardize backend URL
+    public_base_url = settings.BACKEND_URL.rstrip("/") if settings.BACKEND_URL else str(request.base_url).replace("http://", "https://").rstrip("/")
+    action_url = f"{public_base_url}/api/whatsapp/voice-followup/collect?{action_qs}"
 
     vr = VoiceResponse()
     gather = Gather(
@@ -205,7 +208,9 @@ async def whatsapp_voice_followup_collect(
 
     if (not followup_text or needs_followup_details(combined_text)) and attempt < 1:
         retry_qs = urlencode({"phone": phone, "lang": lang, "base": base[:220], "attempt": attempt + 1})
-        retry_action = f"{str(request.base_url).rstrip('/')}/api/whatsapp/voice-followup/collect?{retry_qs}"
+        # Standardize backend URL
+        public_base_url = settings.BACKEND_URL.rstrip("/") if settings.BACKEND_URL else str(request.base_url).replace("http://", "https://").rstrip("/")
+        retry_action = f"{public_base_url}/api/whatsapp/voice-followup/collect?{retry_qs}"
         gather = Gather(
             input="speech",
             action=retry_action, method="POST",

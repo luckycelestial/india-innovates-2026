@@ -1,10 +1,17 @@
 import re
 import json
 import httpx
+from functools import lru_cache
 from groq import Groq
 from app.config import settings
 
-groq_client = Groq(api_key=settings.GROQ_API_KEY)
+@lru_cache
+def get_groq_client():
+    if not settings.GROQ_API_KEY:
+        # Return a mock or raise a descriptive error when used, 
+        # but don't crash the entire app on import.
+        return None
+    return Groq(api_key=settings.GROQ_API_KEY)
 
 CATEGORIES = [
     "Water Supply", "Roads", "Electricity", "Sanitation",
@@ -141,8 +148,11 @@ JSON FORMAT:
   }}
 """
     messages = [{"role": "system", "content": prompt}] + history
+    client = get_groq_client()
+    if not client:
+        return {"type": "question", "text": "AI configuration is missing. Please contact administrator."}
     try:
-        response = groq_client.chat.completions.create(
+        response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=messages,
             max_tokens=350,
@@ -169,13 +179,16 @@ JSON FORMAT:
         return {"type": "question", "text": "I'm having trouble understanding. Could you please repeat your issue and location?"}
 
 def classify_with_groq(text: str) -> dict:
+    client = get_groq_client()
+    if not client:
+        return {"category": "General", "priority": "medium", "sentiment": "neutral", "title": text[:40], "location": "Unknown", "clean_description": text}
     try:
         prompt = f"""Classify this grievance, responding ONLY with valid JSON.
 Text: "{text}"
 JSON Format:
 {{"category": "Water Supply|Roads|Electricity|Sanitation|General", "priority": "low|medium|high|critical", "sentiment": "negative|neutral|positive", "title": "...", "location": "...", "clean_description": "..."}}
 """
-        response = groq_client.chat.completions.create(
+        response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
             temperature=0.1

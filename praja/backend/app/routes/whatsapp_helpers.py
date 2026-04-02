@@ -17,7 +17,7 @@ from groq import Groq
 
 from app.config import settings
 from app.db.database import get_supabase
-from app.utils.ai import CATEGORIES, detect_language, classify_with_groq
+from app.utils.ai import CATEGORIES, detect_language, classify_with_groq, get_groq_client
 
 try:
     from twilio.rest import Client as TwilioClient
@@ -30,7 +30,6 @@ except Exception:
     RequestValidator = None
 
 logger = logging.getLogger(__name__)
-groq_client = Groq(api_key=settings.GROQ_API_KEY)
 
 
 # ── Response helpers ──────────────────────────────────────────
@@ -137,8 +136,12 @@ def download_and_transcribe(media_url: str) -> dict:
                 tmp.write(audio_bytes)
                 tmp_path = tmp.name
 
+            client = get_groq_client()
+            if not client:
+                return {"text": "", "language": "English"}
+
             with open(tmp_path, "rb") as f:
-                transcription = groq_client.audio.transcriptions.create(
+                transcription = client.audio.transcriptions.create(
                     file=("audio.ogg", f.read()),
                     model="whisper-large-v3",
                     prompt="Citizen grievance audio. Languages: English, Hindi, Marathi, Tamil, Telugu.",

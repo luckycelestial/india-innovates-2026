@@ -94,7 +94,8 @@ async def whatsapp_webhook(
             "is_voice": "1" if received_voice_note else "0",
         }
         qs = urlencode(payload_state)
-        public_base_url = str(request.base_url).rstrip("/")
+        # Force HTTPS for Vercel and Twilio signature compatibility
+        public_base_url = settings.BACKEND_URL.rstrip("/") if settings.BACKEND_URL else str(request.base_url).replace("http://", "https://").rstrip("/")
         redirect_url = f"{public_base_url}/api/whatsapp/process-step-2?{qs}"
         resp.redirect(redirect_url, method="POST")
 

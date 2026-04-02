@@ -14,25 +14,29 @@ from app.routes.whatsapp_helpers import get_or_create_user
 from app.utils.ai import detect_language, classify_with_groq
 
 
-# ── Call context (stateful IVR memory) ────────────────────────
-
-CALL_CONTEXTS = {}
-CALL_CTX_MAX_AGE_SECS = 1800  # 30 minutes
-
-
-def purge_stale_call_contexts():
-    """Remove call contexts older than 30 minutes to prevent memory leaks."""
-    now = time.time()
-    stale_keys = [k for k, v in CALL_CONTEXTS.items() if now - v.get("_ts", 0) > CALL_CTX_MAX_AGE_SECS]
-    for k in stale_keys:
-        CALL_CONTEXTS.pop(k, None)
-
+# ── Call context (stateful IVR memory based on Supabase) ──────────
 
 def set_call_context(call_sid: str, data: dict):
-    """Store call context with a timestamp for TTL-based cleanup."""
-    purge_stale_call_contexts()
-    data["_ts"] = time.time()
-    CALL_CONTEXTS[call_sid] = data
+    """Store call context in Supabase to persist across serverless instances."""
+    sb = get_supabase()
+    # Purgin stale contexts is now done via DB function or periodic task,
+    # but here we just upsert the current SID.
+    sb.table("call_contexts").upsert({
+        "call_sid": call_sid,
+        "data": data,
+        "created_at": datetime.now(timezone.utc).isoformat()
+    }).execute()
+
+def get_call_context(call_sid: str) -> dict:
+    """Retrieve call context from Supabase."""
+    sb = get_supabase()
+    res = sb.table("call_contexts").select("data").eq("call_sid", call_sid).execute()
+    if res.data:
+        return res.data[0].get("data", {})
+    return {}
+
+# Define a placeholder for backward compatibility in imports
+CALL_CONTEXTS = {}
 
 
 # ── Response helpers ──────────────────────────────────────────
