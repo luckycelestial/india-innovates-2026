@@ -27,7 +27,7 @@ export default function SubmitTab({ onToast }) {
       setIsEvaluating(true);
       try {
         const token = localStorage.getItem('praja_token');
-        const res = await fetch((import.meta.env.VITE_API_URL || 'https://backend-topaz-one-69.vercel.app') + '/api/grievances/photo-need', {
+        const res = await fetch((import.meta.env.VITE_API_URL || 'https://prajavox-backend.vercel.app') + '/api/grievances/photo-need', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -92,7 +92,7 @@ export default function SubmitTab({ onToast }) {
       formData.append('audio', blob, 'recording.webm');
       
       const token = localStorage.getItem('praja_token');
-      const res = await fetch((import.meta.env.VITE_API_URL || 'https://backend-topaz-one-69.vercel.app') + '/api/mic/transcribe', {
+      const res = await fetch((import.meta.env.VITE_API_URL || 'https://prajavox-backend.vercel.app') + '/api/mic/transcribe', {
         method: 'POST',
         headers: {
           ...(token ? { Authorization: `Bearer ${token}` } : {}),
@@ -196,7 +196,7 @@ export default function SubmitTab({ onToast }) {
         setIsVerifyingPhoto(true);
         try {
           const token = localStorage.getItem('praja_token');
-          const res = await fetch((import.meta.env.VITE_API_URL || 'https://backend-topaz-one-69.vercel.app') + '/api/grievances/verify-photo', {
+          const res = await fetch((import.meta.env.VITE_API_URL || 'https://prajavox-backend.vercel.app') + '/api/grievances/verify-photo', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',

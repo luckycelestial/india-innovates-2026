@@ -1,7 +1,7 @@
 import axios from 'axios'
 
 const api = axios.create({
-  baseURL: (import.meta.env.VITE_API_URL || 'https://backend-topaz-one-69.vercel.app') + '/api',
+  baseURL: (import.meta.env.VITE_API_URL || 'https://prajavox-backend.vercel.app') + '/api',
   timeout: 45000,
 })
 
