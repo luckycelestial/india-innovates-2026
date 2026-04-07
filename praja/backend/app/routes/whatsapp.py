@@ -87,17 +87,24 @@ async def whatsapp_webhook(
             resp.message("⚠️ It seems you sent an empty message I couldn't process. Please send a text or voice note.")
             return xml_response(resp)
 
-        # Bypass 15s Twilio / 10s Vercel limits via Twilio's HTTP <Redirect>
-        payload_state = {
-            "text_body": text_body,
-            "detected_lang": detected_voice_language,
-            "is_voice": "1" if received_voice_note else "0",
-        }
-        qs = urlencode(payload_state)
-        # Force HTTPS for Vercel and Twilio signature compatibility
-        public_base_url = settings.BACKEND_URL.rstrip("/") if settings.BACKEND_URL else str(request.base_url).replace("http://", "https://").rstrip("/")
-        redirect_url = f"{public_base_url}/api/whatsapp/process-step-2?{qs}"
-        resp.redirect(redirect_url, method="POST")
+        if received_voice_note:
+            # Bypass 15s Twilio / 10s Vercel limits via Twilio's HTTP <Redirect>
+            # Use a friendly processing message only for voice
+            resp.message("\u23f3 I'm transcribing your voice note... Please wait a moment.")
+            payload_state = {
+                "text_body": text_body,
+                "detected_lang": detected_voice_language,
+                "is_voice": "1",
+            }
+            qs = urlencode(payload_state)
+            # Force HTTPS for Vercel and Twilio signature compatibility
+            public_base_url = settings.BACKEND_URL.rstrip("/") if settings.BACKEND_URL else str(request.base_url).replace("http://", "https://").rstrip("/")
+            redirect_url = f"{public_base_url}/api/whatsapp/process-step-2?{qs}"
+            resp.redirect(redirect_url, method="POST")
+            return xml_response(resp)
+
+        # TEXT messages: process directly (usually takes < 5s)
+        await _handle_message(text_body, From, resp, detected_voice_language, is_voice=False)
 
     except Exception as exc:
         logger.exception("WhatsApp webhook error")

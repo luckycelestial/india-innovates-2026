@@ -1,35 +1,31 @@
+# Vercel entrypoint for PRAJA Backend
 import sys
 import os
-import traceback
 
-# Build: 2025-03-06-v2 — blueprint features
-# Ensure project root is in sys.path for imports
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
+# Ensure the root folder (/praja/backend) is in sys.path
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+sys.path.insert(0, BASE_DIR)
 
 try:
     from app.main import app
-except BaseException as e:
+except Exception as e:
+    import traceback
     from fastapi import FastAPI
     from fastapi.responses import JSONResponse
-    import logging
-
+    
     app = FastAPI()
-    _error = traceback.format_exc()
-    _etype = type(e).__name__
-    _emsg = str(e)
-    logging.error("PRAJA app failed to start: %s\n%s", _emsg, _error)
-
-    @app.get("/health")
-    @app.get("/")
-    async def error_health():
+    _error_trace = traceback.format_exc()
+    
+    @app.get("/{path:path}")
+    async def startup_error(path: str = ""):
         return JSONResponse(
             status_code=500,
-            content={"error": "Application failed to start", "type": _etype},
+            content={
+                "error": "Backend application failed to initialize",
+                "details": str(e),
+                "traceback": _error_trace
+            }
         )
 
-    @app.api_route("/{path:path}", methods=["GET", "POST", "PUT", "DELETE", "PATCH"])
-    async def error_catch_all(path: str = ""):
-        return JSONResponse(
-            status_code=500,
-            content={"error": "Application failed to start", "type": _etype},
-        )
+# Vercel needs 'app' to be exported at the top level
+app = app

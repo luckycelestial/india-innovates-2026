@@ -1,16 +1,1 @@
-{
-  "projectId": "prj_exGIEfpRV4Sp2Uh6FXegxIL7Bv6o",
-  "orgId": "team_wthL3vWTdyqj9EwHB2iI5bT0",
-  "projectName": "backend",
-  "settings": {
-    "createdAt": 1775106339920,
-    "framework": null,
-    "devCommand": null,
-    "installCommand": null,
-    "buildCommand": null,
-    "outputDirectory": null,
-    "rootDirectory": null,
-    "directoryListing": false,
-    "nodeVersion": "24.x"
-  }
-}
+{"projectId":"prj_tf7Le079gABt70pHKe9dVhGbHFAi","orgId":"team_wthL3vWTdyqj9EwHB2iI5bT0","projectName":"backend"}
