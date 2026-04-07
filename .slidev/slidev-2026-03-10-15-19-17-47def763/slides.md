@@ -96,9 +96,7 @@ layout: default
 
 - **MCP Gateway (`mcp-server/index.js`)**
   - Streamable HTTP (`POST /mcp`)
-  - Exposes GrievanceOS, NayakAI, SentinelPulse tools
-- **NayakAI (`nayakai.py`)**
-  - Briefing, summarization, drafting, governance Q&A
+  - Exposes GrievanceOS, SentinelPulse tools
 - **SentinelPulse (`sentinel.py`)**
   - Ward-level sentiment scoring and critical alerts
 - **Comms Services (`sms.py`, `whatsapp.py`, `voice.py`)**
@@ -153,7 +151,6 @@ layout: two-cols
 - Routers:
   - `/api/auth`
   - `/api/grievances`
-  - `/api/nayakai`
   - `/api/sentinel`
   - `/api/officers`
   - `/api/whatsapp`, `/api/sms`, `/api/voice`
@@ -169,13 +166,12 @@ layout: default
 
 ```python
 from fastapi import FastAPI
-from app.routes import auth, grievances, nayakai, sentinel, officers
+from app.routes import auth, grievances, sentinel, officers
 
 app = FastAPI(title="PRAJA API")
 
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(grievances.router, prefix="/api/grievances", tags=["grievances"])
-app.include_router(nayakai.router, prefix="/api/nayakai", tags=["nayakai"])
 app.include_router(sentinel.router, prefix="/api/sentinel", tags=["sentinel"])
 app.include_router(officers.router, prefix="/api/officers", tags=["officers"])
 ```
@@ -205,7 +201,6 @@ B --> C[Auth + RBAC]
 B --> D[Grievance Processing]
 D --> E[Groq Classification]
 D --> F[Supabase Persistence]
-B --> G[NayakAI Responses]
 B --> H[SentinelPulse Analytics]
 H --> I[Heatmaps + Alerts]
 B --> J[Twilio Channels]

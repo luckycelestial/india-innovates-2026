@@ -32,10 +32,9 @@ After EVERY code change push to GitHub:
 AI-powered Citizen Grievance & Constituency Intelligence Platform.
 India Innovates 2026 hackathon entry.
 
-### Three modules:
+### Two modules:
 1. **GrievanceOS** — Citizens report complaints via web or WhatsApp. Auto-classifies department + priority.
-2. **NayakAI** — AI assistant for elected leaders: governance Q&A, document summarizer, speech drafter, morning brief.
-3. **SentinelPulse** — Real-time ward-level sentiment heatmap from social posts. Alerts when mood goes critical.
+2. **SentinelPulse** — Real-time ward-level sentiment heatmap from social posts. Alerts when mood goes critical.
 
 ---
 
