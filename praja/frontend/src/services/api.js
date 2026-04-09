@@ -16,9 +16,13 @@ api.interceptors.response.use(
   (err) => {
     // 401 = invalid/expired token → force re-login
     if (err.response?.status === 401) {
-      localStorage.removeItem('praja_user')
-      localStorage.removeItem('praja_token')
-      window.location.href = '/login'
+      const token = localStorage.getItem('praja_token');
+      // If it's a mock token, we're in offline/demo mode, so don't force logout on 401
+      if (!token || !token.startsWith('mock-token')) {
+        localStorage.removeItem('praja_user')
+        localStorage.removeItem('praja_token')
+        window.location.href = '/login'
+      }
     }
 
     // Friendly error messages for network issues
