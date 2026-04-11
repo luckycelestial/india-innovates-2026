@@ -13,7 +13,7 @@ from twilio.twiml.voice_response import VoiceResponse, Gather, Say
 from app.db.database import get_supabase
 from app.routes.whatsapp_helpers import get_or_create_user
 from app.routes.sms import send_sms_via_twilio
-from app.utils.ai import agentic_chat_with_groq, translate_to_english, translate_from_english
+from app.utils.ai import agentic_chat_with_gemini, translate_to_english, translate_from_english
 
 from app.routes.voice_helpers import (
     get_call_context,
@@ -385,10 +385,10 @@ async def voice_outbound_chat(
     english_text = translate_to_english(SpeechResult)
     history.append({"role": "user", "content": english_text})
 
-    groq_resp = agentic_chat_with_groq(history, "Citizen")
+    ai_resp = agentic_chat_with_gemini(history, "Citizen")
 
-    if groq_resp["type"] == "question":
-        ans_english = groq_resp["text"]
+    if ai_resp["type"] == "question":
+        ans_english = ai_resp["text"]
         lang_map_reverse = {"hi-IN": "Hindi", "ta-IN": "Tamil", "te-IN": "Telugu", "kn-IN": "Kannada", "ml-IN": "Malayalam", "bn-IN": "Bengali", "en-IN": "English"}
         target_lang_name = lang_map_reverse.get(lang, "English")
         ans_translated = translate_from_english(ans_english, target_lang_name)
@@ -405,7 +405,7 @@ async def voice_outbound_chat(
         resp.append(gather)
     else:
         # Complete!
-        data = groq_resp["data"]
+        data = ai_resp["data"]
         # Use a fresh tracking ID if we didn't have one in context
         tracking_id = ctx.get("tracking_id") or f"PRJ-{datetime.now(timezone.utc).strftime('%y%m%d')}-{secrets.token_hex(3).upper()}"
         

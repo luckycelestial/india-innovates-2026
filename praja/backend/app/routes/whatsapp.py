@@ -17,7 +17,7 @@ import xml.etree.ElementTree as ET
 
 from app.config import settings
 from app.db.database import get_supabase
-from app.utils.ai import detect_language, agentic_chat_with_groq, translate_to_english, translate_from_english
+from app.utils.ai import detect_language, agentic_chat_with_gemini, translate_to_english, translate_from_english
 
 # Import helpers
 from app.routes.whatsapp_helpers import (
@@ -302,16 +302,16 @@ async def _handle_message(Body: str, From: str, resp: MessagingResponse, user_la
             history = []
 
         history.append({"role": "user", "content": english_text})
-        groq_resp = agentic_chat_with_groq(history, user_name)
+        ai_resp = agentic_chat_with_gemini(history, user_name)
 
-        if groq_resp["type"] == "question":
-            ans = groq_resp["text"]
+        if ai_resp["type"] == "question":
+            ans = ai_resp["text"]
             history.append({"role": "assistant", "content": ans})
             sb.table("grievances").update({"resolution_note": json.dumps(history)}).eq("id", draft["id"]).execute()
             _reply_with_voice_if_needed(ans, translate_from_english(ans, detected_lang))
             return
-        elif groq_resp["type"] == "complete":
-            classification = groq_resp["data"]
+        elif ai_resp["type"] == "complete":
+            classification = ai_resp["data"]
             final_text = classification.get("clean_description", text)
             location_text = classification.get("location", "Not specified")
 
@@ -333,10 +333,10 @@ async def _handle_message(Body: str, From: str, resp: MessagingResponse, user_la
     else:
         # No draft exists — start fresh
         history = [{"role": "user", "content": english_text}]
-        groq_resp = agentic_chat_with_groq(history, user_name)
+        ai_resp = agentic_chat_with_gemini(history, user_name)
 
-        if groq_resp["type"] == "question":
-            ans = groq_resp["text"]
+        if ai_resp["type"] == "question":
+            ans = ai_resp["text"]
             history.append({"role": "assistant", "content": ans})
 
             tracking_id = f"PRJ-{datetime.now(timezone.utc).strftime('%y%m%d')}-{secrets.token_hex(3).upper()}"
@@ -351,8 +351,8 @@ async def _handle_message(Body: str, From: str, resp: MessagingResponse, user_la
             }).execute()
             _reply_with_voice_if_needed(ans, translate_from_english(ans, detected_lang))
             return
-        elif groq_resp["type"] == "complete":
-            classification = groq_resp["data"]
+        elif ai_resp["type"] == "complete":
+            classification = ai_resp["data"]
             final_text = classification.get("clean_description", text)
             location_text = classification.get("location", "Not specified")
 

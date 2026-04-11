@@ -2,18 +2,16 @@ import os
 import httpx
 from fastapi import APIRouter, UploadFile, File, HTTPException, Query
 from app.config import settings
-from app.utils.ai import detect_language
-from groq import Groq
+from app.utils.ai import detect_language, configure_gemini
+import google.generativeai as genai
 
 router = APIRouter()
-groq_client = Groq(api_key=settings.GROQ_API_KEY)
 
 @router.post("/transcribe")
 async def transcribe_audio(audio: UploadFile = File(...), engine: str = Query("bhashini")):
-    """
-    Receives an audio blob from the frontend, uses the chosen engine (bhashini or groq) 
-    to convert speech to Indian language text, and then uses Groq to translate it to English.
-    """
+    if not configure_gemini():
+        raise HTTPException(status_code=500, detail="Gemini API Key missing")
+        
     try:
         audio_bytes = await audio.read()
         
@@ -24,25 +22,24 @@ async def transcribe_audio(audio: UploadFile = File(...), engine: str = Query("b
                 tmp.write(audio_bytes)
                 tmp_path = tmp.name
                 
-            with open(tmp_path, "rb") as f:
-                transcription = groq_client.audio.transcriptions.create(
-                    file=("audio.webm", f.read()),
-                    model="whisper-large-v3",
-                    prompt="Citizen grievance audio. Languages: English, Hindi, Marathi, Tamil, Telugu."
-                )
+            audio_file = genai.upload_file(path=tmp_path)
+            model = genai.GenerativeModel("gemini-1.5-flash")
+            response = model.generate_content([
+                "Please accurately transcribe this audio recording in its original language.", 
+                audio_file
+            ])
+            native_text = response.text
+            genai.delete_file(audio_file.name)
+
         finally:
             if tmp_path and os.path.exists(tmp_path):
                 os.remove(tmp_path)
         
-        native_text = transcription.text
         if not native_text:
             return {"original_text": "", "english_text": ""}
             
-        # Using Bhashini for Translating Text to prove API Usage in Gov Hackathon
-        # Groq Llama fallback if Bhashini fails
         bhashini_url = "https://dhruva-api.bhashini.gov.in/services/inference/pipeline"
         
-
         lang = detect_language(native_text)
         bhashini_lang_mapping = {
             "Hindi": "hi", "Tamil": "ta", "Telugu": "te", "Kannada": "kn", 
@@ -86,14 +83,10 @@ async def transcribe_audio(audio: UploadFile = File(...), engine: str = Query("b
                     else:
                         raise Exception(f"Bhashini returned {res.status_code}")
                 except Exception as e:
-                    print(f"Bhashini translation failed, falling back to Groq: {e}")
+                    print(f"Bhashini translation failed, falling back to Gemini: {e}")
                     prompt = f"Translate the following text into English. Return ONLY the English translation, no other words.\nText: {native_text}"
-                    completion = groq_client.chat.completions.create(
-                        model="llama-3.3-70b-versatile",
-                        messages=[{"role": "user", "content": prompt}],
-                        temperature=0.1
-                    )
-                    english_text = completion.choices[0].message.content.strip()
+                    completion = model.generate_content(prompt)
+                    english_text = completion.text.strip()
 
         return {
             "original_text": native_text,

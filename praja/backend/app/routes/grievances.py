@@ -11,14 +11,19 @@ from app.config import settings
 from app.db.database import get_supabase
 from app.utils.jwt import get_current_user
 from app.utils.exif import extract_exif_gps
-from app.utils.ai import classify_with_groq as _classify_raw
+from app.utils.ai import classify_with_groq as classify_with_gemini
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
 
-# Shared Groq client for classification and verification
-from groq import Groq
-_groq = Groq(api_key=settings.GROQ_API_KEY)
+import google.generativeai as genai
+from app.utils.ai import configure_gemini
+
+# Configure Gemini for classification and verification
+if configure_gemini():
+    _gemini = genai.GenerativeModel("gemini-1.5-flash")
+else:
+    _gemini = None
 
 CATEGORIES = ["Water Supply", "Roads", "Electricity", "Sanitation",
               "Drainage", "Parks", "Health", "Education", "General"]
@@ -41,12 +46,8 @@ Respond with ONLY valid JSON, no explanation:
 Complaint title: {title}
 Complaint description: {desc[:400]}"""
     try:
-        r = _groq.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=80, temperature=0.1,
-        )
-        raw = re.sub(r"```.*?```", "", (r.choices[0].message.content or ""), flags=re.DOTALL).strip()
+        r = _gemini.generate_content(prompt, generation_config=genai.GenerationConfig(temperature=0.1, max_output_tokens=80))
+        raw = re.sub(r"```.*?```", "", (r.text or ""), flags=re.DOTALL).strip()
         data = json.loads(raw)
         if data.get("category") not in CATEGORIES:
             data["category"] = "General"
@@ -66,12 +67,8 @@ def _extract_llm_location(text: str) -> Optional[dict]:
     if not text: return None
     prompt = f"Extract approximate latitude and longitude for this location: '{text}'. Return ONLY valid JSON: {{'lat': ..., 'lon': ...}}. If unknown, return {{}}."
     try:
-        r = _groq.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}],
-            max_tokens=60, temperature=0,
-        )
-        content = r.choices[0].message.content or ""
+        r = _gemini.generate_content(prompt, generation_config=genai.GenerationConfig(temperature=0, max_output_tokens=60))
+        content = r.text or ""
         # Basic cleanup in case of markdown or extra text
         content = re.sub(r"```.*?```", "", content, flags=re.DOTALL).strip()
         data = json.loads(content)
@@ -278,70 +275,68 @@ Respond ONLY with valid JSON. Do not include markdown formatting or extra text.
 Schema: {{"matches": true/false, "reason": "Short explanation of why the photo matches or does not match the issue"}}"""
 
     try:
-        # Final Emergency Fix: Llama-4-Scout is the ONLY working vision model on Groq.
-        # JSON formatting is unreliable, so we move to binary classification.
-        messages = [{
-            "role": "user",
-            "content": [
-                {"type": "text", "text": "Task: Identify the content of this image. Respond with ONLY ONE of these two words: 'PHYSICAL' if it shows a real-world infrastructure/utility issue like a pothole, leak, or debris, OR 'DOCUMENT' if it shows a certificate, screenshot, text, badge, or generic photo."},
-                {"type": "image_url", "image_url": {"url": body.photo_url}}
-            ]
-        }]
+        # Emergency fix: use Gemini Vision
+        photo_info = genai.upload_file(path=None) # We don't have a path, just a URL!
+        # Wait, Gemini currently takes URLs if download works, but we should download it or ask Gemini with just text+URL if it supports it.
+        # Actually Google Gemini handles web urls directly IF they are image URLs? No, we need to download it or pass bytes.
+        import httpx
+        with httpx.Client() as client:
+            img_resp = client.get(body.photo_url)
+            img_bytes = img_resp.content
 
-        r = _groq.chat.completions.create(
-            model="meta-llama/llama-4-scout-17b-16e-instruct",
-            messages=messages,
-            max_tokens=5,
-            temperature=0.0
-        )
+        import tempfile
+        import os
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".jpg") as tmp:
+            tmp.write(img_bytes)
+            tmp_path = tmp.name
         
-        classification = (r.choices[0].message.content or "").strip().upper()
-        
-        if "DOCUMENT" in classification:
+        try:
+            audio_file = genai.upload_file(path=tmp_path)
+            model = genai.GenerativeModel("gemini-1.5-flash")
+            
+            prompt1 = "Task: Identify the content of this image. Respond with ONLY ONE of these two words: 'PHYSICAL' if it shows a real-world infrastructure/utility issue like a pothole, leak, or debris, OR 'DOCUMENT' if it shows a certificate, screenshot, text, badge, or generic photo."
+            r = model.generate_content([prompt1, audio_file], generation_config=genai.GenerationConfig(temperature=0.0, max_output_tokens=5))
+            classification = (r.text or "").strip().upper()
+            
+            if "DOCUMENT" in classification:
+                genai.delete_file(audio_file.name)
+                return {"matches": False, "reason": "Image rejected: Identified as a document, screenshot, or certificate. Please upload a physical photo of the issue.", "metadata": metadata}
+                
+            if "PHYSICAL" in classification:
+                prompt2 = f"Task: Does this physical issue image match these words: '{body.title} {body.description}'? Respond ONLY with 'YES' or 'NO'."
+                r2 = model.generate_content([prompt2, audio_file], generation_config=genai.GenerationConfig(temperature=0.0, max_output_tokens=5))
+                match_val = (r2.text or "").strip().upper()
+                
+                genai.delete_file(audio_file.name)
+                
+                if "YES" in match_val:
+                    # Add metadata to high-quality matches
+                    return {
+                        "matches": True, 
+                        "reason": "Photo evidence verified by Gemini Vision.",
+                        "metadata": metadata
+                    }
+                else:
+                    return {
+                        "matches": False, 
+                        "reason": f"Photo does not seem to match the described issue: {body.title}",
+                        "metadata": metadata
+                    }
+                
+            genai.delete_file(audio_file.name)
             return {
-                "matches": False,
-                "reason": "Image rejected: Identified as a document, screenshot, or certificate. Please upload a physical photo of the issue.",
+                "matches": False, 
+                "reason": "AI could not definitively verify the image. Please try a clearer physical photo.",
                 "metadata": metadata
             }
             
-        if "PHYSICAL" in classification:
-            # Second stage: check if it matches the specific issue words
-            verify_messages = [{
-                "role": "user",
-                "content": [
-                    {"type": "text", "text": f"Task: Does this physical issue image match these words: '{body.title} {body.description}'? Respond ONLY with 'YES' or 'NO'."},
-                    {"type": "image_url", "image_url": {"url": body.photo_url}}
-                ]
-            }]
+        except Exception as inner_e:
+            if 'audio_file' in locals() and audio_file:
+                genai.delete_file(audio_file.name)
+            raise inner_e
+        finally:
+            os.remove(tmp_path)
             
-            r2 = _groq.chat.completions.create(
-                model="meta-llama/llama-4-scout-17b-16e-instruct",
-                messages=verify_messages,
-                max_tokens=5,
-                temperature=0.0
-            )
-            
-            match_val = (r2.choices[0].message.content or "").strip().upper()
-            if "YES" in match_val:
-                # Add metadata to high-quality matches
-                return {
-                    "matches": True, 
-                    "reason": "Photo evidence verified by L4-Scout (v97f601).",
-                    "metadata": metadata
-                }
-            else:
-                return {
-                    "matches": False, 
-                    "reason": f"Photo does not seem to match the described issue: {body.title}",
-                    "metadata": metadata
-                }
-
-        return {
-            "matches": False, 
-            "reason": "AI could not definitively verify the image. Please try a clearer physical photo.",
-            "metadata": metadata
-        }
-
     except Exception as e:
         print("Vision API Error:", str(e))
         return {

@@ -13,11 +13,11 @@ import httpx
 from fastapi.responses import Response
 from twilio.twiml.messaging_response import MessagingResponse
 from twilio.twiml.voice_response import VoiceResponse
-from groq import Groq
+import google.generativeai as genai
 
 from app.config import settings
 from app.db.database import get_supabase
-from app.utils.ai import CATEGORIES, detect_language, classify_with_groq, get_groq_client
+from app.utils.ai import CATEGORIES, detect_language, classify_with_gemini, configure_gemini
 
 try:
     from twilio.rest import Client as TwilioClient
@@ -136,21 +136,25 @@ def download_and_transcribe(media_url: str) -> dict:
                 tmp.write(audio_bytes)
                 tmp_path = tmp.name
 
-            client = get_groq_client()
-            if not client:
+            if not configure_gemini():
                 return {"text": "", "language": "English"}
 
-            with open(tmp_path, "rb") as f:
-                transcription = client.audio.transcriptions.create(
-                    file=("audio.ogg", f.read()),
-                    model="whisper-large-v3",
-                    prompt="Citizen grievance audio. Languages: English, Hindi, Marathi, Tamil, Telugu.",
-                )
+            # Use Gemini to transcribe the audio file
+            audio_file = genai.upload_file(path=tmp_path)
+            try:
+                model = genai.GenerativeModel("gemini-1.5-flash")
+                response = model.generate_content([
+                    "Please accurately transcribe this audio recording in its original language.", 
+                    audio_file
+                ])
+                transcription_text = response.text
+            finally:
+                genai.delete_file(audio_file.name)
         finally:
             if tmp_path and os.path.exists(tmp_path):
                 os.remove(tmp_path)
 
-        native_text = transcription.text
+        native_text = transcription_text
         if not native_text:
             return {"text": "", "language": "English"}
 
@@ -226,7 +230,7 @@ def followup_prompt(language_name: str) -> str:
 def create_grievance_from_text(phone_number: str, complaint_text: str) -> dict:
     sb = get_supabase()
     user_id = get_or_create_user(phone_number, sb)
-    classification = classify_with_groq(complaint_text)
+    classification = classify_with_gemini(complaint_text)
     tracking_id = f"PRJ-{datetime.now(timezone.utc).strftime('%y%m%d')}-{secrets.token_hex(3).upper()}"
     sb.table("grievances").insert({
         "tracking_id": tracking_id,

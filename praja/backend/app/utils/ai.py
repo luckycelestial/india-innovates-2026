@@ -2,16 +2,17 @@ import re
 import json
 import httpx
 from functools import lru_cache
-from groq import Groq
+import google.generativeai as genai
 from app.config import settings
 
 @lru_cache
-def get_groq_client():
-    if not settings.GROQ_API_KEY:
+def configure_gemini():
+    if not settings.GEMINI_API_KEY:
         # Return a mock or raise a descriptive error when used, 
         # but don't crash the entire app on import.
-        return None
-    return Groq(api_key=settings.GROQ_API_KEY)
+        return False
+    genai.configure(api_key=settings.GEMINI_API_KEY)
+    return True
 
 CATEGORIES = [
     "Water Supply", "Roads", "Electricity", "Sanitation",
@@ -119,7 +120,7 @@ def translate_from_english(text: str, target_lang: str) -> str:
         print(f"Bhashini reverse translation failed: {e}")
     return text
 
-def agentic_chat_with_groq(history: list, user_name: str = "Citizen") -> dict:
+def agentic_chat_with_gemini(history: list, user_name: str = "Citizen") -> dict:
     prompt = f"""You are PRAJA Bot, an official Voice Assistant for Indian Citizens to register grievances.
 The citizen's name is {user_name}.
 Your goal is to collect enough information to file a complete ticket via VOICE CONVERSATION.
@@ -147,18 +148,31 @@ JSON FORMAT:
     }}
   }}
 """
-    messages = [{"role": "system", "content": prompt}] + history
-    client = get_groq_client()
-    if not client:
+    if not configure_gemini():
         return {"type": "question", "text": "AI configuration is missing. Please contact administrator."}
     try:
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=messages,
-            max_tokens=350,
-            temperature=0.2,
-        )
-        content = (response.choices[0].message.content or "").strip()
+        model = genai.GenerativeModel("gemini-1.5-flash", system_instruction=prompt)
+        config = genai.GenerationConfig(temperature=0.2, max_output_tokens=350)
+        
+        # Convert our history list into gemini's format 
+        # (user/assistant -> user/model)
+        gemini_history = []
+        for msg in history:
+            role = "model" if msg["role"] == "assistant" else "user"
+            gemini_history.append({"role": role, "parts": [msg["content"]]})
+            
+        chat = model.start_chat(history=gemini_history)
+        # We need an input to send. In this context, if history is provided, we send the last user message,
+        # but `start_chat` handles history. Wait, `agentic_chat_with_groq` passed all history directly. Let's just pass the last message.
+        last_msg = history[-1]["content"] if history else "Hello"
+        # Wait! If we put last_msg in the model text, we must remove it from gemini_history before start_chat
+        
+        if len(gemini_history) > 0:
+            gemini_history.pop()
+        
+        chat = model.start_chat(history=gemini_history)
+        response = chat.send_message(last_msg, generation_config=config)
+        content = response.text.strip()
         
         if "{" in content and "category" in content:
             raw = re.sub(r"^```json\s*|^```\s*|```$", "", content, flags=re.MULTILINE).strip()
@@ -175,12 +189,11 @@ JSON FORMAT:
         else:
             return {"type": "question", "text": content}
     except Exception as e:
-        print("Groq Error:", e)
+        print("Gemini Error:", e)
         return {"type": "question", "text": "I'm having trouble understanding. Could you please repeat your issue and location?"}
 
-def classify_with_groq(text: str) -> dict:
-    client = get_groq_client()
-    if not client:
+def classify_with_gemini(text: str) -> dict:
+    if not configure_gemini():
         return {"category": "General", "priority": "medium", "sentiment": "neutral", "title": text[:40], "location": "Unknown", "clean_description": text}
     try:
         prompt = f"""Classify this grievance, responding ONLY with valid JSON.
@@ -188,12 +201,10 @@ Text: "{text}"
 JSON Format:
 {{"category": "Water Supply|Roads|Electricity|Sanitation|General", "priority": "low|medium|high|critical", "sentiment": "negative|neutral|positive", "title": "...", "location": "...", "clean_description": "..."}}
 """
-        response = client.chat.completions.create(
-            model="llama-3.3-70b-versatile",
-            messages=[{"role": "user", "content": prompt}],
-            temperature=0.1
-        )
-        content = (response.choices[0].message.content or "").strip()
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        config = genai.GenerationConfig(temperature=0.1)
+        response = model.generate_content(prompt, generation_config=config)
+        content = response.text.strip()
         raw = re.sub(r"^```json\s*|^```\s*|```$", "", content, flags=re.MULTILINE).strip()
         match = re.search(r"\{.*\}", raw, flags=re.DOTALL)
         if match:
