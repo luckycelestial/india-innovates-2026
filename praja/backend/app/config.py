@@ -22,12 +22,12 @@ class Settings(BaseSettings):
     TWILIO_PHONE_NUMBER:    str = ""
 
     # AI & External APIs (Loaded from .env)
-    GROQ_API_KEY:      str = ""
+    GEMINI_API_KEY:    str = "AIzaSyDymjTOrhj-2VMVAN20WymPi7eS24Ra7t0"
     BHASHINI_API_KEY:  str = ""
     BHASHINI_USER_ID:  str = ""
     OPENAI_API_KEY:    str = ""
     OPENAI_MODEL:      str = "gpt-4o-mini"
-    GEMINI_API_KEY:    str = ""
+    GEMINI_API_KEY:    str = "AIzaSyDymjTOrhj-2VMVAN20WymPi7eS24Ra7t0"
     MSG91_API_KEY:     str = ""
     MSG91_SENDER_ID:   str = "PRAJA2"
 
