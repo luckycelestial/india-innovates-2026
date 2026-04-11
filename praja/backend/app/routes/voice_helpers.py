@@ -11,7 +11,7 @@ from twilio.twiml.voice_response import VoiceResponse
 
 from app.db.database import get_supabase
 from app.routes.whatsapp_helpers import get_or_create_user
-from app.utils.ai import detect_language, classify_with_groq
+from app.utils.ai import detect_language, classify_with_gemini
 
 
 # ── Call context (stateful IVR memory based on Supabase) ──────────
@@ -89,7 +89,7 @@ def normalize_ticket_id(value: str) -> str:
 
 def create_voice_grievance(sb, phone: str, issue_text: str, location_text: str):
     combined_text = f"{issue_text.strip()} Location: {location_text.strip()}"
-    classification = classify_with_groq(combined_text)
+    classification = classify_with_gemini(combined_text)
     tracking_id = f"PRJ-{datetime.now(timezone.utc).strftime('%y%m%d')}-{secrets.token_hex(3).upper()}"
 
     user_id = get_or_create_user(phone, sb)

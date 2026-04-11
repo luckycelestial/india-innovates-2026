@@ -8,7 +8,7 @@ from twilio.twiml.messaging_response import MessagingResponse
 
 from app.db.database import get_supabase
 from app.routes.whatsapp_helpers import get_or_create_user
-from app.utils.ai import classify_with_groq
+from app.utils.ai import classify_with_gemini
 from app.config import settings
 
 router = APIRouter()
@@ -122,7 +122,7 @@ async def sms_inbound(request: Request):
         except Exception:
             return sms_reply("Error creating account. Please try again.")
 
-    classification = classify_with_groq(text)
+    classification = classify_with_gemini(text)
     tracking_id = f"PRJ-{datetime.now(timezone.utc).strftime('%y%m%d')}-{secrets.token_hex(3).upper()}"
 
     try:
