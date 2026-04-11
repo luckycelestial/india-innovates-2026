@@ -37,3 +37,5 @@ val.txt
 chunk.js
 index.html
 .env.vercel
+
+.vscode/

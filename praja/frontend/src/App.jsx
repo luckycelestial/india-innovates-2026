@@ -41,10 +41,6 @@ export default function App() {
         <Route path="/"            element={<RoleRedirect />} />
         <Route path="/login"       element={<Login />} />
         <Route path="/dashboard/*" element={<ProtectedRoute><UnifiedDashboard /></ProtectedRoute>} />
-        {/* Legacy routes redirect to unified dashboard */}
-        <Route path="/citizen/*"   element={<ProtectedRoute><Navigate to="/dashboard" replace /></ProtectedRoute>} />
-        <Route path="/officer/*"   element={<ProtectedRoute><Navigate to="/dashboard" replace /></ProtectedRoute>} />
-        <Route path="/leader/*"    element={<ProtectedRoute><Navigate to="/dashboard" replace /></ProtectedRoute>} />
         <Route path="*"            element={<Navigate to="/" replace />} />
       </Routes>
     </BrowserRouter>
