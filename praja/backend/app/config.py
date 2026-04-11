@@ -23,6 +23,7 @@ class Settings(BaseSettings):
 
     # AI & External APIs (Loaded from .env)
     GEMINI_API_KEY:    str = "AIzaSyDymjTOrhj-2VMVAN20WymPi7eS24Ra7t0"
+    GROQ_API_KEY:      str = ""
     BHASHINI_API_KEY:  str = ""
     BHASHINI_USER_ID:  str = ""
     OPENAI_API_KEY:    str = ""

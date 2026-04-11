@@ -136,20 +136,57 @@ def download_and_transcribe(media_url: str) -> dict:
                 tmp.write(audio_bytes)
                 tmp_path = tmp.name
 
-            if not configure_gemini():
-                return {"text": "", "language": "English"}
+            transcription_text = ""
+            engine_used = ""
 
-            # Use Gemini to transcribe the audio file
-            audio_file = genai.upload_file(path=tmp_path)
+            # Attempt 1: Bhashini ASR (Try generic Hindi pipeline first)
             try:
-                model = genai.GenerativeModel("gemini-1.5-flash")
-                response = model.generate_content([
-                    "Please accurately transcribe this audio recording in its original language.", 
-                    audio_file
-                ])
-                transcription_text = response.text
-            finally:
-                genai.delete_file(audio_file.name)
+                if settings.BHASHINI_API_KEY:
+                    import base64
+                    audio_b64 = base64.b64encode(audio_bytes).decode("utf-8")
+                    bhashini_url = "https://dhruva-api.bhashini.gov.in/services/inference/pipeline"
+                    payload = {
+                        "pipelineTasks": [{
+                            "taskType": "asr",
+                            "config": {
+                                "language": {"sourceLanguage": "hi"},
+                                "serviceId": "ai4bharat/conformer-hi-gpu--t4"
+                            }
+                        }],
+                        "inputData": {"audio": [{"audioContent": audio_b64}]}
+                    }
+                    headers = {"Authorization": settings.BHASHINI_API_KEY, "Content-Type": "application/json"}
+                    with httpx.Client(timeout=10) as c:
+                        res = c.post(bhashini_url, json=payload, headers=headers)
+                        res.raise_for_status()
+                        
+                        out_val = res.json().get("pipelineResponse", [{}])[0].get("output", [{}])[0].get("source", "")
+                        if out_val:
+                            transcription_text = out_val
+                            engine_used = "Bhashini"
+            except Exception as e:
+                logger.warning(f"Bhashini ASR failed: {e}")
+
+            # Attempt 2: Groq Whisper Fallback
+            if not transcription_text:
+                try:
+                    if settings.GROQ_API_KEY:
+                        groq_url = "https://api.groq.com/openai/v1/audio/transcriptions"
+                        headers = {"Authorization": f"Bearer {settings.GROQ_API_KEY}"}
+                        with open(tmp_path, "rb") as f:
+                            files = {"file": ("audio.ogg", f, "audio/ogg")}
+                            data = {"model": "whisper-large-v3"}
+                            with httpx.Client(timeout=15) as c:
+                                res = c.post(groq_url, headers=headers, files=files, data=data)
+                                res.raise_for_status()
+                                transcription_text = res.json().get("text", "")
+                                if transcription_text:
+                                    engine_used = "Groq"
+                except Exception as e:
+                    logger.warning(f"Groq ASR failed: {e}")
+
+            if engine_used and transcription_text:
+                transcription_text += f"\n\n[Transcribed by {engine_used}]"
         finally:
             if tmp_path and os.path.exists(tmp_path):
                 os.remove(tmp_path)
