@@ -40,16 +40,10 @@ export default function Login() {
   return (
     <div className="sov-page">
       <header className="sov-header">
-        <div className="sov-header-brand">PRAJA SOVEREIGN</div>
+        <div className="sov-header-brand">PRAJA</div>
         <nav className="sov-header-nav" aria-label="Primary">
           <a href="#dashboard" className="sov-nav-link active" onClick={noopLink}>
             Dashboard
-          </a>
-          <a href="#services" className="sov-nav-link" onClick={noopLink}>
-            Services
-          </a>
-          <a href="#schemes" className="sov-nav-link" onClick={noopLink}>
-            Schemes
           </a>
           <a href="#about" className="sov-nav-link" onClick={noopLink}>
             About
@@ -69,7 +63,13 @@ export default function Login() {
       </header>
 
       <section className="sov-hero">
-        <div className="sov-hero-chakra" aria-hidden="true" />
+        <svg className="sov-hero-chakra" viewBox="0 0 100 100" aria-hidden="true" style={{ opacity: 0.2, color: 'rgba(255, 255, 255, 1)' }}>
+          <circle cx="50" cy="50" r="45" fill="none" stroke="currentColor" strokeWidth="2" />
+          <circle cx="50" cy="50" r="36" fill="none" stroke="currentColor" strokeWidth="1" />
+          {[...Array(24)].map((_, i) => (
+            <line key={`spoke-${i}`} x1="50" y1="50" x2="50" y2="14" stroke="currentColor" strokeWidth="1" transform={`rotate(${i * 15} 50 50)`} />
+          ))}
+        </svg>
         <div className="sov-hero-inner">
           <div className="sov-hero-copy">
             <span className="sov-kicker">Governing public interface</span>
@@ -138,60 +138,38 @@ export default function Login() {
         </div>
       </section>
 
-      <section className="sov-section sov-section--white" id="services">
-        <h2 className="sov-section-title">
-          Framework of governance
-          <span className="sov-section-underline" />
-        </h2>
-        <div className="sov-cards-row">
-          <article className="sov-feature-card">
-            <div className="sov-feature-icon sov-feature-icon--saffron" aria-hidden="true">
-              🏛
-            </div>
-            <h3>Unified redressal</h3>
-            <p>One window for filing, tracking, and resolving public grievances with clear accountability.</p>
-          </article>
-          <article className="sov-feature-card">
-            <div className="sov-feature-icon sov-feature-icon--navy" aria-hidden="true">
-              🛡
-            </div>
-            <h3>Secure traceability</h3>
-            <p>Every action is logged and auditable so citizens and administrators share a single source of truth.</p>
-          </article>
-          <article className="sov-feature-card">
-            <div className="sov-feature-icon sov-feature-icon--green" aria-hidden="true">
-              🌐
-            </div>
-            <h3>Multi-lingual support</h3>
-            <p>Reach citizens in the language they are most comfortable with, across states and districts.</p>
-          </article>
-        </div>
-      </section>
-
-      <section className="sov-section sov-section--muted" id="schemes">
+      <section className="sov-section sov-section--muted" id="contact">
         <h2 className="sov-section-title sov-section-title--center">
           Official assistance channels
           <span className="sov-section-underline sov-section-underline--center" />
         </h2>
         <div className="sov-assist-row">
           <div className="sov-assist-box">
-            <span className="sov-assist-label">Toll-free</span>
-            <span className="sov-assist-value">1800-11-PRAJA</span>
+            <span className="sov-assist-label">Whatsapp Channel</span>
+            <span className="sov-assist-value" style={{ fontSize: '1rem', marginTop: '4px' }}>send "join next-pocket" to +1 4155238886</span>
           </div>
           <div className="sov-assist-box">
-            <span className="sov-assist-label">Email desk</span>
-            <span className="sov-assist-value">nodal@praja.gov.in</span>
+            <span className="sov-assist-label">Email</span>
+            <span className="sov-assist-value" style={{ fontSize: '1.25rem' }}>founder@cyberlabs.systems</span>
           </div>
           <div className="sov-assist-box">
-            <span className="sov-assist-label">Live status</span>
+            <span className="sov-assist-label">Call</span>
             <button type="button" className="sov-assist-value sov-assist-btn" onClick={noopLink}>
-              Check dashboard
+              Click Here
             </button>
           </div>
         </div>
       </section>
 
       <footer className="sov-footer" id="about">
+        <div style={{ textAlign: 'center', marginBottom: '2rem', maxWidth: '600px', margin: '0 auto 2rem', color: '#e2e8f0', lineHeight: 1.6 }}>
+          <p style={{ marginBottom: '0.5rem' }}>
+            <strong>PRAJA</strong> is an AI-powered Citizen Grievance & Constituency Intelligence Platform.
+          </p>
+          <p>
+            Proud to be a finalist product in the world's largest civic tech hackathon &rarr; India Innovates 2026, Delhi.
+          </p>
+        </div>
         <div className="sov-footer-links">
           <a href="#privacy" onClick={noopLink}>
             Privacy policy
@@ -207,9 +185,7 @@ export default function Login() {
           </a>
         </div>
         <p className="sov-footer-copy">
-          © {new Date().getFullYear()} Government of India. All rights reserved. PRAJA Sovereign is a conceptual
-          interface demonstration — managed in spirit by the Department of Administrative Reforms and Public
-          Grievances.
+          © {new Date().getFullYear()} Government of India. All rights reserved. PRAJA is a conceptual interface demonstration.
         </p>
       </footer>
     </div>
