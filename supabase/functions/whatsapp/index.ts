@@ -240,10 +240,12 @@ Deno.serve(async (req) => {
         );
       }
 
-      // User said YES → register with mock Aadhaar
+      // User said YES → register with unique demo Aadhaar per user
+      const last4 = from.slice(-4);
+      const demoAadhaar = `XXXX-XXXX-${last4}`;
       const { error: updateError } = await supabase
         .from('users')
-        .update({ aadhaar_number: 'XXXX-XXXX-2816' })
+        .update({ aadhaar_number: demoAadhaar })
         .eq('id', user.id);
 
       if (updateError) {
@@ -253,7 +255,7 @@ Deno.serve(async (req) => {
 
       return buildTwilioResponse(
         `✅ *Successfully Registered!*\n\n` +
-        `Your Aadhaar has been linked (XXXX-XXXX-2816).\n\n` +
+        `Your Aadhaar has been linked (${demoAadhaar}).\n\n` +
         `Now, tell me about your complaint. What issue would you like to report?`
       );
     }

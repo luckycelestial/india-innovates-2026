@@ -9,6 +9,9 @@ const corsHeaders = {
 
 const NIL_UUID = "00000000-0000-0000-0000-000000000000";
 
+// Demo citizen (Ramesh Kumar) sees ALL grievances so WhatsApp complaints are visible
+const DEMO_CITIZEN_ID = "981cfd4e-dc40-4021-9c38-66c8262b8d9c";
+
 function isStaff(role: string | null): boolean {
   return !!role && role !== "citizen";
 }
@@ -37,7 +40,8 @@ Deno.serve(async (req) => {
         ascending: false,
       }).limit(limit);
 
-      if (role === "citizen" && userId && userId !== NIL_UUID) {
+      // Demo citizen (Ramesh Kumar) sees all complaints; other citizens see only their own
+      if (role === "citizen" && userId && userId !== NIL_UUID && userId !== DEMO_CITIZEN_ID) {
         q = q.eq("citizen_id", userId);
       }
 
