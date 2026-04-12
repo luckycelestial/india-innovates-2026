@@ -109,7 +109,8 @@ Deno.serve(async (req) => {
         role: 'citizen',
         name: `Phone User ${from.slice(-4)}`,
         email: `tel_${from.replace('+', '')}@praja.local`,
-        password_hash: 'dummy_hash_no_login_needed'
+        password_hash: 'dummy_hash_no_login_needed',
+        aadhaar_number: `XXXX-XXXX-${from.slice(-4)}`
       }).select().single();
 
       user = newUser || null;
@@ -125,15 +126,14 @@ Deno.serve(async (req) => {
     // RESET command
     if (bodyLower === 'reset') {
       await supabase.from('grievances').delete().eq('citizen_id', user.id);
-      await supabase.from('users').update({ aadhaar_number: null }).eq('id', user.id);
-      // Clear conversation context
+      // Clear conversation context but keep aadhaar linked
       await supabase.from('call_contexts').delete().eq('call_sid', from);
 
       return buildTwilioResponse(
         `✅ *Demo Reset Successful*\n\n` +
-        `• Aadhaar link removed\n` +
-        `• All grievances deleted\n\n` +
-        `Reply *YES* to re-register.`
+        `• All grievances deleted\n` +
+        `• Conversation cleared\n\n` +
+        `You can now file a new complaint. Just describe your issue!`
       );
     }
 
