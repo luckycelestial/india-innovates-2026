@@ -206,7 +206,9 @@ async def _handle_message(Body: str, From: str, resp: MessagingResponse, user_la
 
     def _reply_with_voice_if_needed(text_en: str, text_native: str):
         msg = resp.message(text_native)
-        if is_voice:
+        # Only attach voice reply if Bhashini API key is present, otherwise Twilio silently drops the message
+        # when it fails to fetch the media URL with a 200 OK status.
+        if is_voice and settings.BHASHINI_API_KEY:
             url = f"{settings.BACKEND_URL}/api/tts/generate.mp3?text={urllib.parse.quote(text_native)}&lang={detected_lang}"
             msg.media(url)
 
