@@ -1,5 +1,4 @@
 import { createContext, useContext, useState, useCallback } from 'react'
-import api from '../services/api'
 
 const AuthContext = createContext(null)
 
@@ -19,27 +18,13 @@ export function AuthProvider({ children }) {
     } catch { return null }
   })
 
-  const login = useCallback(async (aadhaar_number, password) => {
+  const login = useCallback(async (aadhaar_number) => {
     const cleanAadhaar = aadhaar_number
       ? aadhaar_number.toString().replace(/\s/g, '').replace(/-/g, '')
       : ''
 
     if (!cleanAadhaar || cleanAadhaar.length !== 12) {
       throw new Error('Aadhaar number must be exactly 12 digits')
-    }
-
-    try {
-      const resp = await api.post('/auth/login', {
-        aadhaar_number: cleanAadhaar,
-        password: password || 'Demo',
-      })
-      const { user: backendUser } = resp.data
-      backendUser.full_name = backendUser.full_name || backendUser.name
-      setUser(backendUser)
-      localStorage.setItem('praja_user', JSON.stringify(backendUser))
-      return true
-    } catch (backendErr) {
-      console.warn('Backend login failed, falling back to demo mode:', backendErr.message)
     }
 
     const demoUser = DEMO_USERS[cleanAadhaar]

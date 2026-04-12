@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../services/supabase';
-import api from '../services/api';
 import prajaIcon from '../assets/SS.jpg';
 import './UnifiedDashboard.css';
 import { FileText, List as ListIcon, Ticket, BarChart3, Map as MapIcon, Bell } from 'lucide-react';

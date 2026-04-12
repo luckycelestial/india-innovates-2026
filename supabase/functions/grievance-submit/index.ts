@@ -42,11 +42,28 @@ Deno.serve(async (req) => {
       const supabaseServiceRole = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
       const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRole);
       
-      const { data: foundUser } = await supabaseAdmin.from('users').select('id').eq('id', headerUserId).single();
+      const { data: foundUser, error: findUserError } = await supabaseAdmin.from('users').select('id').eq('id', headerUserId).maybeSingle();
+      
+      let validCitizenId = null;
       if (!foundUser) {
-        return new Response(JSON.stringify({ error: 'User not found for provided x-user-id.' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        // Create demo user on the fly to satisfy FK constraint
+        const demoUser = {
+          id: headerUserId,
+          name: "Demo User " + headerUserId.substring(0,4),
+          email: "demo_" + headerUserId.substring(0,8) + "@example.com",
+          password_hash: "demo",
+          role: "citizen"
+        };
+        const { error: insertUserError } = await supabaseAdmin.from('users').insert(demoUser);
+        if (insertUserError) {
+          return new Response(JSON.stringify({ error: 'Failed to create demo user: ' + insertUserError.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+        }
+        validCitizenId = headerUserId;
+      } else {
+        validCitizenId = foundUser.id;
       }
-      citizenId = foundUser.id;
+      
+      citizenId = validCitizenId;
       sb = supabaseAdmin;
     }
 
@@ -132,7 +149,7 @@ Deno.serve(async (req) => {
     });
   } catch (error) {
     console.error("Submit Error:", error);
-    return new Response(JSON.stringify({ error: error }), {
+    return new Response(JSON.stringify({ error: error instanceof Error ? error.message : String(error) }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 500,
     });
