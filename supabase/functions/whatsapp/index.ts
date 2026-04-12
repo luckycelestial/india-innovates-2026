@@ -123,17 +123,17 @@ Deno.serve(async (req) => {
     // ===== COMMAND HANDLING =====
     const bodyLower = body.trim().toLowerCase();
 
-    // RESET command
+    // RESET command — replay the onboarding demo (no grievances deleted)
     if (bodyLower === 'reset') {
-      await supabase.from('grievances').delete().eq('citizen_id', user.id);
-      // Clear conversation context but keep aadhaar linked
+      // Clear aadhaar so user sees "Reply YES" flow again
+      await supabase.from('users').update({ aadhaar_number: null }).eq('id', user.id);
+      // Clear conversation context
       await supabase.from('call_contexts').delete().eq('call_sid', from);
 
       return buildTwilioResponse(
         `✅ *Demo Reset Successful*\n\n` +
-        `• All grievances deleted\n` +
-        `• Conversation cleared\n\n` +
-        `You can now file a new complaint. Just describe your issue!`
+        `Your conversation has been reset.\n` +
+        `Send any message to start the onboarding experience again!`
       );
     }
 
