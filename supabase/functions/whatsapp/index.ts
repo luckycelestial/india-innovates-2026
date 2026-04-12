@@ -109,8 +109,7 @@ Deno.serve(async (req) => {
         role: 'citizen',
         name: `Phone User ${from.slice(-4)}`,
         email: `tel_${from.replace('+', '')}@praja.local`,
-        password_hash: 'dummy_hash_no_login_needed',
-        aadhaar_number: `XXXX-XXXX-${from.slice(-4)}`
+        password_hash: 'dummy_hash_no_login_needed'
       }).select().single();
 
       user = newUser || null;
@@ -123,17 +122,18 @@ Deno.serve(async (req) => {
     // ===== COMMAND HANDLING =====
     const bodyLower = body.trim().toLowerCase();
 
-    // RESET command — replay the onboarding demo (no grievances deleted)
+    // RESET command
     if (bodyLower === 'reset') {
-      // Clear aadhaar so user sees "Reply YES" flow again
+      await supabase.from('grievances').delete().eq('citizen_id', user.id);
       await supabase.from('users').update({ aadhaar_number: null }).eq('id', user.id);
       // Clear conversation context
       await supabase.from('call_contexts').delete().eq('call_sid', from);
 
       return buildTwilioResponse(
         `✅ *Demo Reset Successful*\n\n` +
-        `Your conversation has been reset.\n` +
-        `Send any message to start the onboarding experience again!`
+        `• Aadhaar link removed\n` +
+        `• All grievances deleted\n\n` +
+        `Reply *YES* to re-register.`
       );
     }
 
@@ -240,12 +240,10 @@ Deno.serve(async (req) => {
         );
       }
 
-      // User said YES → register with unique demo Aadhaar per user
-      const last4 = from.slice(-4);
-      const demoAadhaar = `XXXX-XXXX-${last4}`;
+      // User said YES → register with mock Aadhaar
       const { error: updateError } = await supabase
         .from('users')
-        .update({ aadhaar_number: demoAadhaar })
+        .update({ aadhaar_number: 'XXXX-XXXX-2816' })
         .eq('id', user.id);
 
       if (updateError) {
@@ -255,7 +253,7 @@ Deno.serve(async (req) => {
 
       return buildTwilioResponse(
         `✅ *Successfully Registered!*\n\n` +
-        `Your Aadhaar has been linked (${demoAadhaar}).\n\n` +
+        `Your Aadhaar has been linked (XXXX-XXXX-2816).\n\n` +
         `Now, tell me about your complaint. What issue would you like to report?`
       );
     }
@@ -305,26 +303,19 @@ Deno.serve(async (req) => {
 
     if (callContext.state === ConversationState.AWAITING_DESCRIPTION) {
       systemPrompt = `You are Praja, a friendly Indian municipal complaint assistant on WhatsApp.
+      
+The citizen "${user.name}" just sent a message. Analyze it as a complaint description.
 
-The citizen "${user.name}" just sent this message: "${body}"
-
-CRITICAL LANGUAGE RULE (HIGHEST PRIORITY):
-You MUST reply in the EXACT SAME language the citizen used. Detect their language from the message above.
-- If the citizen writes in English → you MUST reply in English. Do NOT switch to Hindi.
-- If the citizen writes in Hindi → reply in Hindi.
-- If the citizen writes in Tamil → reply in Tamil.
-- NEVER default to Hindi when the citizen used English. This is the most important rule.
-
-TASK:
-- Analyze the message as a complaint description.
+RULES:
+- Respond in the SAME LANGUAGE the citizen uses (Hindi, Tamil, Telugu, Kannada, English, etc.)
 - If the message is a clear complaint, extract the description and ask for the location (Ward/Area/City).
 - If the message is vague or too short, ask ONE clarifying question.
 - Be warm, concise, and use 1-2 sentences max.
 
 Respond in JSON format ONLY:
-{"type":"question","text":"your clarifying question in the SAME language as the citizen"}
+{"type":"question","text":"your clarifying question"} — if description needs more detail
 OR
-{"type":"acknowledged","description":"extracted clear description","text":"your response asking for location in the SAME language as the citizen"}`;
+{"type":"acknowledged","description":"extracted clear description","text":"your response asking for location"}`;
 
     } else if (callContext.state === ConversationState.AWAITING_LOCATION) {
       const desc = callContext.extracted_data.description || 'their complaint';
@@ -333,23 +324,17 @@ OR
 
 The citizen just said: "${body}"
 
-CRITICAL LANGUAGE RULE (HIGHEST PRIORITY):
-You MUST reply in the EXACT SAME language the citizen is using in the conversation.
-- If the citizen writes in English → you MUST reply in English. Do NOT switch to Hindi.
-- If the citizen writes in Hindi → reply in Hindi.
-- If the citizen writes in Tamil → reply in Tamil.
-- NEVER default to Hindi when the citizen used English.
-
-TASK:
+RULES:
+- Respond in the SAME LANGUAGE the citizen used.
 - If they provided a location, extract it. Also auto-classify the issue category and priority.
 - Categories: Pothole, Garbage, Drainage, Street Light, Water Supply, Roads, Encroachment, Sanitation, Health, Education, or Other.
 - Priorities: low, medium, high, critical (based on urgency/safety).
 - If location is missing, ask for it in one sentence.
 
 Respond in JSON format ONLY:
-{"type":"question","text":"ask for location in the SAME language as the citizen"}
+{"type":"question","text":"Please provide your location..."} — if location unclear
 OR
-{"type":"ready","description":"${desc}","location":"extracted location","category":"category","priority":"low|medium|high|critical","text":"confirmation message in the SAME language as the citizen"}`;
+{"type":"ready","description":"${desc}","location":"extracted location","category":"category","priority":"low|medium|high|critical","text":"confirmation message summarizing the complaint"}`;
 
     } else if (callContext.state === ConversationState.AWAITING_CONFIRMATION) {
       systemPrompt = `You are Praja. The citizen's grievance details are:
@@ -360,13 +345,11 @@ OR
 
 They just said: "${body}"
 
-CRITICAL LANGUAGE RULE: Reply in the SAME language the citizen is using. If they speak English, reply English. If Hindi, reply Hindi. NEVER default to Hindi.
-
 Determine if they are confirming (yes, ok, submit, haan, theek hai, sari, correct, etc.) or want to change something.
 
 Respond in JSON format ONLY:
 {"type":"confirmed"} — if they confirm
-{"type":"modify","text":"what to ask them in the same language"} — if they want to change something
+{"type":"modify","text":"what to ask them"} — if they want to change something
 {"type":"restart"} — if they want to start over`;
     }
 
@@ -375,36 +358,23 @@ Respond in JSON format ONLY:
       replyText = "I'm here to help! Please describe the issue you'd like to report.";
       callContext.state = ConversationState.AWAITING_DESCRIPTION;
     } else {
-      // Groq API call with 10s timeout (Twilio needs response within 15s)
-      const controller = new AbortController();
-      const timeout = setTimeout(() => controller.abort(), 10000);
-
-      let groqRes: Response;
-      try {
-        groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-          method: "POST",
-          headers: {
-            "Authorization": `Bearer ${groqApiKey}`,
-            "Content-Type": "application/json"
-          },
-          body: JSON.stringify({
-            model: "llama-3.3-70b-versatile",
-            messages: [
-              { role: "system", content: systemPrompt },
-              ...callContext.chat_history
-            ],
-            temperature: 0.2,
-            response_format: { type: "json_object" },
-            max_tokens: 500
-          }),
-          signal: controller.signal
-        });
-      } catch (fetchErr: any) {
-        clearTimeout(timeout);
-        console.error("Groq fetch error (timeout?):", fetchErr.message);
-        return buildTwilioResponse("Sorry, the AI service is slow right now. Please try again in a moment.");
-      }
-      clearTimeout(timeout);
+      const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Authorization": `Bearer ${groqApiKey}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+          model: "llama-3.3-70b-versatile",
+          messages: [
+            { role: "system", content: systemPrompt },
+            ...callContext.chat_history
+          ],
+          temperature: 0.2,
+          response_format: { type: "json_object" },
+          max_tokens: 500
+        })
+      });
 
       if (!groqRes.ok) {
         const errText = await groqRes.text();

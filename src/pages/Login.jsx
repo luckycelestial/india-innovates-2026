@@ -40,14 +40,17 @@ export default function Login() {
   return (
     <div className="sov-page">
       <header className="sov-header">
-        <div className="sov-header-brand">PRAJA</div>
+        <div className="sov-header-brand" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+          <img src="/logo.png" alt="PRAJA Logo" style={{ height: '32px', width: '32px', borderRadius: '50%' }} />
+          PRAJA
+        </div>
         <nav className="sov-header-nav" aria-label="Primary">
           <a href="#dashboard" className="sov-nav-link active" onClick={noopLink}>
             Dashboard
           </a>
-          <a href="#about" className="sov-nav-link" onClick={noopLink}>
+          <button type="button" className="sov-nav-link" style={{ background: 'transparent', border: 'none', color: 'inherit', cursor: 'pointer', fontFamily: 'inherit', fontSize: '1rem', padding: 0 }} onClick={() => navigate('/about')}>
             About
-          </a>
+          </button>
         </nav>
         <div className="sov-header-actions">
           <button type="button" className="sov-icon-btn" aria-label="Notifications (showcase)" onClick={noopLink}>
@@ -180,9 +183,9 @@ export default function Login() {
           <a href="#accessibility" onClick={noopLink}>
             Accessibility statement
           </a>
-          <a href="#contact" onClick={noopLink}>
-            Contact us
-          </a>
+          <button type="button" className="sov-linkish" onClick={() => navigate('/about')} style={{ background: 'none', border: 'none', padding: 0, color: 'inherit', font: 'inherit', cursor: 'pointer', textDecoration: 'underline', opacity: 0.8 }}>
+            About
+          </button>
         </div>
         <p className="sov-footer-copy">
           © {new Date().getFullYear()} Government of India. All rights reserved. PRAJA is a conceptual interface demonstration.

@@ -34,8 +34,7 @@ Deno.serve(async (req) => {
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
 
-    const baseActionUrl = `${url.origin}${url.pathname}`;
-
+    const baseActionUrl = '/functions/v1/twilio-voice';
     let xml = '';
 
     if (step === 'inbound') {
@@ -55,7 +54,7 @@ Deno.serve(async (req) => {
         xml = `<?xml version="1.0" encoding="UTF-8"?>
         <Response>
             <Gather input="speech" action="${baseActionUrl}?step=issue" method="POST" timeout="8" speechTimeout="auto" language="en-IN" enhanced="true">
-                <Say voice="Polly.Aditi" language="en-IN">Please tell your issue briefly after the beep.</Say>
+                <Say voice="Polly.Aditi" language="en-IN">Please describe your issue briefly.</Say>
             </Gather>
             <Say voice="Polly.Aditi" language="en-IN">No issue captured. Please call again.</Say>
         </Response>`;

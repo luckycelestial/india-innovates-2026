@@ -3,6 +3,7 @@ import { useAuth } from './context/AuthContext'
 import { Component } from 'react'
 
 import Login            from './pages/Login'
+import About            from './pages/About'
 import UnifiedDashboard from './pages/UnifiedDashboard'
 
 class ErrorBoundary extends Component {
@@ -40,6 +41,7 @@ export default function App() {
       <Routes>
         <Route path="/"            element={<RoleRedirect />} />
         <Route path="/login"       element={<Login />} />
+        <Route path="/about"       element={<About />} />
         <Route path="/dashboard/*" element={<ProtectedRoute><UnifiedDashboard /></ProtectedRoute>} />
         <Route path="*"            element={<Navigate to="/" replace />} />
       </Routes>
