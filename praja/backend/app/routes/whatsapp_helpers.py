@@ -182,8 +182,12 @@ def download_and_transcribe(media_url: str) -> dict:
                                 transcription_text = res.json().get("text", "")
                                 if transcription_text:
                                     engine_used = "Groq"
+                    else:
+                        transcription_text = "ERROR: GROQ_API_KEY is not set."
                 except Exception as e:
                     logger.warning(f"Groq ASR failed: {e}")
+                    import traceback
+                    transcription_text = f"[DEBUG] Groq err: {e}. Vercel ENV GROQ_API_KEY present: {bool(settings.GROQ_API_KEY)}"
 
             if engine_used and transcription_text:
                 transcription_text += f"\n\n[Transcribed by {engine_used}]"
