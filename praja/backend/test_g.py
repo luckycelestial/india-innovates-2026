@@ -1,0 +1,1 @@
+﻿import time, sys; sys.path.append('./praja/backend'); from app.utils.ai import classify_with_gemini; t0 = time.time(); x=classify_with_gemini('Street light broken at 5th cross'); print(time.time() - t0, 'seconds')

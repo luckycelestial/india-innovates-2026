@@ -94,8 +94,7 @@ async def whatsapp_webhook(
             payload_state = {
                 "text_body": text_body,
                 "detected_lang": detected_voice_language,
-                "is_voice": "1",
-            }
+                "is_voice": "1",                "From": From,            }
             qs = urlencode(payload_state)
             # Force HTTPS for Vercel and Twilio signature compatibility
             public_base_url = settings.BACKEND_URL.rstrip("/") if settings.BACKEND_URL else str(request.base_url).replace("http://", "https://").rstrip("/")
@@ -115,24 +114,41 @@ async def whatsapp_webhook(
     return xml_response(resp)
 
 
-@router.post("/process-step-2")
+@router.api_route("/process-step-2", methods=["GET", "POST"])
 async def whatsapp_process_step_2(
     request: Request,
     x_twilio_signature: str = Header(default=""),
     text_body: str = Query(""),
     detected_lang: str = Query("English"),
-    is_voice: str = Query("0"),
-    From: str = Form(...),
+    is_voice: str = Query("0")
 ):
     resp = MessagingResponse()
     try:
-        form_data = await request.form()
+        try:
+            form_data = await request.form()
+        except:
+            form_data = {}
         params = {k: str(v) for k, v in form_data.items()}
+        
+        From = form_data.get("From") or request.query_params.get("From")
+        if not From:
+            From = "whatsapp:+1234567890" # Fallback if totally lost
+            logger.warning("Twilio Redirect entirely lost the 'From' field!")
+
         # Bypass signature check for redirect due to query param mangling on Vercel
         # if not is_valid_twilio_signature(request, x_twilio_signature, params):
         #     return Response(content="Forbidden", status_code=403)
 
-        await _handle_message(text_body, From, resp, detected_lang, is_voice == "1")
+        try:
+            await _handle_message(text_body, From, resp, detected_lang, is_voice == "1")
+        except Exception as handler_err:
+            logger.error("Error in handle_message: %s", handler_err)
+            if settings.TWILIO_ACCOUNT_SID:
+                TwilioClient(settings.TWILIO_ACCOUNT_SID, settings.TWILIO_AUTH_TOKEN).messages.create(
+                    to=From, from_=settings.TWILIO_WHATSAPP_NUMBER,
+                    body=f"⚠️ [DEBUG] Internal error inside handle_message: {handler_err}"
+                )
+            raise handler_err
 
     except Exception as exc:
         logger.exception("WhatsApp process-step-2 error")
