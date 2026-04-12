@@ -11,7 +11,7 @@ from twilio.twiml.voice_response import VoiceResponse
 
 from app.db.database import get_supabase
 from app.routes.whatsapp_helpers import get_or_create_user
-detect_language, classify_with_groq
+from app.utils.ai import detect_language, classify_with_groq
 
 
 # ── Call context (stateful IVR memory based on Supabase) ──────────

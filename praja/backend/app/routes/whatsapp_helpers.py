@@ -16,7 +16,7 @@ from twilio.twiml.voice_response import VoiceResponse
 
 from app.config import settings
 from app.db.database import get_supabase
-CATEGORIES, detect_language, classify_with_groq, try:
+from app.utils.ai import CATEGORIES, detect_language, classify_with_groq, try:
     from twilio.rest import Client as TwilioClient
 except Exception:
     TwilioClient = None

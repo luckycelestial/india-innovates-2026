@@ -17,7 +17,7 @@ import xml.etree.ElementTree as ET
 
 from app.config import settings
 from app.db.database import get_supabase
-detect_language, agentic_chat_with_groq, translate_to_english, translate_from_english
+from app.utils.ai import detect_language, agentic_chat_with_groq, translate_to_english, translate_from_english
 
 # Import helpers
 from app.routes.whatsapp_helpers import (

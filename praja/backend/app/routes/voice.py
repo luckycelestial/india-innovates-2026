@@ -13,7 +13,7 @@ from twilio.twiml.voice_response import VoiceResponse, Gather, Say
 from app.db.database import get_supabase
 from app.routes.whatsapp_helpers import get_or_create_user
 from app.routes.sms import send_sms_via_twilio
-agentic_chat_with_groq, translate_to_english, translate_from_english
+from app.utils.ai import agentic_chat_with_groq, translate_to_english, translate_from_english
 
 from app.routes.voice_helpers import (
     get_call_context,
