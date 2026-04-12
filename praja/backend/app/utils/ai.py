@@ -2,10 +2,11 @@ import re
 import json
 import httpx
 from functools import lru_cache
+import google.generativeai as genai
 from app.config import settings
 
 @lru_cache
-def ():
+def configure_gemini():
     if not settings.GEMINI_API_KEY:
         # Return a mock or raise a descriptive error when used, 
         # but don't crash the entire app on import.
@@ -147,7 +148,7 @@ JSON FORMAT:
     }}
   }}
 """
-    if not ():
+    if not configure_gemini():
         return {"type": "question", "text": "AI configuration is missing. Please contact administrator."}
     try:
         model = genai.GenerativeModel("gemini-1.5-flash", system_instruction=prompt)
@@ -192,7 +193,7 @@ JSON FORMAT:
         return {"type": "question", "text": "I'm having trouble understanding. Could you please repeat your issue and location?"}
 
 def classify_with_groq(text: str) -> dict:
-    if not ():
+    if not configure_gemini():
         return {"category": "General", "priority": "medium", "sentiment": "neutral", "title": text[:40], "location": "Unknown", "clean_description": text}
     try:
         prompt = f"""Classify this grievance, responding ONLY with valid JSON.
