@@ -1,1 +1,4 @@
-{}
+﻿{
+    "python.terminal.useEnvFile":  true,
+    "python.envFile":  "${workspaceFolder}/praja/backend/.env"
+}

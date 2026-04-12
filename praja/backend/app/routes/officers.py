@@ -1,8 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, Query
+﻿from fastapi import APIRouter, Depends, HTTPException, Query
 from typing import Any, Optional
 from datetime import datetime, timezone, timedelta
 from app.db.database import get_supabase
-from app.utils.jwt import get_current_user
+from app.utils.auth_tokens import get_current_user
 
 router = APIRouter()
 
@@ -101,7 +101,7 @@ def escalate_grievance(
     return {"ok": True}
 
 
-# ── Department Performance Dashboard ────────────────────────────
+# â”€â”€ Department Performance Dashboard â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @router.get("/performance")
 def department_performance(
     current: dict = Depends(require_officer),
@@ -186,7 +186,7 @@ def department_performance(
     }
 
 
-# ── Analytics: 30-day Daily Trends ──────────────────────────────
+# â”€â”€ Analytics: 30-day Daily Trends â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @router.get("/analytics/trends")
 def analytics_trends(
     current: dict = Depends(require_officer),
@@ -223,7 +223,7 @@ def analytics_trends(
     return sorted(buckets.values(), key=lambda x: x["date"])
 
 
-# ── Analytics: Resolution Time Distribution ─────────────────────
+# â”€â”€ Analytics: Resolution Time Distribution â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @router.get("/analytics/resolution-times")
 def analytics_resolution_times(
     current: dict = Depends(require_officer),
@@ -257,13 +257,13 @@ def analytics_resolution_times(
     return [{"bucket": labels[i], "count": counts[i]} for i in range(len(labels))]
 
 
-# ── Analytics: Hourly Heatmap ───────────────────────────────────
+# â”€â”€ Analytics: Hourly Heatmap â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @router.get("/analytics/hourly-heatmap")
 def analytics_hourly_heatmap(
     current: dict = Depends(require_officer),
     sb: Any = Depends(get_supabase),
 ):
-    """7×24 matrix of submission counts (day-of-week × hour, IST)."""
+    """7Ã—24 matrix of submission counts (day-of-week Ã— hour, IST)."""
     rows = (
         sb.table("grievances")
         .select("created_at")

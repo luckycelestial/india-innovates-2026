@@ -2,11 +2,10 @@ import re
 import json
 import httpx
 from functools import lru_cache
-import google.generativeai as genai
 from app.config import settings
 
 @lru_cache
-def configure_gemini():
+def ():
     if not settings.GEMINI_API_KEY:
         # Return a mock or raise a descriptive error when used, 
         # but don't crash the entire app on import.
@@ -120,7 +119,7 @@ def translate_from_english(text: str, target_lang: str) -> str:
         print(f"Bhashini reverse translation failed: {e}")
     return text
 
-def agentic_chat_with_gemini(history: list, user_name: str = "Citizen") -> dict:
+def agentic_chat_with_groq(history: list, user_name: str = "Citizen") -> dict:
     prompt = f"""You are PRAJA Bot, an official Voice Assistant for Indian Citizens to register grievances.
 The citizen's name is {user_name}.
 Your goal is to collect enough information to file a complete ticket via VOICE CONVERSATION.
@@ -148,7 +147,7 @@ JSON FORMAT:
     }}
   }}
 """
-    if not configure_gemini():
+    if not ():
         return {"type": "question", "text": "AI configuration is missing. Please contact administrator."}
     try:
         model = genai.GenerativeModel("gemini-1.5-flash", system_instruction=prompt)
@@ -192,8 +191,8 @@ JSON FORMAT:
         print("Gemini Error:", e)
         return {"type": "question", "text": "I'm having trouble understanding. Could you please repeat your issue and location?"}
 
-def classify_with_gemini(text: str) -> dict:
-    if not configure_gemini():
+def classify_with_groq(text: str) -> dict:
+    if not ():
         return {"category": "General", "priority": "medium", "sentiment": "neutral", "title": text[:40], "location": "Unknown", "clean_description": text}
     try:
         prompt = f"""Classify this grievance, responding ONLY with valid JSON.

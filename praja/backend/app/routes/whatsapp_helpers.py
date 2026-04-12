@@ -13,13 +13,10 @@ import httpx
 from fastapi.responses import Response
 from twilio.twiml.messaging_response import MessagingResponse
 from twilio.twiml.voice_response import VoiceResponse
-import google.generativeai as genai
 
 from app.config import settings
 from app.db.database import get_supabase
-from app.utils.ai import CATEGORIES, detect_language, classify_with_groq, configure_gemini
-
-try:
+CATEGORIES, detect_language, classify_with_groq, try:
     from twilio.rest import Client as TwilioClient
 except Exception:
     TwilioClient = None

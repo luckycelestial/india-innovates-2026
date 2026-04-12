@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect } from 'react';
+﻿import React, { useState, useRef, useEffect } from 'react';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { Card } from '../../components/ui/Card';
@@ -26,12 +26,12 @@ export default function SubmitTab({ onToast }) {
     const timer = setTimeout(async () => {
       setIsEvaluating(true);
       try {
-        const token = localStorage.getItem('praja_token');
+        const userStr = localStorage.getItem("praja_user"); const user = userStr ? JSON.parse(userStr) : null;
         const res = await fetch((import.meta.env.VITE_API_URL || 'https://prajavox-backend.vercel.app') + '/api/grievances/photo-need', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            ...(token ? { Authorization: `Bearer ${token}` } : {}),
+            ...(user ? { "x-user-id": user.id, "x-user-role": user.role } : {}),
           },
           body: JSON.stringify({ title, description, ai_category: '' })
         });
@@ -91,11 +91,11 @@ export default function SubmitTab({ onToast }) {
       const formData = new FormData();
       formData.append('audio', blob, 'recording.webm');
       
-      const token = localStorage.getItem('praja_token');
+      const userStr = localStorage.getItem("praja_user"); const user = userStr ? JSON.parse(userStr) : null;
       const res = await fetch((import.meta.env.VITE_API_URL || 'https://prajavox-backend.vercel.app') + '/api/mic/transcribe', {
         method: 'POST',
         headers: {
-          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...(user ? { "x-user-id": user.id, "x-user-role": user.role } : {}),
         },
         body: formData,
       });
@@ -195,12 +195,12 @@ export default function SubmitTab({ onToast }) {
       if (title.length > 5 || description.length > 5) {
         setIsVerifyingPhoto(true);
         try {
-          const token = localStorage.getItem('praja_token');
+          const userStr = localStorage.getItem("praja_user"); const user = userStr ? JSON.parse(userStr) : null;
           const res = await fetch((import.meta.env.VITE_API_URL || 'https://prajavox-backend.vercel.app') + '/api/grievances/verify-photo', {
             method: 'POST',
             headers: {
               'Content-Type': 'application/json',
-              ...(token ? { Authorization: `Bearer ${token}` } : {}),
+              ...(user ? { "x-user-id": user.id, "x-user-role": user.role } : {}),
             },
             body: JSON.stringify({ title, description, photo_url: String(dataUrl) })
           });
@@ -213,7 +213,7 @@ export default function SubmitTab({ onToast }) {
               setPhotoMetadata(null);
               if (photoInputRef.current) photoInputRef.current.value = '';
             } else {
-              onToast('✅ Photo evidence verified!', 'success');
+              onToast('âœ… Photo evidence verified!', 'success');
               if (data.metadata && data.metadata.latitude) {
                 setPhotoMetadata(data.metadata);
               } else {
@@ -266,9 +266,9 @@ export default function SubmitTab({ onToast }) {
       setPhotoDataUrl('');
       setPhotoFileName('');
       if (photoInputRef.current) photoInputRef.current.value = '';
-      onToast(`✅ Submitted — ID: ${data.tracking_id}`, 'success');
+      onToast(`âœ… Submitted â€” ID: ${data.tracking_id}`, 'success');
     } catch (err) {
-      onToast(`❌ ${err.message}`, 'error');
+      onToast(`âŒ ${err.message}`, 'error');
     }
   };
 
@@ -303,13 +303,13 @@ export default function SubmitTab({ onToast }) {
           gap: 8,
         }}>
           <div style={{ fontWeight: 700, color: 'var(--color-success-text)', fontSize: '0.95rem' }}>
-            ✅ Complaint submitted successfully
+            âœ… Complaint submitted successfully
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10, fontSize: '0.84rem' }}>
             <span style={{ color: 'var(--text-secondary)' }}>Tracking ID:</span>
             <span className="ud-tracking-id">{submitted.tracking_id}</span>
             {submitted.ai_category && (
-              <span style={{ color: 'var(--text-secondary)' }}>📂 {submitted.ai_category}</span>
+              <span style={{ color: 'var(--text-secondary)' }}>ðŸ“‚ {submitted.ai_category}</span>
             )}
             {submitted.priority && (
               <span style={{
@@ -377,14 +377,14 @@ export default function SubmitTab({ onToast }) {
               }}
               title={isRecording ? "Stop Recording" : "Speak your complaint (Bhashini ASR)"}
             >
-              {isTranscribing ? '⌛' : (isRecording ? '⏹️' : '🎤')}
+              {isTranscribing ? 'âŒ›' : (isRecording ? 'â¹ï¸' : 'ðŸŽ¤')}
             </button>
           </div>
 
           {photoReq.need !== 'not_needed' && (
             <div className="ud-field-wrapper">
               <label htmlFor="complaint-photo" className="ud-label" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                📷 Photo Evidence
+                ðŸ“· Photo Evidence
                 {photoReq.need === 'required' ? 
                   <span style={{color: '#fff', fontSize: '0.65rem', fontWeight: 'bold', background: 'var(--color-danger)', padding: '2px 6px', borderRadius: '4px'}}>REQUIRED</span> : 
                   <span style={{color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 'normal'}}>(based on the complaint)</span>
@@ -405,7 +405,7 @@ export default function SubmitTab({ onToast }) {
               />
               <div className="ud-photo-upload-shell" role="group" aria-label="Photo evidence upload">
                 <button type="button" className="ud-photo-upload-btn" onClick={openPhotoPicker}>
-                  📁 Choose Image
+                  ðŸ“ Choose Image
                 </button>
                 <div className="ud-photo-upload-name" title={photoFileName || 'No image selected'}>
                   {photoFileName || 'No image selected'}
@@ -425,7 +425,7 @@ export default function SubmitTab({ onToast }) {
                 <div className="ud-photo-preview-label">Preview</div>
                 {photoMetadata && photoMetadata.latitude && (
                   <div style={{ fontSize: '0.72rem', color: 'var(--color-success-text)', background: 'rgba(74, 222, 128, 0.1)', padding: '2px 8px', borderRadius: '12px', border: '1px solid var(--color-success-border)' }}>
-                    📍 GPS Verified: {photoMetadata.latitude.toFixed(4)}, {photoMetadata.longitude.toFixed(4)}
+                    ðŸ“ GPS Verified: {photoMetadata.latitude.toFixed(4)}, {photoMetadata.longitude.toFixed(4)}
                   </div>
                 )}
               </div>
@@ -437,15 +437,15 @@ export default function SubmitTab({ onToast }) {
               />
               {photoMetadata && (
                 <div style={{ marginTop: 8, fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                  <div title="Photo capture date">📅 {photoMetadata.timestamp || 'Unknown Date'}</div>
-                  <div title="Camera model">📱 {photoMetadata.model || 'Unknown Device'}</div>
+                  <div title="Photo capture date">ðŸ“… {photoMetadata.timestamp || 'Unknown Date'}</div>
+                  <div title="Camera model">ðŸ“± {photoMetadata.model || 'Unknown Device'}</div>
                 </div>
               )}
             </div>
           )}
           <div style={{ marginTop: 20 }}>
             <Button type="submit" isLoading={loading || isVerifyingPhoto} size="lg" fullWidth disabled={isVerifyingPhoto}>
-              {isVerifyingPhoto ? 'Verifying Photo...' : '📤 Submit Complaint'}
+              {isVerifyingPhoto ? 'Verifying Photo...' : 'ðŸ“¤ Submit Complaint'}
             </Button>
           </div>
         </form>

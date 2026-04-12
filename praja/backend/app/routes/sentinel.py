@@ -1,9 +1,9 @@
-from datetime import datetime, timezone, timedelta
+﻿from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends
 from typing import Any
 from collections import defaultdict
 from app.db.database import get_supabase
-from app.utils.jwt import get_current_user
+from app.utils.auth_tokens import get_current_user
 
 router = APIRouter()
 
@@ -90,7 +90,7 @@ def get_alerts(
         alerts.append({
             "id": g["id"],
             "title": f"Critical: {g['title']}",
-            "description": f"Tracking ID {g.get('tracking_id', '')} — {g.get('ai_category', 'General')} — awaiting resolution.",
+            "description": f"Tracking ID {g.get('tracking_id', '')} â€” {g.get('ai_category', 'General')} â€” awaiting resolution.",
             "severity": "critical",
             "type": "critical_grievance",
         })
@@ -100,7 +100,7 @@ def get_alerts(
         alerts.append({
             "id": g["id"],
             "title": f"SLA Breach: {g['title']}",
-            "description": f"Open for {hours_open}h — {g.get('ai_category', 'General')}. Immediate action required.",
+            "description": f"Open for {hours_open}h â€” {g.get('ai_category', 'General')}. Immediate action required.",
             "severity": "high",
             "type": "sla_breach",
         })
@@ -109,7 +109,7 @@ def get_alerts(
         alerts.append({
             "id": g["id"],
             "title": f"Escalated: {g['title']}",
-            "description": f"Ticket {g.get('tracking_id', '')} has been escalated — {g.get('ai_category', 'General')}.",
+            "description": f"Ticket {g.get('tracking_id', '')} has been escalated â€” {g.get('ai_category', 'General')}.",
             "severity": "high",
             "type": "escalated",
         })
@@ -125,7 +125,7 @@ def get_alerts(
     return unique_alerts
 
 
-# ── Topic Clustering ────────────────────────────────────────────
+# â”€â”€ Topic Clustering â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @router.get("/topics")
 def topic_clusters(
     sb: Any = Depends(get_supabase),
@@ -153,7 +153,7 @@ def topic_clusters(
     return topics
 
 
-# ── 7-Day Trend Data ────────────────────────────────────────────
+# â”€â”€ 7-Day Trend Data â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @router.get("/trends")
 def trends_7day(
     sb: Any = Depends(get_supabase),
@@ -186,13 +186,13 @@ def trends_7day(
     return list(daily.values())
 
 
-# ── Constituency Comparison ─────────────────────────────────────
+# â”€â”€ Constituency Comparison â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 @router.get("/comparison")
 def constituency_comparison(
     sb: Any = Depends(get_supabase),
     current: dict = Depends(get_current_user),
 ):
-    """Compare grievance stats across categories — resolution rate, avg sentiment."""
+    """Compare grievance stats across categories â€” resolution rate, avg sentiment."""
     res = sb.table("grievances").select("ai_category, priority, status, ai_sentiment").execute()
     rows = res.data or []
 

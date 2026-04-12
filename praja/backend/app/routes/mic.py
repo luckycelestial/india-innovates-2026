@@ -2,15 +2,13 @@ import os
 import httpx
 from fastapi import APIRouter, UploadFile, File, HTTPException, Query
 from app.config import settings
-from app.utils.ai import detect_language, configure_gemini
-import google.generativeai as genai
 
 router = APIRouter()
 
 @router.post("/transcribe")
 async def transcribe_audio(audio: UploadFile = File(...), engine: str = Query("bhashini")):
-    if not configure_gemini():
-        raise HTTPException(status_code=500, detail="Gemini API Key missing")
+    if not settings.GROQ_API_KEY:
+        raise HTTPException(status_code=500, detail="Groq API Key missing")
         
     try:
         audio_bytes = await audio.read()
@@ -22,14 +20,19 @@ async def transcribe_audio(audio: UploadFile = File(...), engine: str = Query("b
                 tmp.write(audio_bytes)
                 tmp_path = tmp.name
                 
-            audio_file = genai.upload_file(path=tmp_path)
-            model = genai.GenerativeModel("gemini-1.5-flash")
-            response = model.generate_content([
-                "Please accurately transcribe this audio recording in its original language.", 
-                audio_file
-            ])
-            native_text = response.text
-            genai.delete_file(audio_file.name)
+            headers = {"Authorization": f"Bearer {settings.GROQ_API_KEY}"}
+            with open(tmp_path, "rb") as f:
+                res = httpx.post(
+                    "https://api.groq.com/openai/v1/audio/transcriptions",
+                    headers=headers,
+                    files={"file": (f.name, f, "audio/webm")},
+                    data={"model": "whisper-large-v3-turbo"},
+                    timeout=20.0
+                )
+            if res.status_code != 200:
+                print(res.text)
+                raise Exception("Groq transcription failed")
+            native_text = res.json().get("text", "")
 
         finally:
             if tmp_path and os.path.exists(tmp_path):
@@ -40,6 +43,7 @@ async def transcribe_audio(audio: UploadFile = File(...), engine: str = Query("b
             
         bhashini_url = "https://dhruva-api.bhashini.gov.in/services/inference/pipeline"
         
+        from app.utils.ai import detect_language
         lang = detect_language(native_text)
         bhashini_lang_mapping = {
             "Hindi": "hi", "Tamil": "ta", "Telugu": "te", "Kannada": "kn", 
@@ -67,14 +71,14 @@ async def transcribe_audio(audio: UploadFile = File(...), engine: str = Query("b
                 }
             }
 
-            headers = {
+            b_headers = {
                 "Content-Type": "application/json",
                 "Authorization": settings.BHASHINI_API_KEY
             }
 
-            with httpx.Client(timeout=15) as client:
-                try:
-                    res = client.post(bhashini_url, json=payload, headers=headers)
+            try:
+                with httpx.Client(timeout=15) as client:
+                    res = client.post(bhashini_url, json=payload, headers=b_headers)
                     if res.status_code == 200:
                         data = res.json()
                         translated_text = data["pipelineResponse"][0]["output"][0]["target"]
@@ -82,11 +86,17 @@ async def transcribe_audio(audio: UploadFile = File(...), engine: str = Query("b
                             english_text = translated_text
                     else:
                         raise Exception(f"Bhashini returned {res.status_code}")
-                except Exception as e:
-                    print(f"Bhashini translation failed, falling back to Gemini: {e}")
-                    prompt = f"Translate the following text into English. Return ONLY the English translation, no other words.\nText: {native_text}"
-                    completion = model.generate_content(prompt)
-                    english_text = completion.text.strip()
+            except Exception as e:
+                print(f"Bhashini translation failed, falling back to Groq: {e}")
+                prompt = f"Translate the following text into English. Return ONLY the English translation, no other words.\nText: {native_text}"
+                
+                groq_payload = {
+                    "model": "llama-3.3-70b-versatile",
+                    "messages": [{"role": "user", "content": prompt}],
+                    "temperature": 0.0
+                }
+                res = httpx.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=groq_payload, timeout=8.0)
+                english_text = res.json()["choices"][0]["message"]["content"].strip()
 
         return {
             "original_text": native_text,

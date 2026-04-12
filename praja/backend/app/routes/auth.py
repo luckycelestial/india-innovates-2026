@@ -1,9 +1,9 @@
-import logging
+﻿import logging
 from fastapi import APIRouter, Depends, HTTPException
 from pydantic import BaseModel
 from typing import Any
 from app.db.database import get_supabase
-from app.utils.jwt import create_access_token, get_current_user
+from app.utils.auth_tokens import create_access_token, get_current_user
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -11,7 +11,7 @@ logger = logging.getLogger(__name__)
 
 class UserLogin(BaseModel):
     aadhaar_number: str
-    password: str  # accepted but not verified (prototype — Aadhaar-only auth)
+    password: str  # accepted but not verified (prototype â€” Aadhaar-only auth)
 
 
 class Token(BaseModel):

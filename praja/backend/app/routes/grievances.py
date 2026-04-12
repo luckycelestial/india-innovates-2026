@@ -9,7 +9,7 @@ from typing import Optional, Any
 import httpx
 from app.config import settings
 from app.db.database import get_supabase
-from app.utils.jwt import get_current_user
+from app.utils.auth_tokens import get_current_user
 from app.utils.exif import extract_exif_gps
 from app.utils.ai import classify_with_groq
 

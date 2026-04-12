@@ -13,7 +13,7 @@ from twilio.twiml.voice_response import VoiceResponse, Gather, Say
 from app.db.database import get_supabase
 from app.routes.whatsapp_helpers import get_or_create_user
 from app.routes.sms import send_sms_via_twilio
-from app.utils.ai import agentic_chat_with_gemini, translate_to_english, translate_from_english
+agentic_chat_with_groq, translate_to_english, translate_from_english
 
 from app.routes.voice_helpers import (
     get_call_context,
@@ -385,7 +385,7 @@ async def voice_outbound_chat(
     english_text = translate_to_english(SpeechResult)
     history.append({"role": "user", "content": english_text})
 
-    ai_resp = agentic_chat_with_gemini(history, "Citizen")
+    ai_resp = agentic_chat_with_groq(history, "Citizen")
 
     if ai_resp["type"] == "question":
         ans_english = ai_resp["text"]

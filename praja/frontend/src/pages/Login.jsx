@@ -1,4 +1,4 @@
-import { useState } from 'react';
+﻿import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import prajaLogo   from '../assets/RR.jpg';
@@ -38,7 +38,7 @@ export default function Login() {
       aadhaar_number: '123412341234'
     };
     
-    localStorage.setItem('praja_token', 'mock-token-' + Date.now());
+    
     localStorage.setItem('praja_user', JSON.stringify(user));
     
     // Hard redirect
