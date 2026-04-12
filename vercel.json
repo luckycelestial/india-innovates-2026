@@ -6,5 +6,5 @@
       "VITE_API_URL": "https://prajavox-backend.vercel.app"
     }
   },
-  "rewrites": [{ "source": "/(.*)", "destination": "/" }]
+  "rewrites": [{ "source": "/(.*)", "destination": "/index.html" }]
 }
