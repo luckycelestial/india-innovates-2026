@@ -44,3 +44,13 @@ val.txt
 chunk.js
 index.html.json
 node_modules
+
+# code-review-graph
+setup-crg.sh
+setup-crg.ps1
+check-crg.sh
+CLAUDE.md
+crg-cheatsheet.pdf
+CRG-README.md
+.opencode.json
+GEMINI.md

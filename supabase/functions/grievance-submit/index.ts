@@ -31,19 +31,23 @@ Deno.serve(async (req) => {
     const { data: { user } } = await supabase.auth.getUser(token);
     
     let citizenId = user?.id;
+    let sb = supabase;
 
-    // Use dummy bypass if testing without full anon-key UUID
+    // Fallback: resolve user from x-user-id header (demo mode)
     if (!citizenId) {
       const headerUserId = req.headers.get('x-user-id');
+      if (!headerUserId) {
+        return new Response(JSON.stringify({ error: 'Could not identify user. Provide a valid JWT or x-user-id header.' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
       const supabaseServiceRole = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
       const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRole);
       
-      const { data: foundUser } = await supabaseAdmin.from('users').select('*').eq('id', headerUserId || '').single();
-      citizenId = foundUser ? foundUser.id : "8fc290a5-bfa3-4348-b674-40ab2425c492"; // Hardcode fallback
-      
-      var sb = supabaseAdmin;
-    } else {
-      var sb = supabase;
+      const { data: foundUser } = await supabaseAdmin.from('users').select('id').eq('id', headerUserId).single();
+      if (!foundUser) {
+        return new Response(JSON.stringify({ error: 'User not found for provided x-user-id.' }), { status: 404, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
+      }
+      citizenId = foundUser.id;
+      sb = supabaseAdmin;
     }
 
     // Classify using Groq
