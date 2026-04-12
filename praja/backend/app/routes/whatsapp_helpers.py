@@ -198,6 +198,9 @@ def download_and_transcribe(media_url: str) -> dict:
         native_text = transcription_text
         if not native_text:
             return {"text": "", "language": "English"}
+            
+        if "[DEBUG]" in native_text:
+            return {"text": native_text, "language": "English"}
 
         # Bhashini translation
         bhashini_url = "https://dhruva-api.bhashini.gov.in/services/inference/pipeline"
@@ -235,7 +238,7 @@ def download_and_transcribe(media_url: str) -> dict:
 
     except Exception as e:
         logger.error("Transcription/Translation error: %s", e)
-        return {"text": "", "language": "English"}
+        return {"text": f"[DEBUG] Outer Error: {str(e)}", "language": "English"}
 
 
 # ── Complaint helpers ─────────────────────────────────────────
