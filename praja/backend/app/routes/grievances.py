@@ -1,4 +1,4 @@
-import re
+﻿import re
 import json
 import secrets
 import logging
@@ -11,7 +11,7 @@ from app.config import settings
 from app.db.database import get_supabase
 from app.utils.jwt import get_current_user
 from app.utils.exif import extract_exif_gps
-from app.utils.ai import classify_with_gemini
+from app.utils.ai import classify_with_groq
 
 router = APIRouter()
 logger = logging.getLogger(__name__)
@@ -35,9 +35,9 @@ def _classify(title: str, desc: str) -> dict:
     prompt = f"""You are a classifier for Indian citizen grievances. Inputs may be in English, Tamil, Telugu, Hindi, Marathi, or Tanglish (Indian language written in English letters). Understand the ACTUAL meaning before classifying.
 
 CRITICAL RULES:
-- Any mention of suicide, self-harm, or killing oneself â†’ priority=critical, category=Health
-- Any death threat or threat to a public figure â†’ priority=critical, category=General
-- Any sexual assault or abduction â†’ priority=critical, category=General
+- Any mention of suicide, self-harm, or killing oneself Ã¢â€ â€™ priority=critical, category=Health
+- Any death threat or threat to a public figure Ã¢â€ â€™ priority=critical, category=General
+- Any sexual assault or abduction Ã¢â€ â€™ priority=critical, category=General
 - Otherwise: water/drainage issues=Water Supply, road/pothole=Roads, power cut=Electricity, garbage/sewage=Sanitation, hospital/disease=Health, school=Education
 
 Respond with ONLY valid JSON, no explanation:
@@ -387,7 +387,7 @@ def create_grievance(
                     # Supabase PostGIS location format: 'POINT(long lat)'
                     insert_data["location"] = f"POINT({exif_lon} {exif_lat})"
                     
-                    # ─── New Location Logic ───────────────────
+                    # â”€â”€â”€ New Location Logic â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
                     # If user also provided text location, cross-verify
                     if body.user_location_text:
                         llm_coords = _extract_llm_location(body.user_location_text)
@@ -429,7 +429,7 @@ def list_grievances(
     return result.data
 
 
-# â”€â”€ Beneficiary Scheme Linkage (MUST be before /{grievance_id}) â”€
+# Ã¢â€â‚¬Ã¢â€â‚¬ Beneficiary Scheme Linkage (MUST be before /{grievance_id}) Ã¢â€â‚¬
 @router.get("/schemes")
 def get_matching_schemes(
     sb: Any = Depends(get_supabase),
@@ -510,14 +510,14 @@ def update_status(
     return {"ok": True}
 
 
-# â”€â”€ Auto-Escalation Engine â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+# Ã¢â€â‚¬Ã¢â€â‚¬ Auto-Escalation Engine Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬Ã¢â€â‚¬
 @router.post("/check-escalation")
 def check_escalation(
     sb: Any = Depends(get_supabase),
     current: dict = Depends(get_current_user),
 ):
     """Auto-escalate grievances that have breached SLA deadlines.
-    Level 0â†’1 at SLA breach, 1â†’2 at 2Ã— SLA, 2â†’3 at 3Ã— SLA."""
+    Level 0Ã¢â€ â€™1 at SLA breach, 1Ã¢â€ â€™2 at 2Ãƒâ€” SLA, 2Ã¢â€ â€™3 at 3Ãƒâ€” SLA."""
     if current["role"] == "citizen":
         raise HTTPException(status_code=403, detail="Forbidden")
 
@@ -556,7 +556,7 @@ def check_escalation(
                 sb.table("ticket_logs").insert({
                     "grievance_id": g["id"],
                     "action": f"auto_escalated_level_{new_level}",
-                    "note": f"Auto-escalated: SLA breached by {round(hours_past_sla)}h. Level {current_level}â†’{new_level}.",
+                    "note": f"Auto-escalated: SLA breached by {round(hours_past_sla)}h. Level {current_level}Ã¢â€ â€™{new_level}.",
                 }).execute()
             except Exception as exc:
                 logger.warning("Failed to log escalation for %s: %s", g["id"], exc)

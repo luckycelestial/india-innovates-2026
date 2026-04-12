@@ -1,5 +1,5 @@
-"""
-WhatsApp Bot — Helper utilities (extracted from whatsapp.py)
+﻿"""
+WhatsApp Bot â€” Helper utilities (extracted from whatsapp.py)
 """
 import os
 import re
@@ -17,7 +17,7 @@ import google.generativeai as genai
 
 from app.config import settings
 from app.db.database import get_supabase
-from app.utils.ai import CATEGORIES, detect_language, classify_with_gemini, configure_gemini
+from app.utils.ai import CATEGORIES, detect_language, classify_with_groq, configure_gemini
 
 try:
     from twilio.rest import Client as TwilioClient
@@ -32,7 +32,7 @@ except Exception:
 logger = logging.getLogger(__name__)
 
 
-# ── Response helpers ──────────────────────────────────────────
+# â”€â”€ Response helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def priority_emoji(p: str) -> str:
     return {"critical": "\U0001f534", "high": "\U0001f7e0", "medium": "\U0001f7e1", "low": "\U0001f7e2"}.get(p, "\U0001f7e1")
@@ -46,7 +46,7 @@ def voice_xml_response(resp: VoiceResponse) -> Response:
     return Response(content=str(resp), media_type="text/xml; charset=utf-8")
 
 
-# ── Twilio validation ────────────────────────────────────────
+# â”€â”€ Twilio validation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def is_valid_twilio_signature(request, signature: str, params: dict) -> bool:
     if not settings.TWILIO_AUTH_TOKEN or not RequestValidator:
@@ -61,7 +61,7 @@ def is_valid_twilio_signature(request, signature: str, params: dict) -> bool:
     return False
 
 
-# ── User management ──────────────────────────────────────────
+# â”€â”€ User management â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def get_or_create_user(phone: str, sb) -> str:
     clean_phone = phone.replace("whatsapp:", "")
@@ -98,17 +98,17 @@ def check_registration_and_get_user(phone: str, text: str, sb, resp):
         }).execute()
 
         resp.message(
-            f"✅ *Successfully Registered!*\n\n"
-            f"👤 Name: {fake_name}\n"
-            f"🏠 Address: {fake_address}\n"
-            f"🪪 Aadhaar: XXXX XXXX {fake_aadhar[-4:]}\n\n"
+            f"âœ… *Successfully Registered!*\n\n"
+            f"ðŸ‘¤ Name: {fake_name}\n"
+            f"ðŸ  Address: {fake_address}\n"
+            f"ðŸªª Aadhaar: XXXX XXXX {fake_aadhar[-4:]}\n\n"
             f"You can now describe your problem. Please include what the issue is and the exact location."
         )
         return None, None
 
     toy_aadhar = "XXXX XXXX " + str(secrets.randbelow(9000) + 1000)
     resp.message(
-        f"👋 Welcome to PRAJA!\n\n"
+        f"ðŸ‘‹ Welcome to PRAJA!\n\n"
         f"To ensure accountability, please link your Aadhaar.\n"
         f"Linked aadhaar : {toy_aadhar}\n\n"
         f"Reply *YES* to register with PRAJA on this number. Only then you can file a complaint."
@@ -116,7 +116,7 @@ def check_registration_and_get_user(phone: str, text: str, sb, resp):
     return None, None
 
 
-# ── Transcription ─────────────────────────────────────────────
+# â”€â”€ Transcription â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def download_and_transcribe(media_url: str) -> dict:
     """Download a Twilio voice note and return normalized text with detected source language."""
@@ -241,7 +241,7 @@ def download_and_transcribe(media_url: str) -> dict:
         return {"text": f"[DEBUG] Outer Error: {str(e)}", "language": "English"}
 
 
-# ── Complaint helpers ─────────────────────────────────────────
+# â”€â”€ Complaint helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def needs_followup_details(text: str) -> bool:
     """Return True when complaint text likely misses exact location/ward details."""
@@ -274,7 +274,7 @@ def followup_prompt(language_name: str) -> str:
 def create_grievance_from_text(phone_number: str, complaint_text: str) -> dict:
     sb = get_supabase()
     user_id = get_or_create_user(phone_number, sb)
-    classification = classify_with_gemini(complaint_text)
+    classification = classify_with_groq(complaint_text)
     tracking_id = f"PRJ-{datetime.now(timezone.utc).strftime('%y%m%d')}-{secrets.token_hex(3).upper()}"
     sb.table("grievances").insert({
         "tracking_id": tracking_id,

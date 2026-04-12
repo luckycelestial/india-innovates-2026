@@ -1,4 +1,4 @@
-﻿import re
+import re
 import json
 import httpx
 from functools import lru_cache
@@ -218,129 +218,66 @@ import os
 import httpx
 from app.config import settings
 
-def agentic_chat_with_groq(history: list, user_name: str = "Citizen") -> dict:
-    if not settings.GROQ_API_KEY:
-        return {"type": "question", "text": "Groq AI configuration is missing. Please contact administrator."}
-        
-    prompt = f"""You are PRAJA Bot, an official Voice Assistant for Indian Citizens to register grievances.
-The citizen's name is {user_name}.
-Your goal is to collect enough information to file a complete ticket via VOICE CONVERSATION.
-
-Required Info:
-1. Core Issue / Complaint (What is the problem?)
-2. Exact Location / Landmark (Where is it? -> Must be a SPECIFIC area, street name, ward, or public landmark).
-
-Instructions:
-- Keep your responses VERY SHORT and CONVERSATIONAL (Max 15-20 words).
-- If information is missing, ask for it politely.
-- If the user provides a vague location, ask for a specific landmark or street.
-- Once you have all details, respond with ONLY a valid JSON block.
-
-JSON FORMAT:
-  {{
-    "status": "complete",
-    "data": {{
-      "category": "<Water Supply|Roads|Electricity|Sanitation|Drainage|Parks|Health|Education|General>",
-      "priority": "<low|medium|high|critical>",
-      "title": "<Short English title>",
-      "sentiment": "<negative|neutral|positive>",
-      "location": "<Extracted location>",
-      "clean_description": "<Final summary of the issue>"
-    }}
-  }}
-"""
-    try:
-        messages = [{"role": "system", "content": prompt}]
-        for msg in history:
-            messages.append({"role": msg["role"], "content": msg["content"]})
-            
-        groq_url = "https://api.groq.com/openai/v1/chat/completions"
-        headers = {"Authorization": f"Bearer {settings.GROQ_API_KEY}", "Content-Type": "application/json"}
-        payload = {
-            "model": "llama-3.3-70b-versatile",
-            "messages": messages,
-            "temperature": 0.2,
-            "max_tokens": 350
-        }
-        
-        with httpx.Client(timeout=10) as client:
-            res = client.post(groq_url, headers=headers, json=payload)
-            res.raise_for_status()
-            content = res.json()["choices"][0]["message"]["content"].strip()
-            
-        if "{" in content and "category" in content:
-            raw = re.sub(r"^`json\s*|^`\s*|`$", "", content, flags=re.MULTILINE).strip()
-            try:
-                data = json.loads(raw)
-                return {"type": "complete", "data": data.get("data", data)}
-            except Exception:
-                pass
-        return {"type": "question", "text": content}
-    except Exception as e:
-        return {"type": "question", "text": f"Error connecting to fast AI. Try again. {str(e)}"}
-import json
-import re
-import os
-import httpx
-from app.config import settings
 
 def agentic_chat_with_groq(history: list, user_name: str = "Citizen") -> dict:
-    if not settings.GROQ_API_KEY:
-        return {"type": "question", "text": "Groq AI configuration is missing. Please contact administrator."}
-        
-    prompt = f"""You are PRAJA Bot, an official Voice Assistant for Indian Citizens to register grievances.
-The citizen's name is {user_name}.
-Your goal is to collect enough information to file a complete ticket via VOICE CONVERSATION.
+    """
+    Uses Llama-3.3-70b-versatile to act as the Praja Intake Agent.
+    history is a list of {'role': 'user'|'model', 'parts': [{'text': ...}]}
+    """
+    import httpx
+    import json
+    from app.config import settings
 
-Required Info:
-1. Core Issue / Complaint (What is the problem?)
-2. Exact Location / Landmark (Where is it? -> Must be a SPECIFIC area, street name, ward, or public landmark).
+    groq_api_key = settings.GROQ_API_KEY
+    if not groq_api_key:
+        return {"type": "question", "text": "Groq API key not configured."}
 
-Instructions:
-- Keep your responses VERY SHORT and CONVERSATIONAL (Max 15-20 words).
-- If information is missing, ask for it politely.
-- If the user provides a vague location, ask for a specific landmark or street.
-- Once you have all details, respond with ONLY a valid JSON block.
+    system_prompt = f"""
+    You are the Praja Municipal Complaint Agent. You speak ONLY as an assistant, never simulating the user.
+    Your goal is to extract:
+    1. Issue Description
+    2. Location (City, Ward, or Address)
 
-JSON FORMAT:
-  {{
-    "status": "complete",
-    "data": {{
-      "category": "<Water Supply|Roads|Electricity|Sanitation|Drainage|Parks|Health|Education|General>",
-      "priority": "<low|medium|high|critical>",
-      "title": "<Short English title>",
-      "sentiment": "<negative|neutral|positive>",
-      "location": "<Extracted location>",
-      "clean_description": "<Final summary of the issue>"
-    }}
-  }}
-"""
+    Current conversational state:
+    - Only ask for whatever is missing.
+    - Keep responses VERY short (1-2 sentences).
+    - If all required details are clear, respond exactly in this JSON format ONLY (NO OTHER TEXT):
+    {{"type": "complete", "summary": "Brief summary of issue", "category": "Category Name", "location": "Extracted Location"}}
+
+    If details are missing, respond in this JSON format ONLY:
+    {{"type": "question", "text": "Your question to the citizen here."}}
+    """
+
+    messages = [{"role": "system", "content": system_prompt}]
+    
+    for msg in history:
+        role = "user" if msg["role"] == "user" else "assistant"
+        text = msg.get("content", msg.get("parts", [{"text": ""}])[0]["text"])
+        messages.append({"role": role, "content": text})
+    
+    headers = {
+        "Authorization": f"Bearer {groq_api_key}",
+        "Content-Type": "application/json"
+    }
+    
+    payload = {
+        "model": "llama-3.3-70b-versatile",
+        "messages": messages,
+        "temperature": 0.1,
+        "response_format": {"type": "json_object"}
+    }
+    
     try:
-        messages = [{"role": "system", "content": prompt}]
-        for msg in history:
-            messages.append({"role": msg["role"], "content": msg["content"]})
-            
-        groq_url = "https://api.groq.com/openai/v1/chat/completions"
-        headers = {"Authorization": f"Bearer {settings.GROQ_API_KEY}", "Content-Type": "application/json"}
-        payload = {
-            "model": "llama-3.3-70b-versatile",
-            "messages": messages,
-            "temperature": 0.2,
-            "max_tokens": 350
-        }
+        resp = httpx.post("https://api.groq.com/openai/v1/chat/completions", headers=headers, json=payload, timeout=8.0)
+        resp.raise_for_status()
+        res_json = resp.json()
+        content = res_json["choices"][0]["message"]["content"]
         
-        with httpx.Client(timeout=10) as client:
-            res = client.post(groq_url, headers=headers, json=payload)
-            res.raise_for_status()
-            content = res.json()["choices"][0]["message"]["content"].strip()
-            
-        if "{" in content and "category" in content:
-            raw = re.sub(r"^`json\s*|^`\s*|`$", "", content, flags=re.MULTILINE).strip()
-            try:
-                data = json.loads(raw)
-                return {"type": "complete", "data": data.get("data", data)}
-            except Exception:
-                pass
-        return {"type": "question", "text": content}
+        # Ensure we decode JSON 
+        return json.loads(content)
     except Exception as e:
-        return {"type": "question", "text": f"Error connecting to fast AI. Try again. {str(e)}"}
+        import traceback
+        traceback.print_exc()
+        return {"type": "question", "text": "I'm having trouble understanding. Could you please repeat your issue and location?"}
+
+
