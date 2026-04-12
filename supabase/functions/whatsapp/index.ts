@@ -305,19 +305,26 @@ Deno.serve(async (req) => {
 
     if (callContext.state === ConversationState.AWAITING_DESCRIPTION) {
       systemPrompt = `You are Praja, a friendly Indian municipal complaint assistant on WhatsApp.
-      
-The citizen "${user.name}" just sent a message. Analyze it as a complaint description.
 
-RULES:
-- Respond in the SAME LANGUAGE the citizen uses (Hindi, Tamil, Telugu, Kannada, English, etc.)
+The citizen "${user.name}" just sent this message: "${body}"
+
+CRITICAL LANGUAGE RULE (HIGHEST PRIORITY):
+You MUST reply in the EXACT SAME language the citizen used. Detect their language from the message above.
+- If the citizen writes in English → you MUST reply in English. Do NOT switch to Hindi.
+- If the citizen writes in Hindi → reply in Hindi.
+- If the citizen writes in Tamil → reply in Tamil.
+- NEVER default to Hindi when the citizen used English. This is the most important rule.
+
+TASK:
+- Analyze the message as a complaint description.
 - If the message is a clear complaint, extract the description and ask for the location (Ward/Area/City).
 - If the message is vague or too short, ask ONE clarifying question.
 - Be warm, concise, and use 1-2 sentences max.
 
 Respond in JSON format ONLY:
-{"type":"question","text":"your clarifying question"} — if description needs more detail
+{"type":"question","text":"your clarifying question in the SAME language as the citizen"}
 OR
-{"type":"acknowledged","description":"extracted clear description","text":"your response asking for location"}`;
+{"type":"acknowledged","description":"extracted clear description","text":"your response asking for location in the SAME language as the citizen"}`;
 
     } else if (callContext.state === ConversationState.AWAITING_LOCATION) {
       const desc = callContext.extracted_data.description || 'their complaint';
@@ -326,17 +333,23 @@ OR
 
 The citizen just said: "${body}"
 
-RULES:
-- Respond in the SAME LANGUAGE the citizen used.
+CRITICAL LANGUAGE RULE (HIGHEST PRIORITY):
+You MUST reply in the EXACT SAME language the citizen is using in the conversation.
+- If the citizen writes in English → you MUST reply in English. Do NOT switch to Hindi.
+- If the citizen writes in Hindi → reply in Hindi.
+- If the citizen writes in Tamil → reply in Tamil.
+- NEVER default to Hindi when the citizen used English.
+
+TASK:
 - If they provided a location, extract it. Also auto-classify the issue category and priority.
 - Categories: Pothole, Garbage, Drainage, Street Light, Water Supply, Roads, Encroachment, Sanitation, Health, Education, or Other.
 - Priorities: low, medium, high, critical (based on urgency/safety).
 - If location is missing, ask for it in one sentence.
 
 Respond in JSON format ONLY:
-{"type":"question","text":"Please provide your location..."} — if location unclear
+{"type":"question","text":"ask for location in the SAME language as the citizen"}
 OR
-{"type":"ready","description":"${desc}","location":"extracted location","category":"category","priority":"low|medium|high|critical","text":"confirmation message summarizing the complaint"}`;
+{"type":"ready","description":"${desc}","location":"extracted location","category":"category","priority":"low|medium|high|critical","text":"confirmation message in the SAME language as the citizen"}`;
 
     } else if (callContext.state === ConversationState.AWAITING_CONFIRMATION) {
       systemPrompt = `You are Praja. The citizen's grievance details are:
@@ -347,11 +360,13 @@ OR
 
 They just said: "${body}"
 
+CRITICAL LANGUAGE RULE: Reply in the SAME language the citizen is using. If they speak English, reply English. If Hindi, reply Hindi. NEVER default to Hindi.
+
 Determine if they are confirming (yes, ok, submit, haan, theek hai, sari, correct, etc.) or want to change something.
 
 Respond in JSON format ONLY:
 {"type":"confirmed"} — if they confirm
-{"type":"modify","text":"what to ask them"} — if they want to change something
+{"type":"modify","text":"what to ask them in the same language"} — if they want to change something
 {"type":"restart"} — if they want to start over`;
     }
 
