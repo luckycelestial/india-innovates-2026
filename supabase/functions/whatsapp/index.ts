@@ -375,23 +375,36 @@ Respond in JSON format ONLY:
       replyText = "I'm here to help! Please describe the issue you'd like to report.";
       callContext.state = ConversationState.AWAITING_DESCRIPTION;
     } else {
-      const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
-        method: "POST",
-        headers: {
-          "Authorization": `Bearer ${groqApiKey}`,
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
-          messages: [
-            { role: "system", content: systemPrompt },
-            ...callContext.chat_history
-          ],
-          temperature: 0.2,
-          response_format: { type: "json_object" },
-          max_tokens: 500
-        })
-      });
+      // Groq API call with 10s timeout (Twilio needs response within 15s)
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 10000);
+
+      let groqRes: Response;
+      try {
+        groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+          method: "POST",
+          headers: {
+            "Authorization": `Bearer ${groqApiKey}`,
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            model: "llama-3.3-70b-versatile",
+            messages: [
+              { role: "system", content: systemPrompt },
+              ...callContext.chat_history
+            ],
+            temperature: 0.2,
+            response_format: { type: "json_object" },
+            max_tokens: 500
+          }),
+          signal: controller.signal
+        });
+      } catch (fetchErr: any) {
+        clearTimeout(timeout);
+        console.error("Groq fetch error (timeout?):", fetchErr.message);
+        return buildTwilioResponse("Sorry, the AI service is slow right now. Please try again in a moment.");
+      }
+      clearTimeout(timeout);
 
       if (!groqRes.ok) {
         const errText = await groqRes.text();
