@@ -2,7 +2,7 @@
 import { useEffect, useState, useRef } from 'react'
 import { MapContainer, TileLayer, Circle, Popup, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
-import api from '../services/api'
+import { supabase } from '../services/supabase'
 
 // Delhi ward data — real coordinates of major localities
 const DELHI_WARDS = [
@@ -75,13 +75,16 @@ export default function SentinelHeatmap() {
     setLoading(true)
     setError(null)
     try {
-      // Fetch stats for totals
       let totalOpen = 55, criticalOpen = 10, slaViolations = 5
       try {
-        const { data: stats } = await api.get('/officers/performance')
-        totalOpen = stats.total_open ?? 55
-        criticalOpen = stats.total_escalated ?? 10
-        slaViolations = stats.sla_breached ?? 0
+        const { data: stats, error: funcErr } = await supabase.functions.invoke('dev-dummy-endpoint');
+        if (funcErr) throw funcErr;
+        
+        if (stats) {
+          totalOpen = stats.total_open ?? 55
+          criticalOpen = stats.total_escalated ?? 10
+          slaViolations = stats.sla_breached ?? 0
+        }
         setStats({ totalOpen, criticalOpen, slaViolations })
       } catch (e) {
         console.error("Stats fetch failed, using defaults", e)

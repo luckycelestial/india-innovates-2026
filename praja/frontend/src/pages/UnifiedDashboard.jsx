@@ -120,8 +120,8 @@ export default function UnifiedDashboard() {
       return;
     }
     let alive = true;
-    api.get('/sentinel/alerts')
-      .then(r => { if (alive && Array.isArray(r.data)) setNotifications(r.data.slice(0, 5)); })
+    supabase.functions.invoke('sentinel', { query: { action: 'alerts' } })
+      .then(({data, error}) => { if (!error && alive && Array.isArray(data)) setNotifications(data.slice(0, 5)); })
       .catch(() => {});
     return () => { alive = false; };
   }, [showAlerts]);

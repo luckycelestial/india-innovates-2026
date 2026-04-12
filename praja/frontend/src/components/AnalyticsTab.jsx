@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import api from '../services/api'
+import { supabase } from '../services/supabase'
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend,
@@ -53,11 +53,10 @@ export default function AnalyticsTab() {
     let alive = true
     async function load() {
       try {
-        const resp = await api.get('/officers/tickets?limit=1000')
-        if (!alive) return
-        const rows = resp.data || []
-        
-        const now = new Date()
+          const { data, error } = await supabase.from('grievances').select('*').limit(1000)
+          if (error) throw error
+          if (!alive) return
+          const rows = data || []
         const resolved = rows.filter(r => r.status === 'resolved')
         const openTickets = rows.filter(r => !['resolved', 'closed'].includes(r.status))
         const escalated = rows.filter(r => r.status === 'escalated')

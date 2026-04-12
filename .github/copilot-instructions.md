@@ -43,8 +43,8 @@ India Innovates 2026 hackathon entry.
 | Layer | Technology | Free Plan |
 |---|---|---|
 | Backend | FastAPI + Python 3.14 | Self-hosted |
-| Database | Supabase (project: `bbakxtofuxkxzfbexlll`, region: ap-south-1) | Free tier |
-| AI / LLM | Groq API â€” `llama-3.3-70b-versatile` | Free (14,400 req/day) |
+| Database | Supabase (project: `grcaskbmwpvxnmrdkqte`, region: ap-south-1) | Free tier |
+| AI / LLM | Groq API — `llama-3.3-70b-versatile` | Free (14,400 req/day) |
 | Frontend | React 18 + Vite | Self-hosted |
 | Auth | Custom Token (bcrypt) | Self-hosted |
 | WhatsApp | Twilio Sandbox | Free (demo/testing only) |
@@ -54,5 +54,5 @@ India Innovates 2026 hackathon entry.
 
 ## Supabase Project
 
-- Project ID: `bbakxtofuxkxzfbexlll`
-- URL: `https://bbakxtofuxkxzfbexlll.supabase.co`
+- Project ID: `grcaskbmwpvxnmrdkqte`
+- URL: `https://grcaskbmwpvxnmrdkqte.supabase.co`

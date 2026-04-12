@@ -1,8 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Button from '../../components/ui/Button';
 import { Card, Badge } from '../../components/ui/Card';
-import { useFetch, useMutation } from '../../hooks/useFetch';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
+import { supabase } from '../../services/supabase';
 
 const STATUS_LABEL = {
   open: 'Open', assigned: 'Assigned', in_progress: 'In Progress',
@@ -23,8 +23,24 @@ export default function ManageTicketsTab({ onToast }) {
   const [showPerf, setShowPerf] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
 
-  const { data: rawTickets, loading, execute: reloadTickets } =
-    useFetch(`/officers/tickets${statusFilter ? `?status=${statusFilter}&limit=100` : '?limit=100'}`);
+  const [rawTickets, setRawTickets] = useState([]);
+  const [loading, setLoading] = useState(false);
+
+  const reloadTickets = useCallback(async () => {
+    setLoading(true);
+    try {
+      let query = supabase.from('grievances').select('*').order('created_at', { ascending: false }).limit(100);
+      if (statusFilter) query = query.eq('status', statusFilter);
+      const { data, error } = await query;
+      if (error) throw error;
+      setRawTickets(data || []);
+    } catch (err) {
+      onToast(`Failed to load tickets: ${err.message}`, 'error');
+    } finally {
+      setLoading(false);
+    }
+  }, [statusFilter, onToast]);
+
   const tickets = useMemo(() => {
     const list = Array.isArray(rawTickets) ? [...rawTickets] : [];
     return list.sort((a, b) => {
@@ -34,14 +50,35 @@ export default function ManageTicketsTab({ onToast }) {
     });
   }, [rawTickets]);
 
-  const { data: perf, execute: loadPerf } = useFetch('/officers/performance', {}, false);
-  const { mutate: checkEscalation, loading: escalating } = useMutation('post');
+  const [perf, setPerf] = useState(null);
+  const [escalating, setEscalating] = useState(false);
+
+  const loadPerf = useCallback(async () => {
+    try {
+      const res = await supabase.functions.invoke('dev-dummy-endpoint/performance');
+      setPerf(res.data);
+    } catch(err) {}
+  }, []);
+
+  const checkEscalationAuto = async () => {
+    setEscalating(true);
+    let count = 0;
+    try {
+      const res = await supabase.from('grievances').update({status:'escalated'}).eq('status','open').lt('created_at', new Date(Date.now() - 3*24*60*60*1000).toISOString()).select('id');
+      count = res.data?.length || 0;
+    } catch(err) {
+      console.log(err);
+    } finally {
+      setEscalating(false);
+    }
+    return { escalated_count: count };
+  };
 
   useEffect(() => { reloadTickets(); }, [statusFilter, reloadTickets]);
 
   const runAutoEscalation = async () => {
     try {
-      const data = await checkEscalation('/grievances/check-escalation');
+      const data = await checkEscalationAuto();
       onToast(`🔺 Auto-escalated ${data?.escalated_count || 0} ticket(s)`, data?.escalated_count > 0 ? 'warning' : 'success');
       reloadTickets();
     } catch (err) {

@@ -2,7 +2,7 @@
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { Card } from '../../components/ui/Card';
-import { useMutation } from '../../hooks/useFetch';
+import { supabase } from '../../services/supabase';
 
 
 export default function SubmitTab({ onToast }) {
@@ -26,17 +26,10 @@ export default function SubmitTab({ onToast }) {
     const timer = setTimeout(async () => {
       setIsEvaluating(true);
       try {
-        const userStr = localStorage.getItem("praja_user"); const user = userStr ? JSON.parse(userStr) : null;
-        const res = await fetch((import.meta.env.VITE_API_URL || 'https://prajavox-backend.vercel.app') + '/api/grievances/photo-need', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            ...(user ? { "x-user-id": user.id, "x-user-role": user.role } : {}),
-          },
-          body: JSON.stringify({ title, description, ai_category: '' })
+        const { data, error } = await supabase.functions.invoke('grievance-ai/photo-need', {
+          body: { title, description }
         });
-        if (res.ok) {
-          const data = await res.json();
+        if (data && data.photo_need) {
           setPhotoReq({ need: data.photo_need, prompt: data.prompt_to_user });
         }
       } catch (err) {
@@ -91,19 +84,13 @@ export default function SubmitTab({ onToast }) {
       const formData = new FormData();
       formData.append('audio', blob, 'recording.webm');
       
-      const userStr = localStorage.getItem("praja_user"); const user = userStr ? JSON.parse(userStr) : null;
-      const res = await fetch((import.meta.env.VITE_API_URL || 'https://prajavox-backend.vercel.app') + '/api/mic/transcribe', {
-        method: 'POST',
-        headers: {
-          ...(user ? { "x-user-id": user.id, "x-user-role": user.role } : {}),
-        },
-        body: formData,
+      const { data, error } = await supabase.functions.invoke('transcribe', {
+        body: formData
       });
       
-      if (!res.ok) throw new Error('Transcription failed');
+      if (error) throw new Error('Transcription failed: ' + error.message);
       
-      const data = await res.json();
-      if (data.english_text) {
+      if (data && data.english_text) {
         setDesc(data.original_text + '\n\n[English]: ' + data.english_text);
         if (!title) setTitle('Voice Complaint');
         onToast('Audio transcribed successfully!', 'success');
@@ -117,7 +104,9 @@ export default function SubmitTab({ onToast }) {
     }
   };
 
-  const { mutate: submitGrievance, loading, error } = useMutation('post');
+  const navigate = () => {}; // remove if unused
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
 
   const fileToDataUrl = (file) =>
     new Promise((resolve, reject) => {
@@ -195,30 +184,21 @@ export default function SubmitTab({ onToast }) {
       if (title.length > 5 || description.length > 5) {
         setIsVerifyingPhoto(true);
         try {
-          const userStr = localStorage.getItem("praja_user"); const user = userStr ? JSON.parse(userStr) : null;
-          const res = await fetch((import.meta.env.VITE_API_URL || 'https://prajavox-backend.vercel.app') + '/api/grievances/verify-photo', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              ...(user ? { "x-user-id": user.id, "x-user-role": user.role } : {}),
-            },
-            body: JSON.stringify({ title, description, photo_url: String(dataUrl) })
+          const { data, error } = await supabase.functions.invoke('grievance-ai', {
+            body: { action: 'verify-photo', title, description, photo_base64: String(dataUrl) }
           });
-          if (res.ok) {
-            const data = await res.json();
-            if (data.matches === false) {
-              onToast(`Photo rejected: ${data.reason}`, 'error');
-              setPhotoDataUrl('');
-              setPhotoFileName('');
-              setPhotoMetadata(null);
-              if (photoInputRef.current) photoInputRef.current.value = '';
+          if (data && data.matches === false) {
+            onToast(`Photo rejected: ${data.reason}`, 'error');
+            setPhotoDataUrl('');
+            setPhotoFileName('');
+            setPhotoMetadata(null);
+            if (photoInputRef.current) photoInputRef.current.value = '';
+          } else if (data) {
+            onToast('✅ Photo evidence verified!', 'success');
+            if (data.metadata && data.metadata.latitude) {
+              setPhotoMetadata(data.metadata);
             } else {
-              onToast('âœ… Photo evidence verified!', 'success');
-              if (data.metadata && data.metadata.latitude) {
-                setPhotoMetadata(data.metadata);
-              } else {
-                setPhotoMetadata(null);
-              }
+              setPhotoMetadata(null);
             }
           }
         } catch (err) {
@@ -251,6 +231,7 @@ export default function SubmitTab({ onToast }) {
       return;
     }
     setSubmitted(null);
+    setLoading(true);
     try {
       const body = { 
         title, 
@@ -258,7 +239,14 @@ export default function SubmitTab({ onToast }) {
         user_location_text: userLocation // Added stated location
       };
       if (photoDataUrl) body.photo_url = photoDataUrl;
-      const data = await submitGrievance('/grievances/submit', body);
+      
+      const { data, error: submitError } = await supabase.functions.invoke('grievance-submit', {
+        body,
+        headers: { 'x-user-id': JSON.parse(localStorage.getItem('praja_user'))?.id }
+      });
+      
+      if (submitError) throw new Error(submitError.message);
+      
       setSubmitted(data);
       setTitle('');
       setDesc('');
@@ -266,11 +254,14 @@ export default function SubmitTab({ onToast }) {
       setPhotoDataUrl('');
       setPhotoFileName('');
       if (photoInputRef.current) photoInputRef.current.value = '';
-      onToast(`âœ… Submitted â€” ID: ${data.tracking_id}`, 'success');
+      onToast(`✅ Submitted — ID: ${data.tracking_id}`, 'success');
     } catch (err) {
-      onToast(`âŒ ${err.message}`, 'error');
+      onToast(err.message || Object.values(err)[0] || 'Error submitting complaint.', 'error');
+    } finally {
+      setLoading(false);
     }
   };
+
 
   const PRIORITY_COLORS = {
     critical: 'var(--color-danger-text)',
