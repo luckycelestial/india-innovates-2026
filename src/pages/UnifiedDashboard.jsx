@@ -114,17 +114,32 @@ export default function UnifiedDashboard() {
     if (isMobile) setIsSidebarOpen(false); // Auto-close on strictly mobile
   };
 
-  // Load priority alerts silently
+  // Load priority alerts silently (must be sentinel *alerts* shape — not *topics* rows)
   useEffect(() => {
     if (!showAlerts) {
       setNotifications([]);
       return;
     }
+    const isAlertRow = (item) =>
+      item &&
+      typeof item === 'object' &&
+      (item.type === 'critical_grievance' || item.type === 'sla_breach' || item.type === 'escalated');
     let alive = true;
     supabase.functions.invoke('sentinel', { query: { action: 'alerts' } })
-      .then(({data, error}) => { if (!error && alive && Array.isArray(data)) setNotifications(data.slice(0, 5)); })
-      .catch(() => {});
-    return () => { alive = false; };
+      .then(({ data, error }) => {
+        if (error || !alive || !Array.isArray(data)) {
+          if (alive) setNotifications([]);
+          return;
+        }
+        const alertsOnly = data.filter(isAlertRow);
+        setNotifications(alertsOnly.slice(0, 5));
+      })
+      .catch(() => {
+        if (alive) setNotifications([]);
+      });
+    return () => {
+      alive = false;
+    };
   }, [showAlerts]);
 
   // Close notification popover when clicking outside

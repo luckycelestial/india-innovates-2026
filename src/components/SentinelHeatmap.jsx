@@ -1,8 +1,9 @@
 // SentinelHeatmap.jsx — Ward-level grievance density map using Leaflet
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useState } from 'react'
 import { MapContainer, TileLayer, Circle, Popup, useMap } from 'react-leaflet'
 import 'leaflet/dist/leaflet.css'
-import { supabase } from '../services/supabase'
+import { useAuth } from '../context/AuthContext'
+import { listGrievances } from '../services/grievancesApi'
 
 // Delhi ward data — real coordinates of major localities
 const DELHI_WARDS = [
@@ -61,7 +62,33 @@ function MapAutoFit({ wards }) {
   return null
 }
 
+function countOpenGrievances(rows) {
+  const closed = new Set(['resolved', 'closed'])
+  return (rows || []).filter((r) => r?.status && !closed.has(String(r.status).toLowerCase())).length
+}
+
+function countCriticalOpen(rows) {
+  const closed = new Set(['resolved', 'closed'])
+  return (rows || []).filter(
+    (r) =>
+      String(r?.priority || '').toLowerCase() === 'critical' &&
+      r?.status &&
+      !closed.has(String(r.status).toLowerCase())
+  ).length
+}
+
+function countSlaBreachedOpen(rows) {
+  const closed = new Set(['resolved', 'closed'])
+  const now = Date.now()
+  return (rows || []).filter((r) => {
+    if (!r?.sla_deadline || !r?.status) return false
+    if (closed.has(String(r.status).toLowerCase())) return false
+    return new Date(r.sla_deadline).getTime() < now
+  }).length
+}
+
 export default function SentinelHeatmap() {
+  const { user } = useAuth()
   const [wardData, setWardData] = useState([])
   const [loading, setLoading] = useState(true)
   const [stats, setStats] = useState(null)
@@ -69,25 +96,24 @@ export default function SentinelHeatmap() {
 
   useEffect(() => {
     loadHeatmapData()
-  }, [])
+  }, [user])
 
   const loadHeatmapData = async () => {
     setLoading(true)
     setError(null)
     try {
-      let totalOpen = 55, criticalOpen = 10, slaViolations = 5
+      let totalOpen = 0
+      let criticalOpen = 0
+      let slaViolations = 0
       try {
-        const { data: stats, error: funcErr } = await supabase.functions.invoke('dev-dummy-endpoint');
-        if (funcErr) throw funcErr;
-        
-        if (stats) {
-          totalOpen = stats.total_open ?? 55
-          criticalOpen = stats.total_escalated ?? 10
-          slaViolations = stats.sla_breached ?? 0
-        }
+        const rows = await listGrievances(user, { limit: 2000 })
+        totalOpen = countOpenGrievances(rows)
+        criticalOpen = countCriticalOpen(rows)
+        slaViolations = countSlaBreachedOpen(rows)
         setStats({ totalOpen, criticalOpen, slaViolations })
       } catch (e) {
-        console.error("Stats fetch failed, using defaults", e)
+        console.error('Grievance stats fetch failed', e)
+        setStats({ totalOpen: 0, criticalOpen: 0, slaViolations: 0 })
       }
 
       const grievanceCounts = distributeGrievances(totalOpen, criticalOpen)
@@ -207,7 +233,7 @@ export default function SentinelHeatmap() {
 
       {/* Ward list */}
       <div style={{ marginTop: '16px', display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(180px, 1fr))', gap: '8px' }}>
-        {wardData.sort((a, b) => b.count - a.count).map(ward => (
+        {[...wardData].sort((a, b) => b.count - a.count).map(ward => (
           <div key={ward.id} style={{ background: 'var(--card)', border: `1px solid ${ward.count >= 8 ? '#F5C6CB' : 'var(--border)'}`, borderRadius: '9px', padding: '10px 14px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <div>
               <div style={{ fontSize: '0.82rem', fontWeight: 600 }}>{ward.name}</div>

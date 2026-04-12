@@ -3,6 +3,7 @@ import Button from '../../components/ui/Button';
 import { Card, Badge } from '../../components/ui/Card';
 import { useAuth } from '../../context/AuthContext';
 import { supabase } from '../../services/supabase';
+import { listGrievances } from '../../services/grievancesApi';
 
 const STATUS_LABEL = {
   open:        'Open',
@@ -35,20 +36,14 @@ export default function MyComplaintsTab() {
     const fetchData = async () => {
       setLoading(true);
       try {
-        let q = supabase.from('grievances').select('*').order('created_at', { ascending: false });
-        if (user && user.role === 'citizen' && user.id !== '00000000-0000-0000-0000-000000000000') {
-          q = q.eq('citizen_id', user.id);
-        }
-        
-        const [ticketsRes, schemesRes] = await Promise.all([
-          q,
+        const [ticketsData, schemesRes] = await Promise.all([
+          listGrievances(user, { limit: 500 }),
           supabase.from('schemes').select('*')
         ]);
 
-        if (ticketsRes.error) throw ticketsRes.error;
         if (schemesRes.error) throw schemesRes.error;
 
-        setTickets(ticketsRes.data || []);
+        setTickets(ticketsData || []);
         setSchemes(schemesRes.data || []);
       } catch (err) {
         console.error('Supabase fetch error:', err);

@@ -104,7 +104,6 @@ export default function SubmitTab({ onToast }) {
     }
   };
 
-  const navigate = () => {}; // remove if unused
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
 
@@ -240,9 +239,19 @@ export default function SubmitTab({ onToast }) {
       };
       if (photoDataUrl) body.photo_url = photoDataUrl;
       
+      const submitHeaders = {};
+      try {
+        const raw = localStorage.getItem('praja_user');
+        if (raw) {
+          const u = JSON.parse(raw);
+          if (u?.id) submitHeaders['x-user-id'] = String(u.id);
+        }
+      } catch {
+        /* ignore bad localStorage */
+      }
       const { data, error: submitError } = await supabase.functions.invoke('grievance-submit', {
         body,
-        headers: { 'x-user-id': JSON.parse(localStorage.getItem('praja_user'))?.id }
+        headers: submitHeaders,
       });
       
       if (submitError) throw new Error(submitError.message);

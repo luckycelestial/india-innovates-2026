@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
-import { supabase } from '../services/supabase'
+import { useAuth } from '../context/AuthContext'
+import { listGrievances } from '../services/grievancesApi'
 import {
   BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid,
   Tooltip, ResponsiveContainer, Cell, PieChart, Pie, Legend,
@@ -43,6 +44,7 @@ function KPICard({ label, value, sub, accent }) {
 }
 
 export default function AnalyticsTab() {
+  const { user } = useAuth()
   const [perf, setPerf]       = useState(null)
   const [trends, setTrends]   = useState([])
   const [resTimes, setRes]    = useState([])
@@ -53,10 +55,8 @@ export default function AnalyticsTab() {
     let alive = true
     async function load() {
       try {
-          const { data, error } = await supabase.from('grievances').select('*').limit(1000)
-          if (error) throw error
+          const rows = await listGrievances(user, { limit: 1000 })
           if (!alive) return
-          const rows = data || []
         const resolved = rows.filter(r => r.status === 'resolved')
         const openTickets = rows.filter(r => !['resolved', 'closed'].includes(r.status))
         const escalated = rows.filter(r => r.status === 'escalated')
@@ -142,14 +142,14 @@ export default function AnalyticsTab() {
         setRes(labels.map((bucket, i) => ({ bucket, count: counts[i] })))
 
       } catch (e) {
-        if (alive) setError(e.response?.data?.detail || 'Failed to fetch tickets')
+        if (alive) setError(e?.message || e?.response?.data?.detail || 'Failed to fetch tickets')
       } finally {
         if (alive) setLoading(false)
       }
     }
     load()
     return () => { alive = false }
-  }, [])
+  }, [user])
 
   if (loading) return <div className="an-loading" style={{ padding: '40px', textAlign: 'center' }}>Loading robust analytics...</div>
   if (error)   return <div className="an-error" style={{ color: 'var(--color-danger)', padding: '40px' }}>{error}</div>

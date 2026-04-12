@@ -3,6 +3,7 @@
    Official Civic Theme · India Innovates 2026
    ═══════════════════════════════════════════════════ */
 
+@import "tailwindcss";
 @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
 :root {
@@ -72,6 +73,17 @@
   --border-color:       #E2E8F0;
   --border-color-hover: #CBD5E1;
   --border-color-focus: var(--color-primary);
+
+  /* ── Text Colors ────────────────────────────────── */
+  --text-primary:   #0f172a;  /* Slate-900 */
+  --text-secondary: #475569;  /* Slate-600 */
+  --text-muted:     #94a3b8;  /* Slate-400 */
+  --text-inverse:   #ffffff;
+
+  /* ── Card / Surface Aliases ─────────────────────── */
+  --bg-card:             var(--bg-surface);
+  --border-color-card:   var(--border-color);
+
   /* ── Typography ───────────────────────────────── */
   --font-primary: 'Inter', system-ui, -apple-system, sans-serif;
   --font-sans:    'Inter', system-ui, -apple-system, sans-serif;

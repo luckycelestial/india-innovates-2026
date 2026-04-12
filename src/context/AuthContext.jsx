@@ -6,7 +6,7 @@ const AuthContext = createContext(null)
 const DEMO_USERS = {
   '234567890123': { id: '981cfd4e-dc40-4021-9c38-66c8262b8d9c', name: 'Ramesh Kumar',    role: 'citizen' },
   '111122223333': { id: 'da7dba2d-e50a-42d8-b188-9d67081cd25c', name: 'Lakshmi Devi',    role: 'sarpanch' },
-  '789012345678': { id: 'da7dba2d-e50a-42d8-b188-9d67081cd25c', name: 'Vikram Singh',    role: 'district_collector' },
+  '789012345678': { id: 'b2c3d4e5-f6a7-4890-ab12-cd34ef56gh78', name: 'Vikram Singh',    role: 'district_collector' },
   '901234567890': { id: 'd0ea6e52-ea43-4c35-a4fa-22b707976a39', name: 'Arjun Mehta',     role: 'mla' },
   '444455556666': { id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479', name: 'Rajendra Prasad', role: 'mp' },
 }

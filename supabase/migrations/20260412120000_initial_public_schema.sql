@@ -9,6 +9,8 @@
 -- ---------------------------------------------------------------------------
 CREATE TYPE public.ticket_status AS ENUM (
   'open',
+  'assigned',
+  'in_progress',
   'escalated',
   'resolved',
   'closed'
@@ -124,6 +126,10 @@ CREATE TABLE public.grievances (
   after_photo_url text,
   escalation_level integer DEFAULT 0,
   location text,
+  user_location_text text,
+  location_verification_status character varying DEFAULT 'pending'::character varying,
+  gps_latitude double precision,
+  gps_longitude double precision,
   CONSTRAINT grievances_pkey PRIMARY KEY (id),
   CONSTRAINT grievances_citizen_id_fkey FOREIGN KEY (citizen_id) REFERENCES public.users (id),
   CONSTRAINT grievances_officer_id_fkey FOREIGN KEY (officer_id) REFERENCES public.users (id),

@@ -30,6 +30,9 @@ Thumbs.db
 .windsurfrules
 .cursorrules
 
+# Generated / introspection
+schema.json
+
 # Misc
 cloudflared.exe
 *.exe

@@ -3,6 +3,8 @@ import Button from '../../components/ui/Button';
 import { Card, Badge } from '../../components/ui/Card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { supabase } from '../../services/supabase';
+import { listGrievances, runEscalationUpdate } from '../../services/grievancesApi';
+import { useAuth } from '../../context/AuthContext';
 
 const STATUS_LABEL = {
   open: 'Open', assigned: 'Assigned', in_progress: 'In Progress',
@@ -19,6 +21,7 @@ const STAT_ITEMS = [
 ];
 
 export default function ManageTicketsTab({ onToast }) {
+  const { user } = useAuth();
   const [statusFilter, setFilter] = useState('');
   const [showPerf, setShowPerf] = useState(false);
   const [selectedTicket, setSelectedTicket] = useState(null);
@@ -29,17 +32,17 @@ export default function ManageTicketsTab({ onToast }) {
   const reloadTickets = useCallback(async () => {
     setLoading(true);
     try {
-      let query = supabase.from('grievances').select('*').order('created_at', { ascending: false }).limit(100);
-      if (statusFilter) query = query.eq('status', statusFilter);
-      const { data, error } = await query;
-      if (error) throw error;
+      const data = await listGrievances(user, {
+        statusFilter,
+        limit: 100,
+      });
       setRawTickets(data || []);
     } catch (err) {
       onToast(`Failed to load tickets: ${err.message}`, 'error');
     } finally {
       setLoading(false);
     }
-  }, [statusFilter, onToast]);
+  }, [statusFilter, onToast, user]);
 
   const tickets = useMemo(() => {
     const list = Array.isArray(rawTickets) ? [...rawTickets] : [];
@@ -64,8 +67,8 @@ export default function ManageTicketsTab({ onToast }) {
     setEscalating(true);
     let count = 0;
     try {
-      const res = await supabase.from('grievances').update({status:'escalated'}).eq('status','open').lt('created_at', new Date(Date.now() - 3*24*60*60*1000).toISOString()).select('id');
-      count = res.data?.length || 0;
+      const rows = await runEscalationUpdate(user);
+      count = rows?.length || 0;
     } catch(err) {
       console.log(err);
     } finally {
