@@ -1,1 +1,0 @@
-﻿import urllib.parse; from twilio.twiml.messaging_response import MessagingResponse; resp = MessagingResponse(); resp.message('Processing voice...'); qs = urllib.parse.urlencode({'a':'1'}); resp.redirect('https://a.com/b?'+qs, method='POST'); print(str(resp))
