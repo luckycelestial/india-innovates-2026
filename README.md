@@ -30,12 +30,15 @@ PRAJA is a comprehensive Grievance Operating System designed to streamline commu
 - Supabase CLI (optional for local dev)
 
 ### Setup
-1. **Frontend**:
+1. **Installation**:
    ```bash
-   cd praja/frontend
    npm install
+   ```
+
+2. **Development**:
+   ```bash
    npm run dev
    ```
 
-2. **Backend**:
-   Managed via Supabase. Environment variables for the frontend are located in `praja/frontend/.env.local`.
+3. **Backend**:
+   Managed via Supabase. Environment variables are located in `.env.local`.
