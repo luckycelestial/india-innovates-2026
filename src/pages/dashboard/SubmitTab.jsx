@@ -1,4 +1,4 @@
-﻿import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { Card } from '../../components/ui/Card';
@@ -294,13 +294,13 @@ export default function SubmitTab({ onToast }) {
           gap: 8,
         }}>
           <div style={{ fontWeight: 700, color: 'var(--color-success-text)', fontSize: '0.95rem' }}>
-            âœ… Complaint submitted successfully
+            ✅ Complaint submitted successfully
           </div>
           <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: 10, fontSize: '0.84rem' }}>
             <span style={{ color: 'var(--text-secondary)' }}>Tracking ID:</span>
             <span className="ud-tracking-id">{submitted.tracking_id}</span>
             {submitted.ai_category && (
-              <span style={{ color: 'var(--text-secondary)' }}>ðŸ“‚ {submitted.ai_category}</span>
+              <span style={{ color: 'var(--text-secondary)' }}>📂 {submitted.ai_category}</span>
             )}
             {submitted.priority && (
               <span style={{
@@ -368,14 +368,14 @@ export default function SubmitTab({ onToast }) {
               }}
               title={isRecording ? "Stop Recording" : "Speak your complaint (Bhashini ASR)"}
             >
-              {isTranscribing ? 'âŒ›' : (isRecording ? 'â¹ï¸' : 'ðŸŽ¤')}
+              {isTranscribing ? '⌛' : (isRecording ? '⏸' : '🎤')}
             </button>
           </div>
 
           {photoReq.need !== 'not_needed' && (
             <div className="ud-field-wrapper">
               <label htmlFor="complaint-photo" className="ud-label" style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                ðŸ“· Photo Evidence
+                📸 Photo Evidence
                 {photoReq.need === 'required' ? 
                   <span style={{color: '#fff', fontSize: '0.65rem', fontWeight: 'bold', background: 'var(--color-danger)', padding: '2px 6px', borderRadius: '4px'}}>REQUIRED</span> : 
                   <span style={{color: 'var(--text-muted)', fontSize: '0.8rem', fontWeight: 'normal'}}>(based on the complaint)</span>
@@ -396,7 +396,7 @@ export default function SubmitTab({ onToast }) {
               />
               <div className="ud-photo-upload-shell" role="group" aria-label="Photo evidence upload">
                 <button type="button" className="ud-photo-upload-btn" onClick={openPhotoPicker}>
-                  ðŸ“ Choose Image
+                  📎 Choose Image
                 </button>
                 <div className="ud-photo-upload-name" title={photoFileName || 'No image selected'}>
                   {photoFileName || 'No image selected'}
@@ -416,7 +416,7 @@ export default function SubmitTab({ onToast }) {
                 <div className="ud-photo-preview-label">Preview</div>
                 {photoMetadata && photoMetadata.latitude && (
                   <div style={{ fontSize: '0.72rem', color: 'var(--color-success-text)', background: 'rgba(74, 222, 128, 0.1)', padding: '2px 8px', borderRadius: '12px', border: '1px solid var(--color-success-border)' }}>
-                    ðŸ“ GPS Verified: {photoMetadata.latitude.toFixed(4)}, {photoMetadata.longitude.toFixed(4)}
+                    📍 GPS Verified: {photoMetadata.latitude.toFixed(4)}, {photoMetadata.longitude.toFixed(4)}
                   </div>
                 )}
               </div>
@@ -428,15 +428,15 @@ export default function SubmitTab({ onToast }) {
               />
               {photoMetadata && (
                 <div style={{ marginTop: 8, fontSize: '0.75rem', color: 'var(--text-secondary)', display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                  <div title="Photo capture date">ðŸ“… {photoMetadata.timestamp || 'Unknown Date'}</div>
-                  <div title="Camera model">ðŸ“± {photoMetadata.model || 'Unknown Device'}</div>
+                  <div title="Photo capture date">📅 {photoMetadata.timestamp || 'Unknown Date'}</div>
+                  <div title="Camera model">📱 {photoMetadata.model || 'Unknown Device'}</div>
                 </div>
               )}
             </div>
           )}
           <div style={{ marginTop: 20 }}>
             <Button type="submit" isLoading={loading || isVerifyingPhoto} size="lg" fullWidth disabled={isVerifyingPhoto}>
-              {isVerifyingPhoto ? 'Verifying Photo...' : 'ðŸ“¤ Submit Complaint'}
+              {isVerifyingPhoto ? 'Verifying Photo...' : '📤 Submit Complaint'}
             </Button>
           </div>
         </form>

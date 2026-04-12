@@ -73,7 +73,7 @@ export default function AnalyticsTab() {
         })
         const sla_compliance_pct = resolved.length ? Math.round((slaMet / resolved.length) * 100) : 100
         const avg_resolution_hours = resolved.length ? Math.round((resHoursSum / resolved.length) * 10) / 10 : 0
-        const sla_breached = openTickets.filter(r => r.sla_deadline && new Date(r.sla_deadline) < now).length
+        const sla_breached = openTickets.filter(r => r.sla_deadline && new Date(r.sla_deadline) < new Date()).length
 
         // 2. Categories
         const catMap = {}
@@ -112,7 +112,7 @@ export default function AnalyticsTab() {
         const buckets = {}
         for (let i = 30; i >= 0; i--) {
           const d = new Date()
-          d.setDate(now.getDate() - i)
+          d.setDate(new Date().getDate() - i)
           const key = d.toISOString().split('T')[0]
           buckets[key] = { date: key, created: 0, resolved: 0 }
         }

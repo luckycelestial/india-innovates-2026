@@ -1,14 +1,14 @@
-﻿import { createContext, useContext, useState, useCallback } from 'react'
+import { createContext, useContext, useState, useCallback } from 'react'
 import api from '../services/api'
 
 const AuthContext = createContext(null)
 
 const DEMO_USERS = {
-  '234567890123': { id: 'demo-citizen',    name: 'Ramesh Kumar',    role: 'citizen' },
-  '111122223333': { id: 'demo-sarpanch',   name: 'Lakshmi Devi',    role: 'sarpanch' },
-  '789012345678': { id: 'demo-collector',  name: 'Vikram Singh',    role: 'district_collector' },
-  '901234567890': { id: 'demo-mla',        name: 'Arjun Mehta',     role: 'mla' },
-  '444455556666': { id: 'demo-mp',         name: 'Rajendra Prasad', role: 'mp' },
+  '234567890123': { id: '981cfd4e-dc40-4021-9c38-66c8262b8d9c', name: 'Ramesh Kumar',    role: 'citizen' },
+  '111122223333': { id: 'da7dba2d-e50a-42d8-b188-9d67081cd25c', name: 'Lakshmi Devi',    role: 'sarpanch' },
+  '789012345678': { id: 'da7dba2d-e50a-42d8-b188-9d67081cd25c', name: 'Vikram Singh',    role: 'district_collector' },
+  '901234567890': { id: 'd0ea6e52-ea43-4c35-a4fa-22b707976a39', name: 'Arjun Mehta',     role: 'mla' },
+  '444455556666': { id: 'f47ac10b-58cc-4372-a567-0e02b2c3d479', name: 'Rajendra Prasad', role: 'mp' },
 }
 
 export function AuthProvider({ children }) {
@@ -50,7 +50,13 @@ export function AuthProvider({ children }) {
       return true
     }
 
-    const fallbackUser = { id: 'demo-' + Date.now(), name: 'Demo User', full_name: 'Demo User', role: 'citizen', aadhaar_number: cleanAadhaar }
+    const fallbackUser = { 
+      id: '00000000-0000-4000-8000-' + Date.now().toString().slice(-12), 
+      name: 'Demo User', 
+      full_name: 'Demo User', 
+      role: 'citizen', 
+      aadhaar_number: cleanAadhaar 
+    }
     setUser(fallbackUser)
     localStorage.setItem('praja_user', JSON.stringify(fallbackUser))
     return true

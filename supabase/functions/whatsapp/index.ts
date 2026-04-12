@@ -102,8 +102,6 @@ Deno.serve(async (req) => {
       if (!error) { user = newUser; }
     }
     
-    const groqApiKey = Deno.env.get('GROQ_API_KEY');
-    
     // 3. Craft the AI Prompt (Same as Python version)
     const systemPrompt = `You are the Praja Municipal Complaint Agent. 
     The citizen's name is ${user?.name || 'Citizen'}.
@@ -153,11 +151,12 @@ Deno.serve(async (req) => {
         tracking_id: trackingId,
         citizen_id: user.id,
         title: aiResponse.summary,
-        clean_description: aiResponse.summary,
+        description: aiResponse.summary,
         location: aiResponse.location,
-        category: aiResponse.category || 'General',
+        ai_category: aiResponse.category || 'General',
         priority: aiResponse.priority || 'medium',
-        status: 'open'
+        status: 'open',
+        channel: 'whatsapp',
       });
       
       replyText = `Thank you! Your grievance regarding ${aiResponse.category} at ${aiResponse.location} has been successfully registered. Tracking ID: ${trackingId}. We will update you shortly.`;

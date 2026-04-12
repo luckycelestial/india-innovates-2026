@@ -1,4 +1,4 @@
-﻿import { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import prajaLogo   from '../assets/RR.jpg';
@@ -29,52 +29,43 @@ const formatAadhaar = (val) => {
 
 
 export default function Login() {
-  const forceLoginAndRedirect = (role, name) => {
-    const user = {
-      id: 'demo-' + Date.now(),
-      name: name,
-      full_name: name,
-      role: role.toLowerCase().replace(' ', '_'),
-      aadhaar_number: '123412341234'
-    };
-    
-    
-    localStorage.setItem('praja_user', JSON.stringify(user));
-    
-    // Hard redirect
-    window.location.href = '/dashboard';
+  const { login } = useAuth();
+  const navigate = useNavigate();
+
+  const forceLoginAndRedirect = async (role, name, aadhaar) => {
+    try {
+      await login(aadhaar, 'Demo');
+      navigate('/dashboard');
+    } catch (err) {
+      console.error('Quick login failed:', err);
+    }
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', background: '#0f172a', color: 'white', fontFamily: 'sans-serif' }}>
-      <h1 style={{ fontSize: '2.5rem', marginBottom: '10px', color: '#ff7a2f' }}>PRAJA Demo Login</h1>
-      <p style={{ marginBottom: '40px', color: '#94a3b8' }}>Select a role to enter the platform</p>
-      
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', width: '100%', maxWidth: '400px' }}>
-        {DEMO_USERS.map((u) => (
-          <button 
-            key={u.role}
-            onClick={() => forceLoginAndRedirect(u.role, u.name)}
-            style={{
-              padding: '20px',
-              borderRadius: '10px',
-              border: '2px solid ' + u.color,
-              background: '#1e293b',
-              color: 'white',
-              fontSize: '1.2rem',
-              fontWeight: 'bold',
-              cursor: 'pointer',
-              transition: 'transform 0.2s',
-              display: 'flex',
-              justifyContent: 'space-between'
-            }}
-            onMouseOver={(e) => e.currentTarget.style.transform = 'scale(1.02)'}
-            onMouseOut={(e) => e.currentTarget.style.transform = 'scale(1)'}
-          >
-            <span>{u.role}</span>
-            <span style={{ color: '#94a3b8', fontSize: '0.9rem', alignSelf: 'center' }}>({u.name})</span>
-          </button>
-        ))}
+    <div className="login-container">
+      <div className="login-card">
+        <div className="login-header">
+          <img src={prajaLogo} alt="PRAJA Logo" className="login-logo" />
+          <h1>PRAJA Demo Login</h1>
+          <p>India's Unified Public Grievance Intelligence</p>
+        </div>
+        
+        <div className="role-grid">
+          {DEMO_USERS.map((u) => (
+            <button 
+              key={u.role}
+              onClick={() => forceLoginAndRedirect(u.role, u.name, u.aadhaar)}
+              className="role-btn"
+              style={{ '--accent': u.color, '--bg': u.levelBg }}
+            >
+              <div className="role-btn-top">
+                <span className="role-label">{u.role}</span>
+                <span className="role-level">{u.level}</span>
+              </div>
+              <div className="role-name">{u.name}</div>
+            </button>
+          ))}
+        </div>
       </div>
     </div>
   );

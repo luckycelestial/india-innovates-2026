@@ -118,11 +118,12 @@ serve(async (req) => {
         await supabase.from('grievances').insert({
           tracking_id: trackingId,
           citizen_id: user.id,
-          title: issueText.split(' ').slice(0,5).join(' ') + '...',
-          clean_description: combinedDesc,
+          title: issueText.split(' ').slice(0, 5).join(' ') + '...',
+          description: combinedDesc,
           location: locationText,
-          category: 'Street/Traffic/Civic',
-          status: 'open'
+          ai_category: 'Street/Traffic/Civic',
+          channel: 'voice',
+          status: 'open',
         });
       }
       
@@ -146,7 +147,7 @@ serve(async (req) => {
        if (foundTicket) {
          xml = `<?xml version="1.0" encoding="UTF-8"?>
           <Response>
-              <Say voice="Polly.Aditi" language="en-IN">Your ticket is currently ${foundTicket.status}. The category is ${foundTicket.category}. We are working on it.</Say>
+              <Say voice="Polly.Aditi" language="en-IN">Your ticket is currently ${foundTicket.status}. The category is ${foundTicket.ai_category || 'General'}. We are working on it.</Say>
               <Hangup/>
           </Response>`;
        } else {

@@ -111,8 +111,7 @@ Deno.serve(async (req) => {
     }
     
     if (user_location_text) {
-      insertData.user_stated_location = user_location_text;
-      insertData.location_verification_status = "unverified";
+      insertData.location = user_location_text;
     }
 
     const { data: dbRes, error } = await sb.from('grievances').insert(insertData).select().single();
