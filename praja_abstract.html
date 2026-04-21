@@ -224,19 +224,7 @@
             color: var(--text-secondary);
         }
 
-        .stamp {
-            position: absolute;
-            bottom: 40px;
-            right: 60px;
-            transform: rotate(-15deg);
-            border: 2px solid #cbd5e1;
-            padding: 4px 12px;
-            color: #cbd5e1;
-            font-size: 0.6rem;
-            text-transform: uppercase;
-            font-weight: 900;
-            opacity: 0.6;
-        }
+
 
         @media print {
             .a4-page { padding: 0; width: 100%; margin: 0; }
@@ -246,6 +234,11 @@
 </head>
 <body>
     <div class="a4-page">
+        <!-- Print Trigger (Hidden on Export) -->
+        <button onclick="window.print()" id="print-btn" style="position: fixed; top: 20px; right: 20px; padding: 12px 24px; background: #0f172a; color: white; border: none; border-radius: 50px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); z-index: 100;">
+            <i data-lucide="printer" style="width: 18px"></i> Print for Submission
+        </button>
+
         <header>
             <div class="title-block">
                 <h1>PRAJA</h1>
@@ -253,23 +246,27 @@
             </div>
             <div class="stats-badge">
                 <p class="event">India Innovates 2026</p>
-                <p class="rank">National Finalist: Top 1000 / 26,000 Entries</p>
+                <div class="rank">
+                    <i data-lucide="award" style="width: 14px; display: inline-block; vertical-align: middle; margin-right: 4px"></i>
+                    National Finalist: Top 1000 / 26,000
+                </div>
             </div>
         </header>
 
         <div class="authorship">
+            <i data-lucide="users" style="width: 14px; vertical-align: middle; margin-right: 6px"></i>
             Built by: <b>Cyberpunk</b> : Sanjana R, Pavithran P N, Sachin Siddharth Sargugu, Samyukta R
         </div>
 
         <section>
-            <h2>Executive Abstract</h2>
+            <h2><i data-lucide="file-text" style="width: 18px"></i> Executive Abstract</h2>
             <div class="abstract-text">
-                PRAJA is an AI-powered civic intelligence layer designed to modernize the feedback loop between citizens and administrators. By deploying an omnichannel intake protocol (WhatsApp, Voice, and Web) integrated with <b>Bhashini AI</b>, it democratizes access to grievance reporting while equipping nodal officers with predictive sentiment triggers via <b>SentinelPulse</b> maps.
+                PRAJA is an AI-powered civic intelligence layer designed to modernize the feedback loop between citizens and administrators. By deploying an omnichannel intake protocol (WhatsApp, Voice, and Web) integrated with <b>Bhashini AI</b>, it democratizes access to grievance reporting while equipping nodal officers with predictive sentiment triggers via <b>SentinelPulse</b> GIS synchronization.
             </div>
         </section>
 
         <section>
-            <h2>The Innovation Gap</h2>
+            <h2><i data-lucide="git-compare" style="width: 18px"></i> Innovation Framework</h2>
             <table class="comparison-table">
                 <thead>
                     <tr>
@@ -281,28 +278,28 @@
                 <tbody>
                     <tr>
                         <td><b>Intake Friction</b></td>
-                        <td><span class="neg-callout">High:</span> Primarily Web-only interfaces</td>
-                        <td><span class="pos-callout">Zero:</span> Native WhatsApp & Voice Notes</td>
+                        <td><span class="neg-callout">High:</span> Primarily Web-only</td>
+                        <td><span class="pos-callout">Zero:</span> WhatsApp & Voice Notes</td>
                     </tr>
                     <tr>
                         <td><b>Linguistic Inclusivity</b></td>
-                        <td><span class="neg-callout">Low:</span> Limited to English / Hindi text</td>
-                        <td><span class="pos-callout">Hyper:</span> Full Indian Vernacular support</td>
+                        <td><span class="neg-callout">Low:</span> English / Hindi text</td>
+                        <td><span class="pos-callout">Hyper:</span> 22+ Scheduled Languages</td>
                     </tr>
                     <tr>
                         <td><b>Classification</b></td>
-                        <td><span class="neg-callout">Manual:</span> Prone to human latency</td>
+                        <td><span class="neg-callout">Manual:</span> High latency</td>
                         <td><span class="pos-callout">AI:</span> Real-time LLM Auto-routing</td>
                     </tr>
                     <tr>
                         <td><b>Insights</b></td>
-                        <td><span class="neg-callout">Static:</span> Post-mortem statistical reports</td>
-                        <td><span class="pos-callout">Live:</span> Predictive Sentiment Heatmaps</td>
+                        <td><span class="neg-callout">Static:</span> Post-mortem reports</td>
+                        <td><span class="pos-callout">Live:</span> Sentiment Heatmaps</td>
                     </tr>
                     <tr>
                         <td><b>Infrastructure</b></td>
-                        <td><span class="neg-callout">High:</span> Constant CapEx & Maintenance</td>
-                        <td><span class="pos-callout">Edge:</span> Zero-Budget Serverless Scalability</td>
+                        <td><span class="neg-callout">CapEx:</span> High maintenance</td>
+                        <td><span class="pos-callout">Edge:</span> Zero-Budget Scalability</td>
                     </tr>
                 </tbody>
             </table>
@@ -310,11 +307,11 @@
 
         <div class="info-grid">
             <div class="info-card">
-                <h3>SentinelPulse Mechanism</h3>
-                <p>A GIS-integrated administrative dashboard alerting officials to hot-spots before escalation through real-time density triggers.</p>
+                <h3><i data-lucide="activity" style="width: 14px; vertical-align: middle; margin-right: 6px"></i> SentinelPulse Mechanism</h3>
+                <p>A GIS-integrated administrative dashboard alerting officials to hot-spots before escalation through real-time density triggers and AI sentiment analysis.</p>
             </div>
             <div class="info-card">
-                <h3>Zero-Budget Architecture</h3>
+                <h3><i data-lucide="zap" style="width: 14px; vertical-align: middle; margin-right: 6px"></i> Zero-Budget Architecture</h3>
                 <p>Leverages Serverless Edge nodes and Llama 3/Gemini providers to achieve production performance at absolute $0 operational inference cost.</p>
             </div>
         </div>
@@ -335,8 +332,18 @@
             </div>
         </div>
 
-        <div class="stamp">Official India Innovates Finalist Project</div>
+
     </div>
+
+    <style>
+        /* Print-specific overrides */
+        @media print {
+            #print-btn { display: none !important; }
+            .a4-page { padding: 0 !important; }
+            .info-card { border: 1px solid var(--border); background: none !important; }
+            .comparison-table th { background: #f8fafc !important; }
+        }
+    </style>
 
     <script>
         lucide.createIcons();
