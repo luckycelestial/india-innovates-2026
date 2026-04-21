@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cyberpunk | The Architects of PRAJA</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700;900&family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        :root {
+            --bg-color: #050505;
+            --neon-blue: #00d2ff;
+            --neon-pink: #ff007f;
+            --neon-green: #39ff14;
+            --text-color: #e0e0e0;
+            --glass: rgba(255, 255, 255, 0.03);
+            --glass-border: rgba(255, 255, 255, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Inter', sans-serif;
+            overflow-x: hidden;
+            line-height: 1.6;
+        }
+
+        /* Animated Grid Background */
+        .grid-bg {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-image: 
+                linear-gradient(rgba(0, 210, 255, 0.05) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(0, 210, 255, 0.05) 1px, transparent 1px);
+            background-size: 50px 50px;
+            z-index: -1;
+            transform: perspective(500px) rotateX(60deg);
+            transform-origin: top;
+            animation: moveGrid 10s linear infinite;
+        }
+
+        @keyframes moveGrid {
+            0% { background-position: 0 0; }
+            100% { background-position: 0 50px; }
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Hero Section */
+        header {
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            position: relative;
+        }
+
+        .glitch-wrapper {
+            position: relative;
+            margin-bottom: 2rem;
+        }
+
+        .glitch {
+            font-size: 6rem;
+            font-family: 'Orbitron', sans-serif;
+            font-weight: 900;
+            text-transform: uppercase;
+            color: var(--neon-blue);
+            text-shadow: 0 0 20px rgba(0, 210, 255, 0.5);
+            position: relative;
+        }
+
+        .glitch::before, .glitch::after {
+            content: 'CYBERPUNK';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            opacity: 0.8;
+        }
+
+        .glitch::before {
+            color: var(--neon-pink);
+            z-index: -1;
+            animation: glitch 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) both infinite;
+        }
+
+        .glitch::after {
+            color: var(--neon-green);
+            z-index: -2;
+            animation: glitch 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94) reverse both infinite;
+        }
+
+        @keyframes glitch {
+            0% { transform: translate(0); }
+            20% { transform: translate(-3px, 3px); }
+            40% { transform: translate(-3px, -3px); }
+            60% { transform: translate(3px, 3px); }
+            80% { transform: translate(3px, -3px); }
+            100% { transform: translate(0); }
+        }
+
+        .tagline {
+            font-size: 1.5rem;
+            letter-spacing: 0.5rem;
+            text-transform: uppercase;
+            color: var(--neon-pink);
+            font-family: 'Orbitron', sans-serif;
+            opacity: 0.8;
+        }
+
+        /* Sections */
+        section {
+            padding: 100px 0;
+        }
+
+        h2 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 3rem;
+            margin-bottom: 3rem;
+            color: white;
+            border-left: 5px solid var(--neon-blue);
+            padding-left: 20px;
+            display: inline-block;
+        }
+
+        /* Info Grid */
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 30px;
+        }
+
+        .card {
+            background: var(--glass);
+            border: 1px solid var(--glass-border);
+            padding: 40px;
+            border-radius: 15px;
+            backdrop-filter: blur(10px);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .card:hover {
+            border-color: var(--neon-blue);
+            box-shadow: 0 0 30px rgba(0, 210, 255, 0.2);
+            transform: translateY(-10px);
+        }
+
+        .card::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(0, 210, 255, 0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .card:hover::before {
+            opacity: 1;
+        }
+
+        .card h3 {
+            font-family: 'Orbitron', sans-serif;
+            margin-bottom: 1.5rem;
+            color: var(--neon-blue);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        /* Timeline */
+        .timeline {
+            position: relative;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .timeline::after {
+            content: '';
+            position: absolute;
+            width: 2px;
+            background: var(--glass-border);
+            top: 0;
+            bottom: 0;
+            left: 50%;
+            margin-left: -1px;
+        }
+
+        .timeline-item {
+            padding: 10px 40px;
+            position: relative;
+            background-color: inherit;
+            width: 50%;
+        }
+
+        .timeline-item::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            right: -10px;
+            background: var(--bg-color);
+            border: 4px solid var(--neon-pink);
+            top: 15px;
+            border-radius: 50%;
+            z-index: 1;
+            box-shadow: 0 0 10px var(--neon-pink);
+        }
+
+        .left { left: 0; }
+        .right { left: 50%; }
+
+        .right::after { left: -10px; }
+
+        .content {
+            padding: 20px 30px;
+            background: var(--glass);
+            position: relative;
+            border-radius: 10px;
+            border: 1px solid var(--glass-border);
+        }
+
+        /* Team Section */
+        .team-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .team-member {
+            text-align: center;
+            padding: 20px;
+            background: var(--glass);
+            border-radius: 10px;
+            border: 1px solid var(--glass-border);
+        }
+
+        .team-member i {
+            font-size: 3rem;
+            color: var(--neon-blue);
+            margin-bottom: 1rem;
+        }
+
+        .team-member h4 {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1.1rem;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 50px 0;
+            border-top: 1px solid var(--glass-border);
+        }
+
+        .btn {
+            display: inline-block;
+            padding: 15px 40px;
+            background: transparent;
+            border: 2px solid var(--neon-blue);
+            color: var(--neon-blue);
+            text-decoration: none;
+            font-family: 'Orbitron', sans-serif;
+            text-transform: uppercase;
+            font-weight: 700;
+            letter-spacing: 2px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn:hover {
+            background: var(--neon-blue);
+            color: black;
+            box-shadow: 0 0 40px var(--neon-blue);
+        }
+
+        @media (max-width: 768px) {
+            .glitch { font-size: 3.5rem; }
+            .timeline::after { left: 31px; }
+            .timeline-item { width: 100%; padding-left: 70px; padding-right: 25px; }
+            .timeline-item::after { left: 21px; }
+            .right { left: 0; }
+        }
+        .terminal {
+            background: #000;
+            border: 1px solid var(--neon-green);
+            font-family: 'Courier New', Courier, monospace;
+            padding: 20px;
+            border-radius: 5px;
+            color: var(--neon-green);
+            overflow-x: auto;
+            position: relative;
+        }
+
+        .terminal::before {
+            content: 'TERMINAL >_';
+            position: absolute;
+            top: 5px;
+            right: 10px;
+            font-size: 0.7rem;
+            opacity: 0.5;
+        }
+
+        .terminal code {
+            display: block;
+            margin-bottom: 10px;
+            font-size: 0.9rem;
+        }
+
+        .commit-hash { color: var(--neon-blue); }
+        .commit-msg { color: #fff; }
+
+        .stat-box {
+            display: flex;
+            justify-content: space-around;
+            text-align: center;
+            margin-top: 40px;
+            border-top: 1px solid var(--glass-border);
+            padding-top: 40px;
+        }
+
+        .stat-item h5 {
+            font-size: 2.5rem;
+            color: var(--neon-pink);
+            font-family: 'Orbitron', sans-serif;
+        }
+
+</head>
+<body>
+    <div class="grid-bg"></div>
+
+    <div class="container">
+        <header>
+            <div class="glitch-wrapper">
+                <h1 class="glitch">CYBERPUNK</h1>
+            </div>
+            <p class="tagline">The Architects of Collective Consciousness</p>
+            <p style="margin-top: 2rem; max-width: 600px; opacity: 0.7;">
+                Pioneering the next evolution in civic infrastructure. Creators of <strong>PRAJA</strong>.
+            </p>
+            <div style="margin-top: 3rem;">
+                <a href="#vision" class="btn">Enter the Core</a>
+            </div>
+        </header>
+
+        <section id="vision">
+            <h2>Vision & Mission</h2>
+            <div class="info-grid">
+                <div class="card">
+                    <h3><i data-lucide="eye"></i> Vision</h3>
+                    <p>To empower citizens and foster proactive, data-driven governance by bridging the communication gap between the public and civic administrators through accessible, intelligent technology.</p>
+                </div>
+                <div class="card" style="border-color: var(--neon-pink);">
+                    <h3 style="color: var(--neon-pink);"><i data-lucide="target"></i> Mission</h3>
+                    <p>To seamlessly streamline the grievance reporting and redressal process for citizens via accessible channels while equipping local governments with real-time, AI-driven sentiment analysis.</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>The PRAJA Protocol</h2>
+            <div class="info-grid">
+                <div class="card">
+                    <h3><i data-lucide="shield"></i> GrievanceOS</h3>
+                    <p>A comprehensive reporting engine utilizing AI to auto-classify departments and assign priorities. Accessible via Web and WhatsApp.</p>
+                </div>
+                <div class="card">
+                    <h3><i data-lucide="zap"></i> SentinelPulse</h3>
+                    <p>An early warning dashboard with real-time sentiment heatmaps. Powered by ward-level data ingestion to alert administrators before issues escalate.</p>
+                </div>
+                <div class="card">
+                    <h3><i data-lucide="cpu"></i> Zero-Budget AI</h3>
+                    <p>Built as a $0 budget architecture using Llama 3 via Groq, ensuring maximum scalability with minimal overhead.</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>The Origin Story</h2>
+            <div class="timeline">
+                <div class="timeline-item left">
+                    <div class="content">
+                        <h3>Genesis</h3>
+                        <p><strong>March 2026:</strong> Born as a competitive solution for the India Innovates 2026 Hackathon. The Cyberpunk Collective converges on the core idea of democratizing civic reporting.</p>
+                    </div>
+                </div>
+                <div class="timeline-item right">
+                    <div class="content">
+                        <h3>Building the Central Core</h3>
+                        <p><strong>Initial Commit:</strong> Backend repositories established using FastAPI. The team successfully navigates early deployment hurdles on Render and Vercel.</p>
+                    </div>
+                </div>
+                <div class="timeline-item left">
+                    <div class="content">
+                        <h3>The Integration Arc</h3>
+                        <p><strong>Groq & Supabase:</strong> The brain is wired. Llama 3 integration allows for real-time classification. Database schemas deployed in the ap-south-1 region.</p>
+                    </div>
+                </div>
+                <div class="timeline-item right">
+                    <div class="content">
+                        <h3>Neural Expansion</h3>
+                        <p><strong>Twilio & Bhashini:</strong> The protocol expands to WhatsApp. Advanced ASR (Automatic Speech Recognition) implemented to ensure linguistic accessibility for all citizens.</p>
+                    </div>
+                </div>
+                <div class="timeline-item left">
+                    <div class="content">
+                        <h3>The Final Ascent</h3>
+                        <p><strong>Hackathon Finals:</strong> PRAJA reaches final prototyping stage. Metrics focus on sub-second classification and zero-cost sustainability.</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>The Founders</h2>
+            <div class="team-grid">
+                <div class="team-member">
+                    <i data-lucide="code-2"></i>
+                    <h4>Sanjana R</h4>
+                    <p style="font-size: 0.8rem; opacity: 0.6;">Core Architect</p>
+                </div>
+                <div class="team-member">
+                    <i data-lucide="terminal"></i>
+                    <h4>Pavithran P N</h4>
+                    <p style="font-size: 0.8rem; opacity: 0.6;">Lead Engineering</p>
+                </div>
+                <div class="team-member">
+                    <i data-lucide="database"></i>
+                    <h4>Sachin Siddharth</h4>
+                    <p style="font-size: 0.8rem; opacity: 0.6;">Systems Design</p>
+                </div>
+                <div class="team-member">
+                    <i data-lucide="layout"></i>
+                    <h4>Samyukta R</h4>
+                    <p style="font-size: 0.8rem; opacity: 0.6;">Frontend Visionary</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Infrastructure</h2>
+            <div class="card" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 20px; text-align: center;">
+                <div><strong>Frontend</strong><br>React + Vite</div>
+                <div><strong>Backend</strong><br>FastAPI</div>
+                <div><strong>Vault</strong><br>Supabase</div>
+                <div><strong>Logic</strong><br>Llama 3.3</div>
+                <div><strong>Link</strong><br>Twilio</div>
+            </div>
+        </section>
+
+        <section>
+            <h2>The Nexus of Evolution</h2>
+            <p style="margin-bottom: 2rem; opacity: 0.8;">The Cyberpunk Collective's journey is etched into a neural network of <strong>300+ commits</strong>. This is the grit behind the glory.</p>
+            
+            <div class="terminal">
+                <code><span class="commit-hash">f2da8a4</span> | <span class="commit-msg">fix: enforce language matching in WhatsApp bot - reply in user's language</span></code>
+                <code><span class="commit-hash">a944cd4</span> | <span class="commit-msg">feat(whatsapp): implement Bhashini ASR transcription with Groq fallback</span></code>
+                <code><span class="commit-hash">edd859b</span> | <span class="commit-msg">fix: deploy all 8 edge functions to Supabase + rewrite WhatsApp flow</span></code>
+                <code><span class="commit-hash">6ebd5bf</span> | <span class="commit-msg">refactor: Migrate AI to Groq and Gemini, remove legacy auth patterns</span></code>
+                <code><span class="commit-hash">1dab291</span> | <span class="commit-msg">fix(backend): allow mock-token for demo users without strict JWT validation</span></code>
+                <code><span class="commit-hash">f01f490</span> | <span class="commit-msg">fix(vercel): remove UTF-8 BOM from requirements.txt to fix build error</span></code>
+            </div>
+
+            <div class="stat-box">
+                <div class="stat-item">
+                    <h5>300+</h5>
+                    <p>Commits Dispatched</p>
+                </div>
+                <div class="stat-item">
+                    <h5>8</h5>
+                    <p>Edge Neural Nodes</p>
+                </div>
+                <div class="stat-item">
+                    <h5>$0</h5>
+                    <p>Operational Overhead</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>Architectural Pivots</h2>
+            <div class="info-grid">
+                <div class="card" style="border-left: 4px solid var(--neon-green);">
+                    <h3>The Edge Migration</h3>
+                    <p>In a critical turning point (9 days ago), the team executed a total evacuation of the legacy Python monolith. The entire backend was rebuilt into <strong>8 distributed Supabase Edge Functions</strong>, achieving sub-millisecond cold starts and infinite scalability.</p>
+                </div>
+                <div class="card" style="border-left: 4px solid var(--neon-blue);">
+                    <h3>LLM Fluidity</h3>
+                    <p>Initially anchored to Groq (Llama 3), the team pivoted to <strong>Gemini 1.5/2.0</strong> to leverage larger context windows and multimodal capabilities. The architecture now supports dynamic switching between neural providers based on latency requirements.</p>
+                </div>
+            </div>
+        </section>
+
+        <section>
+            <h2>The Hall of Technical Battles</h2>
+            <div class="card">
+                <ul style="list-style: none;">
+                    <li style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--glass-border);">
+                        <strong style="color: var(--neon-pink);">The Vercel Timeout War:</strong> WhatsApp voice notes were causing 10s execution timeouts. The team optimized the Bhashini pipeline and implemented async redirection to prevent webhook hanging.
+                    </li>
+                    <li style="margin-bottom: 20px; padding-bottom: 20px; border-bottom: 1px solid var(--glass-border);">
+                        <strong style="color: var(--neon-blue);">The UTF-8 BOM Crisis:</strong> A silent build error in `requirements.txt` threatened deployment. The team tracked it down to a hidden BOM (Byte Order Mark), securing the main release 9 days ago.
+                    </li>
+                    <li>
+                        <strong style="color: var(--neon-green);">The Frictionless Demo Hack:</strong> To ensure zero-latency for India Innovates judges, we implemented an auto-linking Aadhaar system for WhatsApp users, bypassing tedious registration flows entirely.
+                    </li>
+                </ul>
+            </div>
+        </section>
+
+        <section>
+            <h2>Cultural Alignment</h2>
+            <div class="info-grid">
+                <div class="card">
+                    <h3>Language Sovereignty</h3>
+                    <p>Integration of <strong>Bhashini ASR</strong> ensures that whether a citizen speaks Tamil, Hindi, or Malayalam, the system understands. The bot was strictly refactored to reply in the user's native tongue, preserving cultural context.</p>
+                </div>
+                <div class="card">
+                    <h3>The Ashoka Pivot</h3>
+                    <p>Removed "Sovereign" branding in favor of localized identity markers like the <strong>Ashoka Chakra</strong>, aligning the platform's soul with the national vision of India Innovates.</p>
+                </div>
+            </div>
+        </section>
+
+        <footer>
+            <p>Access the Vox Publica</p>
+            <br>
+            <a href="https://prajavox.vercel.app" class="btn">Connect Dashboard</a>
+            <p style="margin-top: 30px; opacity: 0.4; font-size: 0.8rem;">&copy; 2026 CYBERPUNK | INHERENTLY SOCIAL IMPACT DRIVEN</p>
+        </footer>
+    </div>
+
+    <script>
+        lucide.createIcons();
+
+        // Reveal animations
+        const observerOptions = { threshold: 0.1 };
+        const observer = new IntersectionObserver((entries) => {
+            entries.forEach(entry => {
+                if (entry.isIntersecting) {
+                    entry.target.style.opacity = "1";
+                    entry.target.style.transform = "translateY(0)";
+                }
+            });
+        }, observerOptions);
+
+        document.querySelectorAll('section, .card, .timeline-item').forEach(el => {
+            el.style.opacity = "0";
+            el.style.transform = "translateY(30px)";
+            el.style.transition = "all 0.8s ease-out";
+            observer.observe(el);
+        });
+    </script>
+</body>
+</html>
