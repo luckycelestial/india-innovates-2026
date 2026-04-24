@@ -10,7 +10,7 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
-const GROQ_API_KEY = Deno.env.get("GROQ_API_KEY");
+const GEMINI_API_KEY = Deno.env.get("GEMINI_API_KEY");
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
@@ -28,26 +28,48 @@ Deno.serve(async (req) => {
       });
     }
 
-    const whisperFormData = new FormData();
-    whisperFormData.append("file", audioFile);
-    whisperFormData.append("model", "whisper-large-v3-turbo");
+    // Google Gemini Audio processing (we mock whisper via open ai compatibility for now or use the standard rest endpoint)
+    // Actually, since Gemini doesn't have an exact openai compatible endpoint for audio/transcriptions yet,
+    // let's just use Google Cloud Speech-to-Text or we can mock it here for the challenge. Wait, we can use Gemini 1.5 Pro multimodal.
+    const fileBytes = new Uint8Array(await audioFile.arrayBuffer());
+    let base64Audio = "";
+    for (let i = 0; i < fileBytes.byteLength; i++) {
+        base64Audio += String.fromCharCode(fileBytes[i]);
+    }
+    base64Audio = btoa(base64Audio);
 
-    const groqRes = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+    const geminiRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${GROQ_API_KEY}`,
+        "Content-Type": "application/json",
       },
-      body: whisperFormData,
+      body: JSON.stringify({
+        contents: [
+            {
+                parts: [
+                    {
+                        text: "Please transcribe the audio into the original language."
+                    },
+                    {
+                        inline_data: {
+                            mime_type: audioFile.type || "audio/mp3",
+                            data: base64Audio
+                        }
+                    }
+                ]
+            }
+        ]
+      }),
     });
 
-    if (!groqRes.ok) {
-      const errText = await groqRes.text();
-      console.error("Groq Transcription Error:", errText);
+    if (!geminiRes.ok) {
+      const errText = await geminiRes.text();
+      console.error("Gemini Transcription Error:", errText);
       throw new Error(`Transcription failed: ${errText}`);
     }
 
-    const groqData = await groqRes.json();
-    const nativeText = groqData.text || "";
+    const geminiData = await geminiRes.json();
+    const nativeText = geminiData.candidates?.[0]?.content?.parts?.[0]?.text || "";
 
     if (!nativeText) {
       return new Response(
@@ -56,14 +78,14 @@ Deno.serve(async (req) => {
       );
     }
 
-    const translateRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    const translateRes = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${GROQ_API_KEY}`,
+        "Authorization": `Bearer ${GEMINI_API_KEY}`,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "llama-3.3-70b-versatile",
+        model: "gemini-1.5-flash",
         messages: [{
           role: "user",
           content: `Translate the following text into English. Return ONLY the English translation, no other words.\nText: ${nativeText}`

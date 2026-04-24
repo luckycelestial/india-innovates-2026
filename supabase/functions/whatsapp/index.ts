@@ -47,7 +47,7 @@ Deno.serve(async (req) => {
     const mediaUrl0 = searchParams.get('MediaUrl0');
     const mediaContentType0 = searchParams.get('MediaContentType0') || '';
 
-    const groqApiKey = Deno.env.get('GROQ_API_KEY');
+    const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
     const supabaseServiceRoleKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
     const supabase = createClient(supabaseUrl, supabaseServiceRoleKey);
@@ -72,26 +72,46 @@ Deno.serve(async (req) => {
         }
         const audioBlob = await audioRes.blob();
 
-        const whisperFormData = new FormData();
-        whisperFormData.append("file", audioBlob, 'whatsapp_audio.ogg');
-        whisperFormData.append("model", "whisper-large-v3-turbo");
+        const fileBytes = new Uint8Array(await audioBlob.arrayBuffer());
+        let base64Audio = "";
+        for (let i = 0; i < fileBytes.byteLength; i++) {
+            base64Audio += String.fromCharCode(fileBytes[i]);
+        }
+        base64Audio = btoa(base64Audio);
 
-        const groqAudioRes = await fetch("https://api.groq.com/openai/v1/audio/transcriptions", {
+        const geminiAudioRes = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${geminiApiKey}`, {
           method: "POST",
           headers: {
-            "Authorization": `Bearer ${groqApiKey}`,
+            "Content-Type": "application/json",
           },
-          body: whisperFormData,
+          body: JSON.stringify({
+            contents: [
+                {
+                    parts: [
+                        {
+                            text: "Please transcribe the audio into text."
+                        },
+                        {
+                            inline_data: {
+                                mime_type: mediaContentType0,
+                                data: base64Audio
+                            }
+                        }
+                    ]
+                }
+            ]
+          }),
         });
 
-        if (groqAudioRes.ok) {
-          const groqAudioData = await groqAudioRes.json();
-          if (groqAudioData.text) {
-            body = groqAudioData.text;
+        if (geminiAudioRes.ok) {
+          const geminiAudioData = await geminiAudioRes.json();
+          const text = geminiAudioData.candidates?.[0]?.content?.parts?.[0]?.text;
+          if (text) {
+            body = text;
             console.log("Transcribed text:", body);
           }
         } else {
-          console.error("Groq Transcription failed:", await groqAudioRes.text());
+          console.error("Gemini Transcription failed:", await geminiAudioRes.text());
         }
       } catch (err) {
         console.error("Error handling voice note:", err);
@@ -353,19 +373,19 @@ Respond in JSON format ONLY:
 {"type":"restart"} — if they want to start over`;
     }
 
-    // Call Groq if we have a prompt
+    // Call Gemini if we have a prompt
     if (!systemPrompt) {
       replyText = "I'm here to help! Please describe the issue you'd like to report.";
       callContext.state = ConversationState.AWAITING_DESCRIPTION;
     } else {
-      const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+      const geminiRes = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
         method: "POST",
         headers: {
-          "Authorization": `Bearer ${groqApiKey}`,
+          "Authorization": `Bearer ${geminiApiKey}`,
           "Content-Type": "application/json"
         },
         body: JSON.stringify({
-          model: "llama-3.3-70b-versatile",
+          model: "gemini-1.5-flash",
           messages: [
             { role: "system", content: systemPrompt },
             ...callContext.chat_history
@@ -376,20 +396,20 @@ Respond in JSON format ONLY:
         })
       });
 
-      if (!groqRes.ok) {
-        const errText = await groqRes.text();
-        console.error("Groq API error:", errText);
+      if (!geminiRes.ok) {
+        const errText = await geminiRes.text();
+        console.error("Gemini API error:", errText);
         return buildTwilioResponse("Technical issue, please try again in a moment.");
       }
 
-      const groqData = await groqRes.json();
-      const aiResponseRaw = groqData.choices?.[0]?.message?.content || '{}';
+      const geminiData = await geminiRes.json();
+      const aiResponseRaw = geminiData.choices?.[0]?.message?.content || '{}';
 
       let aiResponse: Record<string, any> = {};
       try {
         aiResponse = JSON.parse(aiResponseRaw);
       } catch {
-        console.error("Failed to parse Groq response:", aiResponseRaw);
+        console.error("Failed to parse Gemini response:", aiResponseRaw);
         return buildTwilioResponse("I couldn't understand that. Can you say it differently?");
       }
 

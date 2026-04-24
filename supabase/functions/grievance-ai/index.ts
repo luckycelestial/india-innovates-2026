@@ -65,8 +65,8 @@ async function handleVerifyPhoto(req: Request) {
     const { title, description, photo_url, photo_base64 } = await req.json();
     console.log("Verifying photo for:", title);
     
-    const groqApiKey = Deno.env.get('GROQ_API_KEY');
-    if (!groqApiKey) {
+    const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
+    if (!geminiApiKey) {
       // Fallback if no API key is provided
       return new Response(JSON.stringify({ matches: true, reason: "Verification skipped (No API Key)" }), {
         headers: { ...corsHeaders, 'Content-Type': 'application/json' },
@@ -86,9 +86,9 @@ Schema: {"matches": true, "reason": "Short explanation"} or {"matches": false, "
     let imageUrl = photo_url;
     if (photo_base64) imageUrl = photo_base64; // base64 data URI
 
-    // Request Groq Vision limit max tokens to avoid huge outputs
+    // Request Gemini Vision
     const reqBody = {
-      model: "llama-3.2-11b-vision-preview",
+      model: "gemini-1.5-flash",
       messages: [
         {
           role: "user",
@@ -99,19 +99,19 @@ Schema: {"matches": true, "reason": "Short explanation"} or {"matches": false, "
         }
       ],
       temperature: 0.1,
-      max_completion_tokens: 100
+      max_tokens: 100
     };
 
-    const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+    const geminiRes = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${groqApiKey}`,
+        "Authorization": `Bearer ${geminiApiKey}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify(reqBody)
     });
 
-    const data = await groqRes.json();
+    const data = await geminiRes.json();
     console.log("Vision result:", data.choices?.[0]);
 
     const rawContent = data.choices?.[0]?.message?.content || "";
@@ -132,7 +132,7 @@ Schema: {"matches": true, "reason": "Short explanation"} or {"matches": false, "
       console.log("Parse error:", e);
     }
     
-    // Default valid if Groq fails to return json or fails vision check
+    // Default valid if Gemini fails to return json or fails vision check
     return new Response(JSON.stringify({ matches: true, reason: "Vision AI fallback acceptance." }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
       status: 200,

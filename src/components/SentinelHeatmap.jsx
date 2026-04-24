@@ -1,7 +1,7 @@
 // SentinelHeatmap.jsx — Ward-level grievance density map using Leaflet
 import { useEffect, useState } from 'react'
-import { MapContainer, TileLayer, Circle, Popup, useMap } from 'react-leaflet'
-import 'leaflet/dist/leaflet.css'
+import { APIProvider, Map, AdvancedMarker, Pin, InfoWindow, useAdvancedMarkerRef } from '@vis.gl/react-google-maps'
+
 import { useAuth } from '../context/AuthContext'
 import { listGrievances } from '../services/grievancesApi'
 
@@ -52,15 +52,7 @@ function distributeGrievances(totalOpen, criticalOpen) {
   return counts
 }
 
-function MapAutoFit({ wards }) {
-  const map = useMap()
-  useEffect(() => {
-    if (wards.length > 0) {
-      map.setView([28.6139, 77.2090], 11)
-    }
-  }, [wards, map])
-  return null
-}
+
 
 function countOpenGrievances(rows) {
   const closed = new Set(['resolved', 'closed'])
@@ -87,7 +79,47 @@ function countSlaBreachedOpen(rows) {
   }).length
 }
 
+
+function MarkerWithInfoWindow({ ward }) {
+  const [infoWindowShown, setInfoWindowShown] = useState(false);
+  const [markerRef, marker] = useAdvancedMarkerRef();
+
+  return (
+    <>
+      <AdvancedMarker
+        ref={markerRef}
+        position={{ lat: ward.lat, lng: ward.lng }}
+        onClick={() => setInfoWindowShown(isShown => !isShown)}
+      >
+        <Pin background={getColor(ward.count)} borderColor={ward.count > 0 ? '#000' : 'none'} glyphColor={'#fff'} />
+      </AdvancedMarker>
+      {infoWindowShown && (
+        <InfoWindow anchor={marker} onCloseClick={() => setInfoWindowShown(false)}>
+           <div style={{ fontFamily: 'inherit', minWidth: '160px', color: '#000' }}>
+              <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '4px' }}>{ward.name}</div>
+              <div style={{ fontSize: '0.8rem', color: '#555', marginBottom: '8px' }}>{ward.constituency}</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
+                <span>Open Grievances</span>
+                <strong style={{ color: getColor(ward.count) }}>{ward.count}</strong>
+              </div>
+              {ward.critical > 0 && (
+                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginTop: '2px' }}>
+                  <span>Critical</span>
+                  <strong style={{ color: '#dc2626' }}>{ward.critical}</strong>
+                </div>
+              )}
+              <div style={{ marginTop: '8px', padding: '3px 8px', background: getColor(ward.count), color: ward.count <= 2 ? '#166534' : '#fff', borderRadius: '20px', fontSize: '0.72rem', fontWeight: 700, textAlign: 'center' }}>
+                {getSeverityLabel(ward.count)}
+              </div>
+            </div>
+        </InfoWindow>
+      )}
+    </>
+  );
+}
+
 export default function SentinelHeatmap() {
+
   const { user } = useAuth()
   const [wardData, setWardData] = useState([])
   const [loading, setLoading] = useState(true)
@@ -172,52 +204,20 @@ export default function SentinelHeatmap() {
 
       {/* Map */}
       <div style={{ borderRadius: '12px', overflow: 'hidden', border: '1px solid var(--border)', height: '420px', position: 'relative' }}>
-        <MapContainer
-          center={[28.6139, 77.2090]}
-          zoom={11}
-          style={{ height: '100%', width: '100%' }}
-          scrollWheelZoom={true}
-        >
-          <TileLayer
-            url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
-            attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a>'
-          />
-          <MapAutoFit wards={wardData} />
-          {wardData.map(ward => (
-            <Circle
-              key={ward.id}
-              center={[ward.lat, ward.lng]}
-              radius={900}
-              pathOptions={{
-                color: getColor(ward.count),
-                fillColor: getColor(ward.count),
-                fillOpacity: 0.65,
-                weight: 1.5,
-                opacity: 0.9,
-              }}
-            >
-              <Popup>
-                <div style={{ fontFamily: 'inherit', minWidth: '160px' }}>
-                  <div style={{ fontWeight: 700, fontSize: '0.95rem', marginBottom: '4px' }}>{ward.name}</div>
-                  <div style={{ fontSize: '0.8rem', color: '#555', marginBottom: '8px' }}>{ward.constituency}</div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem' }}>
-                    <span>Open Grievances</span>
-                    <strong style={{ color: getColor(ward.count) }}>{ward.count}</strong>
-                  </div>
-                  {ward.critical > 0 && (
-                    <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.82rem', marginTop: '2px' }}>
-                      <span>Critical</span>
-                      <strong style={{ color: '#dc2626' }}>{ward.critical}</strong>
-                    </div>
-                  )}
-                  <div style={{ marginTop: '8px', padding: '3px 8px', background: getColor(ward.count), color: ward.count <= 2 ? '#166534' : '#fff', borderRadius: '20px', fontSize: '0.72rem', fontWeight: 700, textAlign: 'center' }}>
-                    {getSeverityLabel(ward.count)}
-                  </div>
-                </div>
-              </Popup>
-            </Circle>
-          ))}
-        </MapContainer>
+        <APIProvider apiKey={import.meta.env.VITE_GOOGLE_MAPS_API_KEY || "dummy"}>
+          <Map
+            defaultCenter={{ lat: 28.6139, lng: 77.2090 }}
+            defaultZoom={11}
+            mapId="DEMO_MAP_ID"
+            disableDefaultUI={true}
+          >
+
+            {wardData.map(ward => (
+              <MarkerWithInfoWindow key={ward.id} ward={ward} />
+            ))}
+
+          </Map>
+        </APIProvider>
       </div>
 
       {/* Legend */}

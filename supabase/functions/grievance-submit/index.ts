@@ -67,22 +67,22 @@ Deno.serve(async (req) => {
       sb = supabaseAdmin;
     }
 
-    // Classify using Groq
-    const groqApiKey = Deno.env.get('GROQ_API_KEY');
+    // Classify using Gemini
+    const geminiApiKey = Deno.env.get('GEMINI_API_KEY');
     let category = "General";
     let priority = "medium";
     let sentiment = "negative";
 
-    if (groqApiKey) {
+    if (geminiApiKey) {
       try {
-        const groqRes = await fetch("https://api.groq.com/openai/v1/chat/completions", {
+        const geminiRes = await fetch("https://generativelanguage.googleapis.com/v1beta/openai/chat/completions", {
           method: "POST",
           headers: {
-            "Authorization": `Bearer ${groqApiKey}`,
+            "Authorization": `Bearer ${geminiApiKey}`,
             "Content-Type": "application/json"
           },
           body: JSON.stringify({
-            model: "llama-3.3-70b-versatile",
+            model: "gemini-1.5-flash",
             messages: [
               {
                 role: "system",
@@ -97,13 +97,13 @@ Deno.serve(async (req) => {
             response_format: { type: "json_object" }
           })
         });
-        const groqData = await groqRes.json();
-        const parsed = JSON.parse(groqData.choices[0].message.content);
+        const geminiData = await geminiRes.json();
+        const parsed = JSON.parse(geminiData.choices[0].message.content);
         category = parsed.category || category;
         priority = parsed.priority || priority;
         sentiment = parsed.sentiment || sentiment;
       } catch (e) {
-        console.error("Groq classification failed", e);
+        console.error("Gemini classification failed", e);
       }
     }
 
