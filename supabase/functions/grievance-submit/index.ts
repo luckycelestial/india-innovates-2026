@@ -5,6 +5,11 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
+const corsHeaders = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Headers':
+    'authorization, x-client-info, apikey, content-type',
+};
 const ALLOWED_ORIGINS = [
   "https://prajavox.vercel.app",
   "http://localhost:5173",
@@ -35,44 +40,14 @@ Deno.serve(async (req) => {
     const supabaseUrl = Deno.env.get('SUPABASE_URL') || '';
     const supabaseAnonKey = Deno.env.get('SUPABASE_ANON_KEY') || '';
     const supabase = createClient(supabaseUrl, supabaseAnonKey, { global: { headers: { Authorization: authHeader } } });
-    const { data: { user } } = await supabase.auth.getUser(token);
+    const { data: { user }, error: authError } = await supabase.auth.getUser(token);
     
-    let citizenId = user?.id;
-    let sb = supabase;
-
-    // Fallback: resolve user from x-user-id header (demo mode)
-    if (!citizenId) {
-      const headerUserId = req.headers.get('x-user-id');
-      if (!headerUserId) {
-        return new Response(JSON.stringify({ error: 'Could not identify user. Provide a valid JWT or x-user-id header.' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-      }
-      const supabaseServiceRole = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') || '';
-      const supabaseAdmin = createClient(supabaseUrl, supabaseServiceRole);
-      
-      const { data: foundUser, error: findUserError } = await supabaseAdmin.from('users').select('id').eq('id', headerUserId).maybeSingle();
-      
-      let validCitizenId = null;
-      if (!foundUser) {
-        // Create demo user on the fly to satisfy FK constraint
-        const demoUser = {
-          id: headerUserId,
-          name: "Demo User " + headerUserId.substring(0,4),
-          email: "demo_" + headerUserId.substring(0,8) + "@example.com",
-          password_hash: "demo",
-          role: "citizen"
-        };
-        const { error: insertUserError } = await supabaseAdmin.from('users').insert(demoUser);
-        if (insertUserError) {
-          return new Response(JSON.stringify({ error: 'Failed to create demo user: ' + insertUserError.message }), { status: 500, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
-        }
-        validCitizenId = headerUserId;
-      } else {
-        validCitizenId = foundUser.id;
-      }
-      
-      citizenId = validCitizenId;
-      sb = supabaseAdmin;
+    if (authError || !user) {
+      return new Response(JSON.stringify({ error: 'Invalid or expired token' }), { status: 401, headers: { ...corsHeaders, 'Content-Type': 'application/json' } });
     }
+
+    const citizenId = user.id;
+    const sb = supabase;
 
     // Classify using Groq
     const groqApiKey = Deno.env.get('GROQ_API_KEY');
