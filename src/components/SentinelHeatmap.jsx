@@ -41,13 +41,17 @@ function getSeverityLabel(count) {
 function distributeGrievances(totalOpen, criticalOpen) {
   // Weights for each ward (sum = 1)
   const weights = [0.18, 0.14, 0.10, 0.12, 0.09, 0.11, 0.08, 0.07, 0.06, 0.05]
-  const counts = weights.map(w => Math.round(w * totalOpen))
-  // Add critical markers to first few wards
+  const counts = new Array(weights.length)
   let remaining = criticalOpen
-  for (let i = 0; i < counts.length && remaining > 0; i++) {
-    const extra = Math.min(remaining, Math.round(criticalOpen * weights[i]))
-    counts[i] = Math.max(counts[i], extra)
-    remaining -= extra
+  for (let i = 0; i < weights.length; i++) {
+    const w = weights[i]
+    let count = Math.round(w * totalOpen)
+    if (remaining > 0) {
+      const extra = Math.min(remaining, Math.round(criticalOpen * w))
+      count = Math.max(count, extra)
+      remaining -= extra
+    }
+    counts[i] = count
   }
   return counts
 }
