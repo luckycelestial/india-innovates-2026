@@ -64,16 +64,17 @@ export default function AnalyticsTab() {
         // 1. SLA & Resolution
         let slaMet = 0
         let resHoursSum = 0
+        const nowMs = Date.now()
         resolved.forEach(r => {
-          const cDate = new Date(r.created_at)
-          const rDate = new Date(r.resolved_at || r.updated_at)
-          const sDate = new Date(r.sla_deadline)
-          if (rDate <= sDate) slaMet++
-          resHoursSum += (rDate - cDate) / 3600000
+          const cMs = Date.parse(r.created_at)
+          const rStr = r.resolved_at || r.updated_at
+          const rMs = Date.parse(rStr)
+          if (rMs <= Date.parse(r.sla_deadline)) slaMet++
+          resHoursSum += (rMs - cMs) / 3600000
         })
         const sla_compliance_pct = resolved.length ? Math.round((slaMet / resolved.length) * 100) : 100
         const avg_resolution_hours = resolved.length ? Math.round((resHoursSum / resolved.length) * 10) / 10 : 0
-        const sla_breached = openTickets.filter(r => r.sla_deadline && new Date(r.sla_deadline) < new Date()).length
+        const sla_breached = openTickets.filter(r => r.sla_deadline && Date.parse(r.sla_deadline) < nowMs).length
 
         // 2. Categories
         const catMap = {}
@@ -132,8 +133,8 @@ export default function AnalyticsTab() {
         const labels = ['0-6h', '6-12h', '12-24h', '1-2d', '2-3d', '3-5d', '5d+']
         const counts = [0, 0, 0, 0, 0, 0, 0]
         resolved.forEach(r => {
-          const c = new Date(r.created_at)
-          const rs = new Date(r.resolved_at || r.updated_at)
+          const c = Date.parse(r.created_at)
+          const rs = Date.parse(r.resolved_at || r.updated_at)
           const hrs = (rs - c) / 3600000
           for (let i = 0; i < limits.length; i++) {
             if (hrs <= limits[i]) { counts[i]++; break; }

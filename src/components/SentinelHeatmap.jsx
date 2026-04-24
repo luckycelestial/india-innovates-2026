@@ -83,11 +83,11 @@ function countCriticalOpen(rows) {
 
 function countSlaBreachedOpen(rows) {
   const closed = new Set(['resolved', 'closed'])
-  const now = Date.now()
+  const nowMs = Date.now()
   return (rows || []).filter((r) => {
     if (!r?.sla_deadline || !r?.status) return false
     if (closed.has(String(r.status).toLowerCase())) return false
-    return new Date(r.sla_deadline).getTime() < now
+    return Date.parse(r.sla_deadline) < nowMs
   }).length
 }
 
