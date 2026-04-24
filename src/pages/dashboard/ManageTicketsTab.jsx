@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Button from '../../components/ui/Button';
-import { Card, Badge } from '../../components/ui/Card';
+import { Card } from '../../components/ui/Card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { supabase } from '../../services/supabase';
 import { listGrievances, runEscalationUpdate } from '../../services/grievancesApi';
