@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import Button from '../../components/ui/Button';
-import { Card, Badge } from '../../components/ui/Card';
+import { Card } from '../../components/ui/Card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { supabase } from '../../services/supabase';
 import { listGrievances, runEscalationUpdate } from '../../services/grievancesApi';
@@ -47,9 +47,11 @@ export default function ManageTicketsTab({ onToast }) {
   const tickets = useMemo(() => {
     const list = Array.isArray(rawTickets) ? [...rawTickets] : [];
     return list.sort((a, b) => {
-      const aTime = new Date(a?.created_at || 0).getTime();
-      const bTime = new Date(b?.created_at || 0).getTime();
-      return bTime - aTime;
+      const aStr = a?.created_at || '';
+      const bStr = b?.created_at || '';
+      if (aStr < bStr) return 1;
+      if (aStr > bStr) return -1;
+      return 0;
     });
   }, [rawTickets]);
 
@@ -131,9 +133,9 @@ export default function ManageTicketsTab({ onToast }) {
     let currentKey = null;
 
     for (const ticket of tickets) {
-      const dt = ticket?.created_at ? new Date(ticket.created_at) : null;
-      const key = dt && !Number.isNaN(dt.getTime())
-        ? dt.toISOString().slice(0, 10)
+      const rawDate = ticket?.created_at;
+      const key = (rawDate && rawDate.length >= 10)
+        ? rawDate.slice(0, 10)
         : 'unknown-date';
 
       if (key !== currentKey) {

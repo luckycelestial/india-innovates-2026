@@ -33,7 +33,7 @@ export default function SubmitTab({ onToast }) {
           setPhotoReq({ need: data.photo_need, prompt: data.prompt_to_user });
         }
       } catch (err) {
-        // ignore errors to not interrupt UI
+        console.error('Error evaluating photo requirement:', err);
       } finally {
         setIsEvaluating(false);
       }

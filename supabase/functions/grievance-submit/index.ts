@@ -10,8 +10,20 @@ const corsHeaders = {
   'Access-Control-Allow-Headers':
     'authorization, x-client-info, apikey, content-type',
 };
+const ALLOWED_ORIGINS = [
+  "https://prajavox.vercel.app",
+  "http://localhost:5173",
+];
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get("Origin");
+  const corsHeaders: Record<string, string> = {
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type, x-user-id",
+  };
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    corsHeaders["Access-Control-Allow-Origin"] = origin;
+  }
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders })
   }

@@ -6,14 +6,22 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts"
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
-};
+const ALLOWED_ORIGINS = [
+  "https://prajavox.vercel.app",
+  "http://localhost:5173",
+];
 
 const NO_SPEECH_MSG = "No input was received. Please call back and describe your complaint, or send us an SMS.";
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get("Origin");
+  const corsHeaders: Record<string, string> = {
+    "Access-Control-Allow-Headers": "authorization, x-client-info, apikey, content-type",
+  };
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    corsHeaders["Access-Control-Allow-Origin"] = origin;
+  }
+
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: corsHeaders });
   }
