@@ -1,11 +1,10 @@
 import "jsr:@supabase/functions-js/edge-runtime.d.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-const corsHeaders = {
-  "Access-Control-Allow-Origin": "*",
-  "Access-Control-Allow-Headers":
-    "authorization, x-client-info, apikey, content-type, x-praja-user-id, x-praja-user-role",
-};
+const ALLOWED_ORIGINS = [
+  "https://prajavox.vercel.app",
+  "http://localhost:5173",
+];
 
 const NIL_UUID = "00000000-0000-0000-0000-000000000000";
 
@@ -17,6 +16,15 @@ function isStaff(role: string | null): boolean {
 }
 
 Deno.serve(async (req) => {
+  const origin = req.headers.get("Origin");
+  const corsHeaders: Record<string, string> = {
+    "Access-Control-Allow-Headers":
+      "authorization, x-client-info, apikey, content-type, x-praja-user-id, x-praja-user-role",
+  };
+  if (origin && ALLOWED_ORIGINS.includes(origin)) {
+    corsHeaders["Access-Control-Allow-Origin"] = origin;
+  }
+
   if (req.method === "OPTIONS") {
     return new Response("ok", { headers: corsHeaders });
   }
