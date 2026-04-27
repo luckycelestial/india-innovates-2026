@@ -87,7 +87,8 @@ function countSlaBreachedOpen(rows) {
   return (rows || []).filter((r) => {
     if (!r?.sla_deadline || !r?.status) return false
     if (closed.has(String(r.status).toLowerCase())) return false
-    return new Date(r.sla_deadline).getTime() < now
+    // PERFORMANCE: Using Date.parse() instead of new Date().getTime() in loops to minimize memory allocation and GC overhead
+    return Date.parse(r.sla_deadline) < now
   }).length
 }
 
