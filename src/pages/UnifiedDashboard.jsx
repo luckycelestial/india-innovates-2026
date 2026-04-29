@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '../context/AuthContext';
 import { supabase } from '../services/supabase';
+import { getFunctionsBaseUrl } from '../services/firebase';
 import prajaIcon from '../assets/SS.jpg';
 import './UnifiedDashboard.css';
 import { FileText, List as ListIcon, Ticket, BarChart3, Map as MapIcon, Bell } from 'lucide-react';
@@ -124,7 +125,7 @@ export default function UnifiedDashboard() {
       typeof item === 'object' &&
       (item.type === 'critical_grievance' || item.type === 'sla_breach' || item.type === 'escalated');
     let alive = true;
-    supabase.functions.invoke('sentinel', { query: { action: 'alerts' } })
+    fetch(`${getFunctionsBaseUrl()}/sentinel`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'alerts' }) }).then(res => res.json()).then(data => ({ data })).catch(error => ({ error }))
       .then(({ data, error }) => {
         if (error || !alive || !Array.isArray(data)) {
           if (alive) setNotifications([]);
