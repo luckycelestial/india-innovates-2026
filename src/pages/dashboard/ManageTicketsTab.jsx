@@ -96,10 +96,12 @@ export default function ManageTicketsTab({ onToast }) {
     setShowPerf(!showPerf);
   };
 
-  const counts = tickets.reduce((acc, t) => {
+  // PERFORMANCE: Memoize counts to avoid expensive O(N) array reduction
+  // on every component render (e.g. when toggling details or stats).
+  const counts = useMemo(() => tickets.reduce((acc, t) => {
     acc[t.status] = (acc[t.status] || 0) + 1;
     return acc;
-  }, {});
+  }, {}), [tickets]);
 
   const getCount = (key) => key === '__total__' ? tickets.length : (counts[key] || 0);
 
