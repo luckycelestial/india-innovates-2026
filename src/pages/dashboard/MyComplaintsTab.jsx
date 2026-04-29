@@ -16,8 +16,10 @@ const STATUS_LABEL = {
 
 const getSlaStatus = (sla_deadline) => {
   if (!sla_deadline) return null;
-  const now = new Date();
-  const sla = new Date(sla_deadline);
+  // PERFORMANCE: Using Date.parse() and Date.now() instead of instantiating new Date() objects
+  // in the render loop to minimize memory allocation and GC overhead for 100+ tickets.
+  const now = Date.now();
+  const sla = Date.parse(sla_deadline);
   const hoursLeft = (sla - now) / 3600000;
   if (hoursLeft < 0) return { text: `SLA breached ${Math.abs(Math.round(hoursLeft))}h ago`, variant: 'escalated' };
   if (hoursLeft < 24) return { text: `${Math.round(hoursLeft)}h left`, variant: 'warning' };
