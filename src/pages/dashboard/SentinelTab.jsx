@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Badge } from '../../components/ui/Card';
 import SentinelHeatmap from '../../components/SentinelHeatmap';
 import { supabase } from '../../services/supabase';
+import { getFunctionsBaseUrl } from '../../services/firebase';
 import { BarChart, Bar, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 
 const CHART_COLORS = ['#06038D', '#FF9933', '#138808', '#0284C7', '#D97706', '#dc2626', '#eab308'];
@@ -21,9 +22,11 @@ export default function SentinelTab() {
     setLoading(true);
     setError(null);
     try {
-      const { data, error: funcErr } = await supabase.functions.invoke('sentinel', {
-        query: { action }
-      });
+      const { data, error: funcErr } = await fetch(`${getFunctionsBaseUrl()}/sentinel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action })
+      }).then(res => res.json()).then(data => ({ data })).catch(error => ({ error }));
       
       if (funcErr) throw funcErr;
 

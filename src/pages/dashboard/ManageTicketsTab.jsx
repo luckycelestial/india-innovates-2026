@@ -3,6 +3,7 @@ import Button from '../../components/ui/Button';
 import { Card } from '../../components/ui/Card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Cell } from 'recharts';
 import { supabase } from '../../services/supabase';
+import { getFunctionsBaseUrl } from '../../services/firebase';
 import { listGrievances, runEscalationUpdate } from '../../services/grievancesApi';
 import { useAuth } from '../../context/AuthContext';
 
@@ -60,7 +61,7 @@ export default function ManageTicketsTab({ onToast }) {
 
   const loadPerf = useCallback(async () => {
     try {
-      const res = await supabase.functions.invoke('dev-dummy-endpoint/performance');
+      const res = await fetch(`${getFunctionsBaseUrl()}/devDummyEndpoint`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ action: 'performance' }) }).then(res => res.json()).then(data => ({ data })).catch(error => ({ error }));
       setPerf(res.data);
     } catch(err) {}
   }, []);

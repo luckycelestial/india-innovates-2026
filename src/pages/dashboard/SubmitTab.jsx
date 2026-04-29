@@ -3,6 +3,7 @@ import Button from '../../components/ui/Button';
 import Input from '../../components/ui/Input';
 import { Card } from '../../components/ui/Card';
 import { supabase } from '../../services/supabase';
+import { getFunctionsBaseUrl } from '../../services/firebase';
 
 
 export default function SubmitTab({ onToast }) {
@@ -26,9 +27,11 @@ export default function SubmitTab({ onToast }) {
     const timer = setTimeout(async () => {
       setIsEvaluating(true);
       try {
-        const { data, error } = await supabase.functions.invoke('grievance-ai/photo-need', {
-          body: { title, description }
-        });
+        const { data, error } = await fetch(`${getFunctionsBaseUrl()}/grievanceAi/photo-need`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ title, description })
+        }).then(res => res.json()).then(data => ({ data })).catch(error => ({ error }))
         if (data && data.photo_need) {
           setPhotoReq({ need: data.photo_need, prompt: data.prompt_to_user });
         }
@@ -84,9 +87,10 @@ export default function SubmitTab({ onToast }) {
       const formData = new FormData();
       formData.append('audio', blob, 'recording.webm');
       
-      const { data, error } = await supabase.functions.invoke('transcribe', {
+      const { data, error } = await fetch(`${getFunctionsBaseUrl()}/transcribe`, {
+        method: 'POST',
         body: formData
-      });
+      }).then(res => res.json()).then(data => ({ data })).catch(error => ({ error }))
       
       if (error) throw new Error('Transcription failed: ' + error.message);
       
@@ -183,9 +187,11 @@ export default function SubmitTab({ onToast }) {
       if (title.length > 5 || description.length > 5) {
         setIsVerifyingPhoto(true);
         try {
-          const { data, error } = await supabase.functions.invoke('grievance-ai', {
-            body: { action: 'verify-photo', title, description, photo_base64: String(dataUrl) }
-          });
+          const { data, error } = await fetch(`${getFunctionsBaseUrl()}/grievanceAi/verify-photo`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ title, description, photo_base64: String(dataUrl) })
+          }).then(res => res.json()).then(data => ({ data })).catch(error => ({ error }))
           if (data && data.matches === false) {
             onToast(`Photo rejected: ${data.reason}`, 'error');
             setPhotoDataUrl('');
@@ -249,10 +255,11 @@ export default function SubmitTab({ onToast }) {
       } catch {
         /* ignore bad localStorage */
       }
-      const { data, error: submitError } = await supabase.functions.invoke('grievance-submit', {
-        body,
-        headers: submitHeaders,
-      });
+      const { data, error: submitError } = await fetch(`${getFunctionsBaseUrl()}/grievanceSubmit`, {
+        method: 'POST',
+        body: JSON.stringify(body),
+        headers: { ...submitHeaders, 'Content-Type': 'application/json' },
+      }).then(res => { if(!res.ok) throw new Error("Submit failed"); return res.json().then(data => ({ data })) }).catch(error => ({ error }))
       
       if (submitError) throw new Error(submitError.message);
       
