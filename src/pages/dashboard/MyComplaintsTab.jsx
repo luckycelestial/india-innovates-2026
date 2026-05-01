@@ -14,10 +14,10 @@ const STATUS_LABEL = {
   closed:      'Closed',
 };
 
-const getSlaStatus = (sla_deadline) => {
+const getSlaStatus = (sla_deadline, now) => {
   if (!sla_deadline) return null;
-  const now = new Date();
-  const sla = new Date(sla_deadline);
+  // PERFORMANCE: Using Date.parse() instead of new Date() to minimize memory allocation and GC overhead
+  const sla = Date.parse(sla_deadline);
   const hoursLeft = (sla - now) / 3600000;
   if (hoursLeft < 0) return { text: `SLA breached ${Math.abs(Math.round(hoursLeft))}h ago`, variant: 'escalated' };
   if (hoursLeft < 24) return { text: `${Math.round(hoursLeft)}h left`, variant: 'warning' };
@@ -117,8 +117,11 @@ export default function MyComplaintsTab() {
         </Card>
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-          {tickets.map(t => {
-            const sla = getSlaStatus(t.sla_deadline);
+          {(() => {
+            // PERFORMANCE: Cache Date.now() outside the loop to prevent repeated evaluation
+            const now = Date.now();
+            return tickets.map(t => {
+            const sla = getSlaStatus(t.sla_deadline, now);
             const isExpanded = expandedTicketId === t.id;
             const relatedSchemes = isExpanded ? getRelatedSchemes(t) : [];
 
@@ -205,7 +208,8 @@ export default function MyComplaintsTab() {
                 )}
               </Card>
             );
-          })}
+          });
+          })()}
         </div>
       )}
     </div>
