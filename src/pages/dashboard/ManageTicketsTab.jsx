@@ -96,10 +96,15 @@ export default function ManageTicketsTab({ onToast }) {
     setShowPerf(!showPerf);
   };
 
-  const counts = tickets.reduce((acc, t) => {
-    acc[t.status] = (acc[t.status] || 0) + 1;
-    return acc;
-  }, {});
+  // Performance Optimization: Memoize the O(N) array reduction so it only runs when `tickets` changes.
+  // This prevents unnecessary CPU overhead when the component re-renders from non-data state updates
+  // (e.g. toggling the performance chart `showPerf`, or selecting a ticket `selectedTicket`).
+  const counts = useMemo(() => {
+    return tickets.reduce((acc, t) => {
+      acc[t.status] = (acc[t.status] || 0) + 1;
+      return acc;
+    }, {});
+  }, [tickets]);
 
   const getCount = (key) => key === '__total__' ? tickets.length : (counts[key] || 0);
 
