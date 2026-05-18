@@ -66,30 +66,37 @@ function MapAutoFit({ wards }) {
   return null
 }
 
-function countOpenGrievances(rows) {
-  const closed = new Set(['resolved', 'closed'])
-  return (rows || []).filter((r) => r?.status && !closed.has(String(r.status).toLowerCase())).length
-}
+function calculateGrievanceStats(rows) {
+  // ⚡ BOLT OPTIMIZATION: Combine multiple O(N) filter passes into a single O(N) loop
+  // Performance improvement: Reduces array traversals from 3 to 1 and eliminates intermediate array allocations, reducing GC pressure.
+  let totalOpen = 0;
+  let criticalOpen = 0;
+  let slaViolations = 0;
 
-function countCriticalOpen(rows) {
-  const closed = new Set(['resolved', 'closed'])
-  return (rows || []).filter(
-    (r) =>
-      String(r?.priority || '').toLowerCase() === 'critical' &&
-      r?.status &&
-      !closed.has(String(r.status).toLowerCase())
-  ).length
-}
+  const closed = new Set(['resolved', 'closed']);
+  const now = Date.now();
 
-function countSlaBreachedOpen(rows) {
-  const closed = new Set(['resolved', 'closed'])
-  const now = Date.now()
-  return (rows || []).filter((r) => {
-    if (!r?.sla_deadline || !r?.status) return false
-    if (closed.has(String(r.status).toLowerCase())) return false
-    // PERFORMANCE: Using Date.parse() instead of new Date().getTime() in loops to minimize memory allocation and GC overhead
-    return Date.parse(r.sla_deadline) < now
-  }).length
+  for (const r of (rows || [])) {
+    if (!r?.status) continue;
+
+    const statusLower = String(r.status).toLowerCase();
+    if (closed.has(statusLower)) continue;
+
+    totalOpen++;
+
+    if (String(r?.priority || '').toLowerCase() === 'critical') {
+      criticalOpen++;
+    }
+
+    if (r?.sla_deadline) {
+      // PERFORMANCE: Using Date.parse() instead of new Date().getTime() in loops to minimize memory allocation and GC overhead
+      if (Date.parse(r.sla_deadline) < now) {
+        slaViolations++;
+      }
+    }
+  }
+
+  return { totalOpen, criticalOpen, slaViolations };
 }
 
 export default function SentinelHeatmap() {
@@ -112,9 +119,10 @@ export default function SentinelHeatmap() {
       let slaViolations = 0
       try {
         const rows = await listGrievances(user, { limit: 2000 })
-        totalOpen = countOpenGrievances(rows)
-        criticalOpen = countCriticalOpen(rows)
-        slaViolations = countSlaBreachedOpen(rows)
+        const statsObj = calculateGrievanceStats(rows);
+        totalOpen = statsObj.totalOpen;
+        criticalOpen = statsObj.criticalOpen;
+        slaViolations = statsObj.slaViolations;
         setStats({ totalOpen, criticalOpen, slaViolations })
       } catch (e) {
         console.error('Grievance stats fetch failed', e)
