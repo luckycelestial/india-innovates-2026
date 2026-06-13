@@ -1,0 +1,91 @@
+@import "tailwindcss";
+
+:root {
+  /* ── HP Design System Tokens ───────────────────────── */
+
+  /* Brand & Accent */
+  --color-primary: #024ad8;        /* HP Electric Blue – CTA, links, chevrons */
+  --color-primary-bright: #296ef9; /* Bright Blue – dark-slab CTAs */
+  --color-primary-deep: #0e3191;   /* Deep Navy – pressed state */
+  --color-primary-soft: #c9e0fc;   /* Soft Blue – selection chips, story cards */
+  --color-on-primary: #ffffff;
+
+  /* Surface */
+  --color-canvas: #ffffff;
+  --color-paper: #ffffff;
+  --color-cloud: #f7f7f7;
+  --color-fog: #e8e8e8;
+  --color-steel: #c2c2c2;
+  --color-hairline: #e8e8e8;
+
+  /* Bloom / sale */
+  --color-bloom-coral: #ff5050;
+  --color-bloom-rose: #f9d4d2;
+  --color-bloom-deep: #b3262b;
+  --color-bloom-wine: #5a1313;
+
+  /* Storm (printer plan) */
+  --color-storm-mist: #8ebdce;
+  --color-storm-sea: #7fadbe;
+  --color-storm-deep: #356373;
+
+  /* Text */
+  --color-ink: #1a1a1a;
+  --color-ink-deep: #000000;
+  --color-ink-soft: #292929;
+  --color-on-ink: #ffffff;
+  --color-charcoal: #3d3d3d;
+  --color-graphite: #636363;
+
+  /* ── Typography ────────────────────────────────────── */
+  --font-display: 'Bricolage Grotesque', sans-serif;
+  --font-body: 'Bricolage Grotesque', sans-serif;
+
+  /* ── Spacing ───────────────────────────────────────── */
+  --space-xxs: 4px;
+  --space-xs: 8px;
+  --space-sm: 12px;
+  --space-md: 16px;
+  --space-lg: 20px;
+  --space-xl: 24px;
+  --space-xxl: 32px;
+  --space-section: 80px;
+
+  /* ── Border Radius ─────────────────────────────────── */
+  --rounded-none: 0px;
+  --rounded-xs: 2px;
+  --rounded-sm: 3px;
+  --rounded-md: 4px;   /* buttons, inputs */
+  --rounded-lg: 8px;   /* badges, category icons */
+  --rounded-xl: 16px;  /* cards, photo frames */
+  --rounded-pill: 9999px;
+
+  /* ── Elevation ─────────────────────────────────────── */
+  --shadow-soft-lift: 0 2px 8px rgba(26,26,26,0.08);
+  --shadow-floating: 0 8px 24px rgba(26,26,26,0.12);
+}
+
+* { box-sizing: border-box; margin: 0; padding: 0; }
+
+body {
+  background: var(--color-canvas);
+  color: var(--color-ink);
+  font-family: var(--font-body);
+  font-size: 20px;
+  font-weight: 400;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+@keyframes progress {
+  from { width: 0; }
+  to   { width: 100%; }
+}
