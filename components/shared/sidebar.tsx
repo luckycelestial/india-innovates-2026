@@ -5,7 +5,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, usePathname } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
-import { Home, ClipboardList, FilePlus, Search, Scale, Kanban, Lock, LogOut, Users, GitFork, AlertTriangle, BarChart2 } from 'lucide-react'
+import { Home, ClipboardList, FilePlus, Search, Scale, Kanban, Lock, LogOut, Users, GitFork, AlertTriangle, BarChart2, Compass, ShieldAlert } from 'lucide-react'
 
 type SidebarProps = {
   role: 'citizen' | 'officer' | 'admin'
@@ -33,6 +33,9 @@ const MENU_ITEMS: Record<'citizen' | 'officer' | 'admin', MenuItem[]> = {
   admin: [
     { label: 'Admin Console', href: '/admin/dashboard', icon: Lock },
     { label: 'SentinelPulse Analytics', href: '/admin/analytics', icon: BarChart2 },
+    { label: 'KSP Crime Hotspots', href: '/admin/crime-intelligence', icon: Compass },
+    { label: 'KSP Link Analysis', href: '/admin/link-analysis', icon: GitFork },
+    { label: 'KSP Predictive Risk', href: '/admin/predictive-insights', icon: ShieldAlert },
     { label: 'Escalation & SLA', href: '/admin/escalations', icon: AlertTriangle },
     { label: 'Categories & Routing', href: '/admin/categories', icon: GitFork },
     { label: 'User Management', href: '/admin/users', icon: Users },
