@@ -20,25 +20,12 @@ type MenuItem = {
 }
 
 const MENU_ITEMS: Record<'citizen' | 'officer' | 'admin', MenuItem[]> = {
-  citizen: [
-    { label: 'Citizen Home', href: '/citizen/home', icon: Home },
-    { label: 'My Complaints', href: '/citizen/complaints', icon: ClipboardList },
-    { label: 'Raise Complaint', href: '/citizen/complaint/new', icon: FilePlus },
-    { label: 'Track by ID', href: '/citizen/track', icon: Search },
-  ],
-  officer: [
-    { label: 'Grievance Queue', href: '/officer/dashboard', icon: Scale },
-    { label: 'Pipeline Board', href: '/officer/pipeline', icon: Kanban },
-  ],
+  citizen: [],
+  officer: [],
   admin: [
-    { label: 'Admin Console', href: '/admin/dashboard', icon: Lock },
-    { label: 'SentinelPulse Analytics', href: '/admin/analytics', icon: BarChart2 },
     { label: 'KSP Crime Hotspots', href: '/admin/crime-intelligence', icon: Compass },
     { label: 'KSP Link Analysis', href: '/admin/link-analysis', icon: GitFork },
     { label: 'KSP Predictive Risk', href: '/admin/predictive-insights', icon: ShieldAlert },
-    { label: 'Escalation & SLA', href: '/admin/escalations', icon: AlertTriangle },
-    { label: 'Categories & Routing', href: '/admin/categories', icon: GitFork },
-    { label: 'User Management', href: '/admin/users', icon: Users },
   ]
 }
 
@@ -86,7 +73,7 @@ export default function Sidebar({ role, userName, userSub }: SidebarProps) {
           <div style={{ width: '40px', height: '40px', position: 'relative', flexShrink: 0 }}>
             <Image
               src="/logo-square.jpg"
-              alt="PRAJA"
+              alt="KSP CIAP"
               width={40}
               height={40}
               style={{ borderRadius: '8px', objectFit: 'cover' }}
@@ -100,7 +87,7 @@ export default function Sidebar({ role, userName, userSub }: SidebarProps) {
               color: '#FFFFFF',
               animation: 'fadeIn 0.15s ease-out'
             }}>
-              PRAJA
+              KSP CIAP
             </span>
           )}
         </Link>

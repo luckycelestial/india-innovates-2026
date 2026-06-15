@@ -51,14 +51,54 @@ export default function PredictiveInsightsPage() {
     return acc
   }, {} as Record<string, number>)
 
-  // AI Predictive Risk Forecasts for major jurisdictions
-  const forecastData = [
-    { district: "Bengaluru Urban", threatScore: 92, riskLevel: "Critical", trend: "Increasing", reason: "MDMA logistics corridor expansion & simulated SIM-swap cyber surges.", recommendation: "Increase patrol density in Koramangala & Electronic City." },
-    { district: "Mysuru", threatScore: 68, riskLevel: "Medium", trend: "Stable", reason: "burglary occurrences targeting unlocked gold retail fronts.", recommendation: "Deploy community alarms in Lashkar and Vidyaranyapuram." },
-    { district: "Belagavi", threatScore: 78, riskLevel: "High", trend: "Increasing", reason: "Border checkpoint smuggling of commercial freight.", recommendation: "Enhance search checkpoints on NH-48 interstate links." },
-    { district: "Mangaluru", threatScore: 85, riskLevel: "High", trend: "Increasing", reason: "Narcotics infiltration through coastal fishing transit docks.", recommendation: "Joint harbor patrolling with coastal coast guards." },
-    { district: "Hubballi-Dharwad", threatScore: 58, riskLevel: "Medium", trend: "Decreasing", reason: "Spontaneous land faction skirmishes near markets.", recommendation: "Station dispatch vehicles near APMC truck parking yards." }
-  ]
+  // Dynamic calculation of Predictive Risk Matrix per district
+  const districts = Array.from(new Set(incidents.map(i => i.district)))
+  const forecastData = districts.map(districtName => {
+    const districtIncidents = incidents.filter(i => i.district === districtName)
+    const count = districtIncidents.length
+    const avgRisk = districtIncidents.reduce((sum, i) => sum + i.risk_score, 0) / count
+    
+    // Calculate threat score
+    const threatScore = Math.max(10, Math.min(99, Math.round((avgRisk * 0.7) + (Math.min(count, 5) * 6))))
+    
+    // Determine Risk Level
+    let riskLevel = 'Low'
+    if (threatScore >= 85) riskLevel = 'Critical'
+    else if (threatScore >= 70) riskLevel = 'High'
+    else if (threatScore >= 50) riskLevel = 'Medium'
+
+    // Determine Trend
+    const sorted = [...districtIncidents].sort((a, b) => new Date(a.date_time).getTime() - new Date(b.date_time).getTime())
+    const midpoint = Math.floor(sorted.length / 2)
+    const oldAvg = midpoint > 0 ? sorted.slice(0, midpoint).reduce((sum, i) => sum + i.risk_score, 0) / midpoint : avgRisk
+    const newAvg = sorted.slice(midpoint).reduce((sum, i) => sum + i.risk_score, 0) / (sorted.length - midpoint)
+    
+    let trend: 'Increasing' | 'Decreasing' | 'Stable' = 'Stable'
+    if (newAvg > oldAvg + 2) trend = 'Increasing'
+    else if (newAvg < oldAvg - 2) trend = 'Decreasing'
+
+    // Extract dominant category & location
+    const categoriesMap = districtIncidents.reduce((acc, i) => {
+      acc[i.category] = (acc[i.category] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
+    const dominantCategory = Object.entries(categoriesMap).sort((a, b) => b[1] - a[1])[0]?.[0] || 'general'
+
+    const locationsMap = districtIncidents.reduce((acc, i) => {
+      acc[i.location] = (acc[i.location] || 0) + 1
+      return acc
+    }, {} as Record<string, number>)
+    const dominantLocation = Object.entries(locationsMap).sort((a, b) => b[1] - a[1])[0]?.[0] || 'local areas'
+
+    return {
+      district: districtName,
+      threatScore,
+      riskLevel,
+      trend,
+      reason: `${dominantCategory.toUpperCase()} surges and associated ${dominantLocation} threat factors.`,
+      recommendation: `Patrol ${dominantLocation} to mitigate emerging ${dominantCategory} vulnerability loops.`
+    }
+  }).sort((a, b) => b.threatScore - a.threatScore)
 
   // Anomaly Detection list (MOs or parameters that deviate significantly from baseline averages)
   const anomalies = incidents.filter(i => i.risk_score >= 80)
