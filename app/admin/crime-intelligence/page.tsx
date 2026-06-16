@@ -113,7 +113,7 @@ function CrimeLeafletMap({
 
     const container = document.getElementById('ksp-map-container')
     if (!container) return
-    container.innerHTML = '<div id="ksp-actual-map" style="height: 100%; width: 100%; border-radius: 12px;"></div>'
+    container.innerHTML = '<div id="ksp-actual-map" style="height: 100%; width: 100%; border-radius: 16px;"></div>'
 
     const L = window.L
     
@@ -148,14 +148,14 @@ function CrimeLeafletMap({
         const normalizedName = normalizeDistrictName(dName)
         const count = crimeCountsPerDistrict[normalizedName] || 0
         
-        let fillClr = '#22c55e' // 0 cases - vibrant green
+        let fillClr = '#7B8F65' // 0 cases - vibrant green
         if (count >= 4) fillClr = '#ef4444' // Very High - Red
         else if (count === 3) fillClr = '#f97316' // High - Orange
         else if (count === 2) fillClr = '#eab308' // Medium - Yellow
-        else if (count === 1) fillClr = '#16a34a' // Low - Dark green
+        else if (count === 1) fillClr = '#6D9998' // Low - Dark green
         
         return {
-          color: '#15803d', // Green border
+          color: '#6D9998', // Green border
           weight: 1.5,
           fillColor: fillClr,
           fillOpacity: 0.4
@@ -173,10 +173,10 @@ function CrimeLeafletMap({
 
         layer.bindPopup(`
           <div style="font-family: ${FONT_SANS}; min-width: 140px; padding: 4px;">
-            <h4 style="margin: 0 0 4px; font-size: 13px; font-weight: 700; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
+            <h4 style="margin: 0 0 4px; font-size: 13px; font-weight: 700; color: #262622; border-bottom: 1px solid #dadad3; padding-bottom: 4px;">
               📍 ${dName} Limit
             </h4>
-            <div style="font-size: 11px; display: flex; flex-direction: column; gap: 4px; color: #64748b;">
+            <div style="font-size: 11px; display: flex; flex-direction: column; gap: 4px; color: #262622;">
               <span>Active Crimes: <strong>${count} cases</strong></span>
             </div>
           </div>
@@ -219,16 +219,16 @@ function CrimeLeafletMap({
         weight: 2
       }).addTo(map).bindPopup(`
         <div style="font-family: ${FONT_SANS}; min-width: 220px; padding: 4px;">
-          <h4 style="margin: 0 0 6px; font-size: 13px; font-weight: 700; color: #6d28d9; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
+          <h4 style="margin: 0 0 6px; font-size: 13px; font-weight: 700; color: #6d28d9; border-bottom: 1px solid #dadad3; padding-bottom: 4px;">
             🌌 Spatiotemporal Cluster #${c.clusterId}
           </h4>
-          <div style="font-size: 11px; display: flex; flex-direction: column; gap: 4px; color: #475569;">
+          <div style="font-size: 11px; display: flex; flex-direction: column; gap: 4px; color: #262622;">
             <span>Incidents: <strong>${c.points.length} cases</strong></span>
             <span>Span Radius: <strong>${c.radiusKm.toFixed(2)} km</strong></span>
             <span>Duration: <strong>${new Date(c.startTime).toLocaleDateString()} - ${new Date(c.endTime).toLocaleDateString()}</strong></span>
-            <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #cbd5e1;">
+            <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #dadad3;">
               <span style="font-weight: 700; color: #6d28d9;">Detected MO Series:</span><br/>
-              <span style="color: #64748b; line-height: 1.4; display: block; margin-top: 2px;">${seriesText}</span>
+              <span style="color: #262622; line-height: 1.4; display: block; margin-top: 2px;">${seriesText}</span>
             </div>
           </div>
         </div>
@@ -243,7 +243,7 @@ function CrimeLeafletMap({
       if (timeOfDayFilter === 'night' && !isNight) return
 
       const coords: [number, number] = [inc.latitude, inc.longitude]
-      let color = '#3b82f6'
+      let color = '#e60023'
       if (inc.priority === 'urgent') color = '#ef4444'
       else if (inc.priority === 'high') color = '#f97316'
 
@@ -262,10 +262,10 @@ function CrimeLeafletMap({
 
       circleObj.bindPopup(`
         <div style="font-family: ${FONT_SANS}; min-width: 180px; padding: 4px;">
-          <h4 style="margin: 0 0 6px; font-size: 13px; font-weight: 700; color: #1e293b; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
+          <h4 style="margin: 0 0 6px; font-size: 13px; font-weight: 700; color: #262622; border-bottom: 1px solid #dadad3; padding-bottom: 4px;">
             🚨 ${inc.case_number} (${inc.category.toUpperCase()})
           </h4>
-          <div style="font-size: 11px; display: flex; flex-direction: column; gap: 4px; color: #64748b;">
+          <div style="font-size: 11px; display: flex; flex-direction: column; gap: 4px; color: #262622;">
             <span>Location: <strong>${inc.location}, ${inc.district}</strong></span>
             <span>MO: <i>${inc.modus_operandi}</i></span>
             <span style="color: ${color}; font-weight: 600;">Priority: ${inc.priority.toUpperCase()}</span>
@@ -286,12 +286,12 @@ function CrimeLeafletMap({
         <div style={{
           position: 'absolute',
           inset: 0,
-          background: '#f8fafc',
-          borderRadius: '12px',
+          background: '#f6f6f3',
+          borderRadius: '16px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          color: '#64748b',
+          color: '#262622',
           fontSize: '14px',
           fontWeight: 600,
           zIndex: 10
@@ -299,7 +299,7 @@ function CrimeLeafletMap({
           Loading Map overlays...
         </div>
       )}
-      <div id="ksp-map-container" style={{ flex: 1, width: '100%', borderRadius: '12px', overflow: 'hidden' }}></div>
+      <div id="ksp-map-container" style={{ flex: 1, width: '100%', borderRadius: '16px', overflow: 'hidden' }}></div>
 
       {/* Map Legend Overlay */}
       <div style={{
@@ -308,14 +308,14 @@ function CrimeLeafletMap({
         left: '20px',
         zIndex: 1000,
         background: '#ffffff',
-        border: '1px solid #e2e8f0',
-        borderRadius: '10px',
+        border: '1px solid #dadad3',
+        borderRadius: '16px',
         padding: '12px 16px',
         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
         width: '140px',
         fontFamily: FONT_SANS
       }}>
-        <div style={{ fontSize: '11px', fontWeight: 700, color: '#475569', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+        <div style={{ fontSize: '11px', fontWeight: 700, color: '#262622', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
           Crime Density
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
@@ -323,10 +323,10 @@ function CrimeLeafletMap({
             { label: 'Very High', color: '#ef4444' },
             { label: 'High', color: '#f97316' },
             { label: 'Medium', color: '#eab308' },
-            { label: 'Low', color: '#16a34a' },
-            { label: 'Very Low', color: '#22c55e' }
+            { label: 'Low', color: '#6D9998' },
+            { label: 'Very Low', color: '#7B8F65' }
           ].map(item => (
-            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: 600, color: '#64748b' }}>
+            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: 600, color: '#262622' }}>
               <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: item.color }} />
               <span>{item.label}</span>
             </div>
@@ -341,8 +341,8 @@ function CrimeLeafletMap({
         right: '20px',
         zIndex: 1000,
         background: '#ffffff',
-        border: '1px solid #e2e8f0',
-        borderRadius: '8px',
+        border: '1px solid #dadad3',
+        borderRadius: '16px',
         padding: '8px 12px',
         boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
         display: 'flex',
@@ -350,7 +350,7 @@ function CrimeLeafletMap({
         gap: '6px',
         fontFamily: FONT_SANS,
         fontSize: '11px',
-        color: '#475569',
+        color: '#262622',
         fontWeight: 600
       }}>
         <Clock size={12} />
@@ -365,20 +365,20 @@ function KpiCard({ title, value, subtitle, icon, color }: { title: string, value
   return (
     <div style={{
       background: '#ffffff',
-      border: '1px solid #e2e8f0',
-      borderRadius: '12px',
+      border: '1px solid #dadad3',
+      borderRadius: '16px',
       padding: '20px',
       display: 'flex',
       alignItems: 'center',
       gap: '16px',
       boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
     }}>
-      <div style={{ background: `${color}15`, color: color, padding: '12px', borderRadius: '10px' }}>
+      <div style={{ background: `${color}15`, color: color, padding: '12px', borderRadius: '16px' }}>
         {icon}
       </div>
       <div>
-        <div style={{ fontSize: '12px', fontWeight: 600, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{title}</div>
-        <div style={{ fontSize: '24px', fontWeight: 700, color: '#0f172a', margin: '2px 0' }}>{value}</div>
+        <div style={{ fontSize: '12px', fontWeight: 600, color: '#262622', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{title}</div>
+        <div style={{ fontSize: '24px', fontWeight: 700, color: '#000000', margin: '2px 0' }}>{value}</div>
         <div style={{ fontSize: '11px', color: '#94a3b8' }}>{subtitle}</div>
       </div>
     </div>
@@ -443,10 +443,10 @@ export default function CrimeIntelligencePage() {
   }, {} as Record<string, number>)
 
   const colorsMap: Record<string, string> = {
-    theft: '#10b981',
+    theft: '#7B8F65',
     cybercrime: '#f59e0b',
     narcotics: '#ef4444',
-    robbery: '#3b82f6',
+    robbery: '#e60023',
     assault: '#8b5cf6',
     murder: '#ec4899'
   }
@@ -460,7 +460,7 @@ export default function CrimeIntelligencePage() {
   // Status/threat badge evaluation
   let statusLabel = 'Low Threat'
   let badgeBg = '#dcfce7'
-  let badgeText = '#15803d'
+  let badgeText = '#6D9998'
   if (totalCases >= 4) {
     statusLabel = 'Critical'
     badgeBg = '#fee2e2'
@@ -532,7 +532,7 @@ export default function CrimeIntelligencePage() {
       id: 'theft',
       label: 'Theft Crimes',
       icon: ShieldAlert,
-      color: '#16a34a',
+      color: '#6D9998',
       count: incidents.filter(i => i.category === 'theft').length
     },
     {
@@ -553,14 +553,14 @@ export default function CrimeIntelligencePage() {
       id: 'robbery',
       label: 'Robbery Issues',
       icon: AlertTriangle,
-      color: '#2563eb',
+      color: '#e60023',
       count: incidents.filter(i => i.category === 'robbery').length
     },
     {
       id: 'all',
       label: 'All Crimes',
       icon: Layers,
-      color: '#475569',
+      color: '#262622',
       count: incidents.length
     }
   ]
@@ -578,10 +578,10 @@ export default function CrimeIntelligencePage() {
   }).filter(Boolean) as (KspPerson & { role: string })[]
 
   return (
-    <main style={{ minHeight: '100vh', background: '#f8fafc', padding: '40px 24px', fontFamily: FONT_SANS }}>
+    <main style={{ minHeight: '100vh', background: '#f6f6f3', padding: '40px 24px', fontFamily: FONT_SANS }}>
       <style>{`
         .hover-row:hover {
-          background-color: #f8fafc !important;
+          background-color: #f6f6f3 !important;
         }
         @keyframes fadeIn {
           from { opacity: 0; }
@@ -604,28 +604,28 @@ export default function CrimeIntelligencePage() {
           marginBottom: '24px'
         }}>
           <div>
-            <h1 style={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: '28px', color: '#0f172a' }}>
+            <h1 style={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: '28px', color: '#000000' }}>
               Crime-Specific Hotspots
             </h1>
-            <p style={{ fontSize: '14px', color: '#64748b', marginTop: '4px' }}>
+            <p style={{ fontSize: '14px', color: '#262622', marginTop: '4px' }}>
               Select a crime type to view complaints density by district
             </p>
           </div>
           
           {/* District Selector Dropdown (Styled like the mockup top-bar dropdown) */}
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: '#64748b' }}>District:</span>
+            <span style={{ fontSize: '13px', fontWeight: 600, color: '#262622' }}>District:</span>
             <select
               value={districtFilter}
               onChange={e => setDistrictFilter(e.target.value)}
               style={{
                 height: '40px',
                 padding: '0 32px 0 16px',
-                borderRadius: '8px',
-                border: '1px solid #cbd5e1',
+                borderRadius: '16px',
+                border: '1px solid #dadad3',
                 fontSize: '14px',
                 fontWeight: 700,
-                color: '#0f172a',
+                color: '#000000',
                 background: '#ffffff',
                 cursor: 'pointer',
                 boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
@@ -659,8 +659,8 @@ export default function CrimeIntelligencePage() {
                 onClick={() => setCategoryFilter(card.id)}
                 style={{
                   background: '#ffffff',
-                  border: isSelected ? `2.5px solid ${card.color}` : '1.5px solid #e2e8f0',
-                  borderRadius: '12px',
+                  border: isSelected ? `2.5px solid ${card.color}` : '1.5px solid #dadad3',
+                  borderRadius: '16px',
                   padding: '16px 20px',
                   display: 'flex',
                   alignItems: 'center',
@@ -676,7 +676,7 @@ export default function CrimeIntelligencePage() {
                   background: `${card.color}12`,
                   color: card.color,
                   padding: '10px',
-                  borderRadius: '8px',
+                  borderRadius: '16px',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center'
@@ -684,8 +684,8 @@ export default function CrimeIntelligencePage() {
                   <IconComponent size={24} />
                 </div>
                 <div>
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a' }}>{card.label}</div>
-                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px', fontWeight: 500 }}>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#000000' }}>{card.label}</div>
+                  <div style={{ fontSize: '12px', color: '#262622', marginTop: '2px', fontWeight: 500 }}>
                     {card.count} {card.count === 1 ? 'incident' : 'incidents'}
                   </div>
                 </div>
@@ -699,7 +699,7 @@ export default function CrimeIntelligencePage() {
           <div style={{
             background: '#fee2e2',
             border: '1px solid #fca5a5',
-            borderRadius: '12px',
+            borderRadius: '16px',
             padding: '16px 20px',
             marginBottom: '24px',
             display: 'flex',
@@ -739,7 +739,7 @@ export default function CrimeIntelligencePage() {
           <div style={{
             background: '#ffffff',
             borderRadius: '16px',
-            border: '1px solid #e2e8f0',
+            border: '1px solid #dadad3',
             padding: '24px',
             boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)',
             display: 'flex',
@@ -750,11 +750,11 @@ export default function CrimeIntelligencePage() {
             <div style={{ 
               flex: 1, 
               width: '100%', 
-              background: '#f1f5f9', 
-              borderRadius: '12px', 
+              background: '#f6f6f3', 
+              borderRadius: '16px', 
               overflow: 'hidden',
               boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
-              border: '1px solid #e2e8f0',
+              border: '1px solid #dadad3',
               position: 'relative',
               minHeight: '760px',
               display: 'flex',
@@ -774,7 +774,7 @@ export default function CrimeIntelligencePage() {
           <div style={{
             background: '#ffffff',
             borderRadius: '16px',
-            border: '1px solid #e2e8f0',
+            border: '1px solid #dadad3',
             padding: '24px',
             boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)',
             display: 'flex',
@@ -784,12 +784,12 @@ export default function CrimeIntelligencePage() {
             minWidth: '300px'
           }}>
             {/* Detail Panel Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', borderBottom: '1px solid #dadad3', paddingBottom: '12px' }}>
               <div>
-                <h3 style={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: '20px', color: '#0f172a' }}>
+                <h3 style={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: '20px', color: '#000000' }}>
                   {districtFilter === 'all' ? 'Karnataka State' : districtFilter}
                 </h3>
-                <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>JURISDICTION OVERVIEW</span>
+                <span style={{ fontSize: '11px', color: '#262622', fontWeight: 600 }}>JURISDICTION OVERVIEW</span>
               </div>
               <span style={{
                 background: districtStats.badgeBg,
@@ -813,26 +813,26 @@ export default function CrimeIntelligencePage() {
             {/* 3-Column Stats Grid */}
             <div style={{
               display: 'flex',
-              border: '1px solid #e2e8f0',
-              borderRadius: '10px',
+              border: '1px solid #dadad3',
+              borderRadius: '16px',
               background: '#ffffff',
               overflow: 'hidden',
               boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
             }}>
-              <div style={{ flex: 1, padding: '12px 10px', textAlign: 'center', borderRight: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>Total Cases</div>
-                <div style={{ fontSize: '20px', fontWeight: 800, color: '#0f172a', margin: '4px 0' }}>{districtStats.total}</div>
+              <div style={{ flex: 1, padding: '12px 10px', textAlign: 'center', borderRight: '1px solid #dadad3' }}>
+                <div style={{ fontSize: '11px', color: '#262622', fontWeight: 600 }}>Total Cases</div>
+                <div style={{ fontSize: '20px', fontWeight: 800, color: '#000000', margin: '4px 0' }}>{districtStats.total}</div>
                 <div style={{ fontSize: '10px', color: '#ef4444', fontWeight: 600 }}>↑ 12% vs last wk</div>
               </div>
-              <div style={{ flex: 1, padding: '12px 10px', textAlign: 'center', borderRight: '1px solid #e2e8f0' }}>
-                <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>Solved</div>
-                <div style={{ fontSize: '20px', fontWeight: 800, color: '#16a34a', margin: '4px 0' }}>{Math.round(districtStats.total * 0.6)}</div>
-                <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 500 }}>60% solved</div>
+              <div style={{ flex: 1, padding: '12px 10px', textAlign: 'center', borderRight: '1px solid #dadad3' }}>
+                <div style={{ fontSize: '11px', color: '#262622', fontWeight: 600 }}>Solved</div>
+                <div style={{ fontSize: '20px', fontWeight: 800, color: '#6D9998', margin: '4px 0' }}>{Math.round(districtStats.total * 0.6)}</div>
+                <div style={{ fontSize: '10px', color: '#262622', fontWeight: 500 }}>60% solved</div>
               </div>
               <div style={{ flex: 1, padding: '12px 10px', textAlign: 'center' }}>
-                <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600 }}>Active</div>
+                <div style={{ fontSize: '11px', color: '#262622', fontWeight: 600 }}>Active</div>
                 <div style={{ fontSize: '20px', fontWeight: 800, color: '#ea580c', margin: '4px 0' }}>{districtStats.total - Math.round(districtStats.total * 0.6)}</div>
-                <div style={{ fontSize: '10px', color: '#64748b', fontWeight: 500 }}>40% active</div>
+                <div style={{ fontSize: '10px', color: '#262622', fontWeight: 500 }}>40% active</div>
               </div>
             </div>
 
@@ -844,31 +844,31 @@ export default function CrimeIntelligencePage() {
             }}>
               <div style={{
                 flex: 1,
-                border: '1px solid #e2e8f0',
-                borderRadius: '8px',
+                border: '1px solid #dadad3',
+                borderRadius: '16px',
                 padding: '10px 12px',
-                background: '#f8fafc',
+                background: '#f6f6f3',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '2px'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#262622', fontWeight: 600 }}>
                   <Clock size={12} /> Avg. Response
                 </div>
-                <div style={{ fontSize: '16px', fontWeight: 800, color: '#0f172a' }}>18m</div>
-                <span style={{ fontSize: '10px', color: '#16a34a', fontWeight: 600 }}>↓ 3m from yesterday</span>
+                <div style={{ fontSize: '16px', fontWeight: 800, color: '#000000' }}>18m</div>
+                <span style={{ fontSize: '10px', color: '#6D9998', fontWeight: 600 }}>↓ 3m from yesterday</span>
               </div>
               <div style={{
                 flex: 1,
-                border: '1px solid #e2e8f0',
-                borderRadius: '8px',
+                border: '1px solid #dadad3',
+                borderRadius: '16px',
                 padding: '10px 12px',
-                background: '#f8fafc',
+                background: '#f6f6f3',
                 display: 'flex',
                 flexDirection: 'column',
                 gap: '2px'
               }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#64748b', fontWeight: 600 }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#262622', fontWeight: 600 }}>
                   <ShieldAlert size={12} /> Escalations
                 </div>
                 <div style={{ fontSize: '16px', fontWeight: 800, color: '#ef4444' }}>{districtStats.urgent}</div>
@@ -878,19 +878,19 @@ export default function CrimeIntelligencePage() {
 
             {/* Category distribution list */}
             <div>
-              <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+              <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#262622', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                 Top Sub-Issues
               </h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {districtStats.categories.map(cat => (
                   <div key={cat.name} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 600, color: '#475569', width: '90px', textTransform: 'capitalize', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 600, color: '#262622', width: '90px', textTransform: 'capitalize', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
                       {cat.name}
                     </span>
-                    <div style={{ flex: 1, height: '8px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ flex: 1, height: '8px', background: '#f6f6f3', borderRadius: '4px', overflow: 'hidden' }}>
                       <div style={{ height: '100%', width: `${cat.pct}%`, background: cat.color, borderRadius: '4px' }} />
                     </div>
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#334155', width: '50px', textAlign: 'right' }}>
+                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#262622', width: '50px', textAlign: 'right' }}>
                       {cat.count} ({cat.pct}%)
                     </span>
                   </div>
@@ -900,22 +900,22 @@ export default function CrimeIntelligencePage() {
 
 
             {/* Temporal Autocorrelation & Rhythms */}
-            <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '16px' }}>
-              <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            <div style={{ borderTop: '1px solid #dadad3', paddingTop: '16px' }}>
+              <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#262622', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                 Temporal Autocorrelation &amp; Trends
               </h4>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '11px', color: '#4b5563' }}>
                 <div style={{ display: 'flex', alignItems: 'start', gap: '8px' }}>
-                  <span style={{ fontWeight: 700, color: '#475569', minWidth: '85px' }}>Weekly Pattern:</span>
+                  <span style={{ fontWeight: 700, color: '#262622', minWidth: '85px' }}>Weekly Pattern:</span>
                   <span>{temporalTrends.weeklyPattern}</span>
                 </div>
                 <div style={{ display: 'flex', alignItems: 'start', gap: '8px' }}>
-                  <span style={{ fontWeight: 700, color: '#475569', minWidth: '85px' }}>Diurnal Rhythm:</span>
+                  <span style={{ fontWeight: 700, color: '#262622', minWidth: '85px' }}>Diurnal Rhythm:</span>
                   <span>{temporalTrends.diurnalPattern}</span>
                 </div>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '2px' }}>
-                  <span style={{ fontWeight: 700, color: '#475569' }}>Cyclical Rhythms:</span>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', background: '#f8fafc', padding: '6px 10px', borderRadius: '6px', border: '1px solid #e2e8f0', marginTop: '2px' }}>
+                  <span style={{ fontWeight: 700, color: '#262622' }}>Cyclical Rhythms:</span>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', background: '#f6f6f3', padding: '6px 10px', borderRadius: '6px', border: '1px solid #dadad3', marginTop: '2px' }}>
                     {temporalTrends.cyclicalRhythms.map((rhythm, rIdx) => (
                       <div key={rIdx} style={{ color: '#0369a1', fontWeight: 600 }}>• {rhythm}</div>
                     ))}
@@ -926,17 +926,17 @@ export default function CrimeIntelligencePage() {
 
 
             {/* Contextual Anomaly Detection */}
-            <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '16px' }}>
+            <div style={{ borderTop: '1px solid #dadad3', paddingTop: '16px' }}>
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#334155', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
+                <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#262622', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
                   Contextual Anomalies
                 </h4>
                 {anomaliesCount > 0 ? (
-                  <span style={{ fontSize: '10px', background: '#fee2e2', color: '#ef4444', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
+                  <span style={{ fontSize: '10px', background: '#fee2e2', color: '#ef4444', padding: '2px 8px', borderRadius: '16px', fontWeight: 700 }}>
                     {anomaliesCount} flagged
                   </span>
                 ) : (
-                  <span style={{ fontSize: '10px', background: '#dcfce7', color: '#16a34a', padding: '2px 8px', borderRadius: '12px', fontWeight: 700 }}>
+                  <span style={{ fontSize: '10px', background: '#dcfce7', color: '#6D9998', padding: '2px 8px', borderRadius: '16px', fontWeight: 700 }}>
                     Nominal
                   </span>
                 )}
@@ -944,7 +944,7 @@ export default function CrimeIntelligencePage() {
               
               {/* List Anomalous Incidents */}
               {anomaliesCount === 0 ? (
-                <div style={{ fontSize: '12px', color: '#64748b', background: '#f8fafc', padding: '10px 12px', borderRadius: '8px', border: '1px dashed #cbd5e1', textAlign: 'center' }}>
+                <div style={{ fontSize: '12px', color: '#262622', background: '#f6f6f3', padding: '10px 12px', borderRadius: '16px', border: '1px dashed #dadad3', textAlign: 'center' }}>
                   Isolation Forest: All cases nominal.
                 </div>
               ) : (
@@ -956,7 +956,7 @@ export default function CrimeIntelligencePage() {
                       <div key={idx} style={{
                         background: '#fffafb',
                         border: '1px solid #ffe4e6',
-                        borderRadius: '8px',
+                        borderRadius: '16px',
                         padding: '10px 12px',
                         display: 'flex',
                         flexDirection: 'column',
@@ -984,12 +984,12 @@ export default function CrimeIntelligencePage() {
             </div>
 
             {/* Spatiotemporal Series Analysis */}
-            <div style={{ borderTop: '1px solid #e2e8f0', paddingTop: '16px' }}>
-              <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#334155', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+            <div style={{ borderTop: '1px solid #dadad3', paddingTop: '16px' }}>
+              <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#262622', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                 Detected MO Series
               </h4>
               {detectedSeries.length === 0 ? (
-                <div style={{ fontSize: '12px', color: '#64748b', background: '#f8fafc', padding: '10px 12px', borderRadius: '8px', border: '1px dashed #cbd5e1', textAlign: 'center' }}>
+                <div style={{ fontSize: '12px', color: '#262622', background: '#f6f6f3', padding: '10px 12px', borderRadius: '16px', border: '1px dashed #dadad3', textAlign: 'center' }}>
                   No serial MO patterns detected.
                 </div>
               ) : (
@@ -998,7 +998,7 @@ export default function CrimeIntelligencePage() {
                     <div key={idx} style={{
                       background: '#fcfaff',
                       border: '1px solid #e8dbff',
-                      borderRadius: '8px',
+                      borderRadius: '16px',
                       padding: '10px 12px',
                       display: 'flex',
                       flexDirection: 'column',
@@ -1006,7 +1006,7 @@ export default function CrimeIntelligencePage() {
                     }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <span style={{ fontSize: '11px', fontWeight: 700, color: '#6d28d9' }}>Series #{s.seriesId} (Cluster #{s.clusterId})</span>
-                        <span style={{ fontSize: '10px', background: '#f3e8ff', color: '#7c3aed', padding: '1px 6px', borderRadius: '10px', fontWeight: 700 }}>
+                        <span style={{ fontSize: '10px', background: '#f3e8ff', color: '#7c3aed', padding: '1px 6px', borderRadius: '16px', fontWeight: 700 }}>
                           {Math.round(s.averageSimilarity * 100)}% Match
                         </span>
                       </div>
@@ -1034,10 +1034,10 @@ export default function CrimeIntelligencePage() {
                 marginTop: 'auto',
                 width: '100%',
                 height: '44px',
-                background: '#2563eb',
+                background: '#e60023',
                 color: '#ffffff',
                 border: 'none',
-                borderRadius: '8px',
+                borderRadius: '16px',
                 fontSize: '14px',
                 fontWeight: 700,
                 cursor: 'pointer',
@@ -1047,8 +1047,8 @@ export default function CrimeIntelligencePage() {
                 justifyContent: 'center',
                 gap: '6px'
               }}
-              onMouseEnter={e => e.currentTarget.style.background = '#1d4ed8'}
-              onMouseLeave={e => e.currentTarget.style.background = '#2563eb'}
+              onMouseEnter={e => e.currentTarget.style.background = '#e60023'}
+              onMouseLeave={e => e.currentTarget.style.background = '#e60023'}
             >
               View All Complaints &rarr;
             </button>
@@ -1074,11 +1074,11 @@ export default function CrimeIntelligencePage() {
             background: '#eff6ff',
             color: '#1e3a8a',
             padding: '10px 16px',
-            borderRadius: '8px',
+            borderRadius: '16px',
             fontSize: '12px',
             fontWeight: 600
           }}>
-            <AlertTriangle size={14} style={{ color: '#2563eb' }} />
+            <AlertTriangle size={14} style={{ color: '#e60023' }} />
             <span>Tip: Click on any district boundary to view detailed complaints and trends</span>
           </div>
 
@@ -1090,17 +1090,17 @@ export default function CrimeIntelligencePage() {
               alignItems: 'center',
               gap: '6px',
               background: '#ffffff',
-              border: '1px solid #cbd5e1',
-              borderRadius: '8px',
+              border: '1px solid #dadad3',
+              borderRadius: '16px',
               padding: '10px 16px',
               fontSize: '12px',
               fontWeight: 600,
-              color: '#475569',
+              color: '#262622',
               cursor: 'pointer',
               boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
               transition: 'all 120ms'
             }}
-            onMouseEnter={e => e.currentTarget.style.background = '#f8fafc'}
+            onMouseEnter={e => e.currentTarget.style.background = '#f6f6f3'}
             onMouseLeave={e => e.currentTarget.style.background = '#ffffff'}
           >
             <RefreshCw size={14} />
@@ -1112,18 +1112,18 @@ export default function CrimeIntelligencePage() {
         <div id="station-logs-section" style={{
           background: '#ffffff',
           borderRadius: '16px',
-          border: '1px solid #e2e8f0',
+          border: '1px solid #dadad3',
           boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)',
           overflow: 'hidden'
         }}>
-          <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0' }}>
-            <h3 style={{ fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: '18px', color: '#0f172a' }}>
+          <div style={{ padding: '20px 24px', borderBottom: '1px solid #dadad3' }}>
+            <h3 style={{ fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: '18px', color: '#000000' }}>
               Jurisdiction / Station Metrics
             </h3>
           </div>
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
             <thead>
-              <tr style={{ background: '#f8fafc', color: '#475569', fontWeight: 600, borderBottom: '1px solid #e2e8f0' }}>
+              <tr style={{ background: '#f6f6f3', color: '#262622', fontWeight: 600, borderBottom: '1px solid #dadad3' }}>
                 <th style={{ padding: '12px 24px' }}>Case Number</th>
                 <th style={{ padding: '12px 16px' }}>Category</th>
                 <th style={{ padding: '12px 16px' }}>Station</th>
@@ -1139,13 +1139,13 @@ export default function CrimeIntelligencePage() {
                   onClick={() => setSelectedIncidentId(inc.id)}
                   className="hover-row"
                   style={{ 
-                    borderBottom: '1px solid #f1f5f9', 
-                    color: '#334155',
+                    borderBottom: '1px solid #f6f6f3', 
+                    color: '#262622',
                     cursor: 'pointer',
                     transition: 'background 120ms ease'
                   }}
                 >
-                  <td style={{ padding: '14px 24px', fontWeight: 700, color: '#0f172a' }}>{inc.case_number}</td>
+                  <td style={{ padding: '14px 24px', fontWeight: 700, color: '#000000' }}>{inc.case_number}</td>
                   <td style={{ padding: '14px 16px', textTransform: 'capitalize' }}>{inc.category}</td>
                   <td style={{ padding: '14px 16px' }}>{inc.police_station}</td>
                   <td style={{ padding: '14px 16px' }}>{inc.district}</td>
@@ -1179,7 +1179,7 @@ export default function CrimeIntelligencePage() {
             width: '100%',
             maxWidth: '840px',
             boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
-            border: '1px solid #e2e8f0',
+            border: '1px solid #dadad3',
             overflow: 'hidden',
             display: 'flex',
             flexDirection: 'column',
@@ -1188,7 +1188,7 @@ export default function CrimeIntelligencePage() {
           }}>
             {/* Header */}
             <div style={{
-              background: '#0f172a',
+              background: '#000000',
               color: '#ffffff',
               padding: '20px 28px',
               display: 'flex',
@@ -1229,27 +1229,27 @@ export default function CrimeIntelligencePage() {
             <div style={{ padding: '28px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
               
               {/* Top Summary Row */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px', background: '#f8fafc', padding: '16px', borderRadius: '12px', border: '1px solid #e2e8f0' }}>
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px', background: '#f6f6f3', padding: '16px', borderRadius: '16px', border: '1px solid #dadad3' }}>
                 <div>
-                  <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Police Station</div>
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a', marginTop: '2px' }}>{selectedIncident?.police_station}</div>
+                  <div style={{ fontSize: '11px', color: '#262622', fontWeight: 600, textTransform: 'uppercase' }}>Police Station</div>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#000000', marginTop: '2px' }}>{selectedIncident?.police_station}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Date &amp; Time</div>
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a', marginTop: '2px' }}>
+                  <div style={{ fontSize: '11px', color: '#262622', fontWeight: 600, textTransform: 'uppercase' }}>Date &amp; Time</div>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#000000', marginTop: '2px' }}>
                     {selectedIncident ? new Date(selectedIncident.date_time).toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : ''}
-                    <span style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: '#64748b', marginTop: '1px' }}>
+                    <span style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: '#262622', marginTop: '1px' }}>
                       {selectedIncident ? new Date(selectedIncident.date_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
                     </span>
                   </div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Location &amp; District</div>
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#0f172a', marginTop: '2px' }}>{selectedIncident?.location}</div>
-                  <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>{selectedIncident?.district}</div>
+                  <div style={{ fontSize: '11px', color: '#262622', fontWeight: 600, textTransform: 'uppercase' }}>Location &amp; District</div>
+                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#000000', marginTop: '2px' }}>{selectedIncident?.location}</div>
+                  <div style={{ fontSize: '11px', color: '#262622', fontWeight: 500 }}>{selectedIncident?.district}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '11px', color: '#64748b', fontWeight: 600, textTransform: 'uppercase' }}>Threat / Priority</div>
+                  <div style={{ fontSize: '11px', color: '#262622', fontWeight: 600, textTransform: 'uppercase' }}>Threat / Priority</div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
                     <span style={{
                       background: selectedIncident?.priority === 'urgent' ? '#fee2e2' : selectedIncident?.priority === 'high' ? '#ffedd5' : '#fef3c7',
@@ -1257,12 +1257,12 @@ export default function CrimeIntelligencePage() {
                       fontSize: '11px',
                       fontWeight: 700,
                       padding: '2px 8px',
-                      borderRadius: '12px',
+                      borderRadius: '16px',
                       textTransform: 'uppercase'
                     }}>
                       {selectedIncident?.priority}
                     </span>
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#0f172a' }}>Score: {selectedIncident?.risk_score}</span>
+                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#000000' }}>Score: {selectedIncident?.risk_score}</span>
                   </div>
                 </div>
               </div>
@@ -1273,19 +1273,19 @@ export default function CrimeIntelligencePage() {
                 {/* Left side: Case Narrative */}
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
                   <div>
-                    <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#334155', borderBottom: '2px solid #e2e8f0', paddingBottom: '6px', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#262622', borderBottom: '2px solid #dadad3', paddingBottom: '6px', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       📜 Case History / Description
                     </h3>
-                    <p style={{ fontSize: '14px', color: '#334155', lineHeight: '1.6', background: '#f8fafc', padding: '16px', borderRadius: '10px', border: '1.5px solid #e2e8f0', margin: 0 }}>
+                    <p style={{ fontSize: '14px', color: '#262622', lineHeight: '1.6', background: '#f6f6f3', padding: '16px', borderRadius: '16px', border: '1.5px solid #dadad3', margin: 0 }}>
                       {selectedIncident?.description}
                     </p>
                   </div>
 
                   <div>
-                    <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#334155', borderBottom: '2px solid #e2e8f0', paddingBottom: '6px', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#262622', borderBottom: '2px solid #dadad3', paddingBottom: '6px', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       ⚙️ Modus Operandi Details
                     </h3>
-                    <p style={{ fontSize: '14px', color: '#475569', lineHeight: '1.6', fontStyle: 'italic', background: '#fcfaff', padding: '16px', borderRadius: '10px', border: '1.5px solid #e8dbff', margin: 0 }}>
+                    <p style={{ fontSize: '14px', color: '#262622', lineHeight: '1.6', fontStyle: 'italic', background: '#fcfaff', padding: '16px', borderRadius: '16px', border: '1.5px solid #e8dbff', margin: 0 }}>
                       {selectedIncident?.modus_operandi}
                     </p>
                   </div>
@@ -1296,11 +1296,11 @@ export default function CrimeIntelligencePage() {
                   
                   {/* Suspects / Victims List */}
                   <div>
-                    <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#334155', borderBottom: '2px solid #e2e8f0', paddingBottom: '6px', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#262622', borderBottom: '2px solid #dadad3', paddingBottom: '6px', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       👥 Associated Entities
                     </h3>
                     {associatedPeople.length === 0 ? (
-                      <div style={{ fontSize: '12px', color: '#64748b', padding: '12px', background: '#f8fafc', borderRadius: '8px', border: '1.5px dashed #cbd5e1', textAlign: 'center' }}>
+                      <div style={{ fontSize: '12px', color: '#262622', padding: '12px', background: '#f6f6f3', borderRadius: '16px', border: '1.5px dashed #dadad3', textAlign: 'center' }}>
                         No suspects or victims registered in system connections.
                       </div>
                     ) : (
@@ -1312,7 +1312,7 @@ export default function CrimeIntelligencePage() {
                               background: isSuspect ? '#fffafb' : '#f0f9ff',
                               border: isSuspect ? '1.5px solid #ffe4e6' : '1.5px solid #e0f2fe',
                               padding: '12px',
-                              borderRadius: '8px',
+                              borderRadius: '16px',
                               display: 'flex',
                               flexDirection: 'column',
                               gap: '4px'
@@ -1327,16 +1327,16 @@ export default function CrimeIntelligencePage() {
                                   background: isSuspect ? '#ffe4e6' : '#e0f2fe',
                                   color: isSuspect ? '#be123c' : '#0369a1',
                                   padding: '1px 6px',
-                                  borderRadius: '10px',
+                                  borderRadius: '16px',
                                   textTransform: 'uppercase'
                                 }}>
                                   {person.role.replace('_', ' ')}
                                 </span>
                               </div>
-                              <div style={{ fontSize: '11px', color: '#64748b' }}>
+                              <div style={{ fontSize: '11px', color: '#262622' }}>
                                 Age: {person.demographics.age} | Gender: {person.demographics.gender}
                               </div>
-                              <div style={{ fontSize: '11px', color: '#64748b', fontStyle: 'italic' }}>
+                              <div style={{ fontSize: '11px', color: '#262622', fontStyle: 'italic' }}>
                                 Occupation: {person.demographics.occupation}
                               </div>
                             </div>
@@ -1348,34 +1348,34 @@ export default function CrimeIntelligencePage() {
 
                   {/* Socio-Economic Context */}
                   <div>
-                    <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#334155', borderBottom: '2px solid #e2e8f0', paddingBottom: '6px', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#262622', borderBottom: '2px solid #dadad3', paddingBottom: '6px', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
                       📊 Demographics Context
                     </h3>
                     <div style={{
-                      background: '#f8fafc',
-                      border: '1.5px solid #e2e8f0',
+                      background: '#f6f6f3',
+                      border: '1.5px solid #dadad3',
                       padding: '12px',
-                      borderRadius: '8px',
+                      borderRadius: '16px',
                       display: 'flex',
                       flexDirection: 'column',
                       gap: '8px',
                       fontSize: '12px'
                     }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#64748b', fontWeight: 600 }}>Urbanization Rate:</span>
-                        <span style={{ fontWeight: 700, color: '#0f172a', textTransform: 'capitalize' }}>
+                        <span style={{ color: '#262622', fontWeight: 600 }}>Urbanization Rate:</span>
+                        <span style={{ fontWeight: 700, color: '#000000', textTransform: 'capitalize' }}>
                           {selectedIncident?.socio_economic_factors?.urbanization}
                         </span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#64748b', fontWeight: 600 }}>Population Density:</span>
-                        <span style={{ fontWeight: 700, color: '#0f172a', textTransform: 'capitalize' }}>
+                        <span style={{ color: '#262622', fontWeight: 600 }}>Population Density:</span>
+                        <span style={{ fontWeight: 700, color: '#000000', textTransform: 'capitalize' }}>
                           {selectedIncident?.socio_economic_factors?.density}
                         </span>
                       </div>
                       <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#64748b', fontWeight: 600 }}>Poverty Index:</span>
-                        <span style={{ fontWeight: 700, color: '#0f172a', textTransform: 'capitalize' }}>
+                        <span style={{ color: '#262622', fontWeight: 600 }}>Poverty Index:</span>
+                        <span style={{ fontWeight: 700, color: '#000000', textTransform: 'capitalize' }}>
                           {selectedIncident?.socio_economic_factors?.poverty_index}
                         </span>
                       </div>
@@ -1390,8 +1390,8 @@ export default function CrimeIntelligencePage() {
 
             {/* Footer Panel */}
             <div style={{
-              background: '#f8fafc',
-              borderTop: '1px solid #e2e8f0',
+              background: '#f6f6f3',
+              borderTop: '1px solid #dadad3',
               padding: '16px 28px',
               display: 'flex',
               justifyContent: 'flex-end',
@@ -1402,7 +1402,7 @@ export default function CrimeIntelligencePage() {
                 style={{
                   height: '38px',
                   padding: '0 20px',
-                  background: '#0f172a',
+                  background: '#000000',
                   color: '#ffffff',
                   border: 'none',
                   borderRadius: '6px',
@@ -1411,8 +1411,8 @@ export default function CrimeIntelligencePage() {
                   cursor: 'pointer',
                   transition: 'background 120ms'
                 }}
-                onMouseEnter={e => e.currentTarget.style.background = '#1e293b'}
-                onMouseLeave={e => e.currentTarget.style.background = '#0f172a'}
+                onMouseEnter={e => e.currentTarget.style.background = '#262622'}
+                onMouseLeave={e => e.currentTarget.style.background = '#000000'}
               >
                 Close File
               </button>

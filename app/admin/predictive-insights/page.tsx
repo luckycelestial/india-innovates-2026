@@ -104,7 +104,7 @@ export default function PredictiveInsightsPage() {
   const anomalies = incidents.filter(i => i.risk_score >= 80)
 
   return (
-    <main style={{ minHeight: '100vh', background: '#f8fafc', padding: '40px 24px', fontFamily: FONT_SANS }}>
+    <main style={{ minHeight: '100vh', background: '#f6f6f3', padding: '40px 24px', fontFamily: FONT_SANS }}>
       <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
         
         {/* Title strip */}
@@ -140,20 +140,20 @@ export default function PredictiveInsightsPage() {
           <div style={{
             background: '#ffffff',
             borderRadius: '16px',
-            border: '1px solid #e2e8f0',
+            border: '1px solid #dadad3',
             padding: '24px',
             boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)'
           }}>
-            <h3 style={{ fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: '18px', color: '#0f172a', marginBottom: '6px' }}>
+            <h3 style={{ fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: '18px', color: '#000000', marginBottom: '6px' }}>
               Sociological Indicators
             </h3>
-            <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '20px' }}>
+            <p style={{ fontSize: '12px', color: '#262622', marginBottom: '20px' }}>
               Overlay of crime occurrences with urbanization rate and poverty demographics.
             </p>
 
             {/* Urbanization Bar Chart (SVG) */}
             <div style={{ marginBottom: '24px' }}>
-              <div style={{ fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '8px' }}>Incidents by Urbanization Level:</div>
+              <div style={{ fontSize: '12px', fontWeight: 700, color: '#262622', marginBottom: '8px' }}>Incidents by Urbanization Level:</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {['high', 'medium', 'low'].map(lvl => {
                   const val = urbanGrouping[lvl] || 0
@@ -161,11 +161,11 @@ export default function PredictiveInsightsPage() {
                   const pct = Math.round((val / maxVal) * 100)
                   return (
                     <div key={lvl} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <span style={{ width: '60px', fontSize: '11px', textTransform: 'capitalize', color: '#64748b', fontWeight: 600 }}>{lvl}</span>
-                      <div style={{ flex: 1, height: '12px', background: '#f1f5f9', borderRadius: '6px', overflow: 'hidden' }}>
+                      <span style={{ width: '60px', fontSize: '11px', textTransform: 'capitalize', color: '#262622', fontWeight: 600 }}>{lvl}</span>
+                      <div style={{ flex: 1, height: '12px', background: '#f6f6f3', borderRadius: '6px', overflow: 'hidden' }}>
                         <div style={{ height: '100%', width: `${pct}%`, background: '#8b5cf6', borderRadius: '6px' }} />
                       </div>
-                      <span style={{ width: '24px', fontSize: '11px', fontWeight: 700, color: '#1e293b', textAlign: 'right' }}>{val}</span>
+                      <span style={{ width: '24px', fontSize: '11px', fontWeight: 700, color: '#262622', textAlign: 'right' }}>{val}</span>
                     </div>
                   )
                 })}
@@ -174,7 +174,7 @@ export default function PredictiveInsightsPage() {
 
             {/* Poverty correlation progress bar */}
             <div>
-              <div style={{ fontSize: '12px', fontWeight: 700, color: '#334155', marginBottom: '8px' }}>Incidents by Poverty Index:</div>
+              <div style={{ fontSize: '12px', fontWeight: 700, color: '#262622', marginBottom: '8px' }}>Incidents by Poverty Index:</div>
               <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 {['high', 'medium', 'low'].map(lvl => {
                   const val = povertyGrouping[lvl] || 0
@@ -182,11 +182,11 @@ export default function PredictiveInsightsPage() {
                   const pct = Math.round((val / maxVal) * 100)
                   return (
                     <div key={lvl} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                      <span style={{ width: '60px', fontSize: '11px', textTransform: 'capitalize', color: '#64748b', fontWeight: 600 }}>{lvl}</span>
-                      <div style={{ flex: 1, height: '12px', background: '#f1f5f9', borderRadius: '6px', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', width: `${pct}%`, background: '#3b82f6', borderRadius: '6px' }} />
+                      <span style={{ width: '60px', fontSize: '11px', textTransform: 'capitalize', color: '#262622', fontWeight: 600 }}>{lvl}</span>
+                      <div style={{ flex: 1, height: '12px', background: '#f6f6f3', borderRadius: '6px', overflow: 'hidden' }}>
+                        <div style={{ height: '100%', width: `${pct}%`, background: '#e60023', borderRadius: '6px' }} />
                       </div>
-                      <span style={{ width: '24px', fontSize: '11px', fontWeight: 700, color: '#1e293b', textAlign: 'right' }}>{val}</span>
+                      <span style={{ width: '24px', fontSize: '11px', fontWeight: 700, color: '#262622', textAlign: 'right' }}>{val}</span>
                     </div>
                   )
                 })}
@@ -198,18 +198,18 @@ export default function PredictiveInsightsPage() {
           <div style={{
             background: '#ffffff',
             borderRadius: '16px',
-            border: '1px solid #e2e8f0',
+            border: '1px solid #dadad3',
             boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)',
             overflow: 'hidden'
           }}>
-            <div style={{ padding: '20px 24px', borderBottom: '1px solid #e2e8f0' }}>
-              <h3 style={{ fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: '18px', color: '#0f172a' }}>
+            <div style={{ padding: '20px 24px', borderBottom: '1px solid #dadad3' }}>
+              <h3 style={{ fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: '18px', color: '#000000' }}>
                 Predictive Risk Matrix &amp; Force Deployment
               </h3>
             </div>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
               <thead>
-                <tr style={{ background: '#f8fafc', color: '#475569', fontWeight: 600, borderBottom: '1px solid #e2e8f0' }}>
+                <tr style={{ background: '#f6f6f3', color: '#262622', fontWeight: 600, borderBottom: '1px solid #dadad3' }}>
                   <th style={{ padding: '12px 24px' }}>District</th>
                   <th style={{ padding: '12px 16px' }}>Threat Index</th>
                   <th style={{ padding: '12px 16px' }}>Risk Level</th>
@@ -233,15 +233,15 @@ export default function PredictiveInsightsPage() {
                   }
                   
                   return (
-                    <tr key={f.district} style={{ borderBottom: '1px solid #f1f5f9', color: '#334155' }}>
-                      <td style={{ padding: '14px 24px', fontWeight: 700, color: '#0f172a' }}>{f.district}</td>
+                    <tr key={f.district} style={{ borderBottom: '1px solid #f6f6f3', color: '#262622' }}>
+                      <td style={{ padding: '14px 24px', fontWeight: 700, color: '#000000' }}>{f.district}</td>
                       <td style={{ padding: '14px 16px', fontWeight: 700 }}>{f.threatScore}%</td>
                       <td style={{ padding: '14px 16px' }}>
                         <span style={{ background: badgeBg, color: badgeText, fontSize: '10px', fontWeight: 700, padding: '2px 8px', borderRadius: '20px' }}>
                           {f.riskLevel}
                         </span>
                       </td>
-                      <td style={{ padding: '14px 16px', fontWeight: 600, color: f.trend === 'Increasing' ? '#b91c1c' : f.trend === 'Decreasing' ? '#15803d' : '#475569' }}>
+                      <td style={{ padding: '14px 16px', fontWeight: 600, color: f.trend === 'Increasing' ? '#b91c1c' : f.trend === 'Decreasing' ? '#6D9998' : '#262622' }}>
                         {f.trend === 'Increasing' ? '📈 Up' : f.trend === 'Decreasing' ? '📉 Down' : '➡️ Stable'}
                       </td>
                       <td style={{ padding: '14px 24px', fontSize: '11px', lineHeight: 1.4 }}>
@@ -261,15 +261,15 @@ export default function PredictiveInsightsPage() {
         <div style={{
           background: '#ffffff',
           borderRadius: '16px',
-          border: '1px solid #e2e8f0',
+          border: '1px solid #dadad3',
           boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)',
           overflow: 'hidden',
           padding: '24px'
         }}>
-          <h3 style={{ fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: '18px', color: '#0f172a', marginBottom: '4px' }}>
+          <h3 style={{ fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: '18px', color: '#000000', marginBottom: '4px' }}>
             Behavioral Anomaly log
           </h3>
-          <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '20px' }}>
+          <p style={{ fontSize: '12px', color: '#262622', marginBottom: '20px' }}>
             Critical anomalies representing high threat scores or significant shifts in typical MO signatures.
           </p>
 
@@ -280,14 +280,14 @@ export default function PredictiveInsightsPage() {
                 style={{
                   border: '1px solid #fecaca',
                   background: '#fff5f5',
-                  borderRadius: '10px',
+                  borderRadius: '16px',
                   padding: '16px',
                   display: 'flex',
                   alignItems: 'start',
                   gap: '12px'
                 }}
               >
-                <div style={{ background: '#fee2e2', color: '#ef4444', padding: '10px', borderRadius: '8px' }}>
+                <div style={{ background: '#fee2e2', color: '#ef4444', padding: '10px', borderRadius: '16px' }}>
                   <AlertTriangle size={18} />
                 </div>
                 <div>
@@ -296,7 +296,7 @@ export default function PredictiveInsightsPage() {
                     <span style={{ fontSize: '11px', color: '#dc2626', background: '#fee2e2', padding: '1px 8px', borderRadius: '20px', fontWeight: 600 }}>
                       Anomalous Index: {anom.risk_score}
                     </span>
-                    <span style={{ fontSize: '11px', color: '#64748b' }}>
+                    <span style={{ fontSize: '11px', color: '#262622' }}>
                       | {anom.police_station}, {anom.district}
                     </span>
                   </div>

@@ -177,7 +177,7 @@ export default function LinkAnalysisPage() {
     })
 
   return (
-    <main style={{ minHeight: '100vh', background: '#f8fafc', padding: '40px 24px', fontFamily: FONT_SANS }}>
+    <main style={{ minHeight: '100vh', background: '#f6f6f3', padding: '40px 24px', fontFamily: FONT_SANS }}>
       <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
         
         {/* Title strip */}
@@ -213,16 +213,16 @@ export default function LinkAnalysisPage() {
           <div style={{
             background: '#ffffff',
             borderRadius: '16px',
-            border: '1px solid #e2e8f0',
+            border: '1px solid #dadad3',
             padding: '24px',
             boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)'
           }}>
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
               <div>
-                <h3 style={{ fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: '18px', color: '#0f172a' }}>
+                <h3 style={{ fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: '18px', color: '#000000' }}>
                   Interactive Association Graph
                 </h3>
-                <p style={{ fontSize: '12px', color: '#64748b' }}>
+                <p style={{ fontSize: '12px', color: '#262622' }}>
                   Drag nodes to adjust layout. Click node to inspect criminal profile and interconnected linkages.
                 </p>
               </div>
@@ -237,7 +237,7 @@ export default function LinkAnalysisPage() {
                     height: '32px',
                     padding: '0 10px',
                     borderRadius: '6px',
-                    border: '1px solid #cbd5e1',
+                    border: '1px solid #dadad3',
                     fontSize: '12px',
                     outline: 'none'
                   }}
@@ -246,7 +246,7 @@ export default function LinkAnalysisPage() {
             </div>
 
             {/* SVG Interactive Canvas */}
-            <div style={{ background: '#0b0f19', borderRadius: '12px', overflow: 'hidden', border: '1px solid #1e293b' }}>
+            <div style={{ background: '#0b0f19', borderRadius: '16px', overflow: 'hidden', border: '1px solid #262622' }}>
               <svg 
                 viewBox="0 0 800 500" 
                 style={{ width: '100%', height: 'auto', cursor: draggedNodeId ? 'grabbing' : 'grab' }}
@@ -269,7 +269,7 @@ export default function LinkAnalysisPage() {
                       y1={source.y}
                       x2={target.x}
                       y2={target.y}
-                      stroke={isSelected ? '#818cf8' : '#334155'}
+                      stroke={isSelected ? '#818cf8' : '#262622'}
                       strokeWidth={isSelected ? '2.5' : '1'}
                       strokeDasharray={link.role === 'witness' ? '4' : '0'}
                       opacity={isSelected ? 0.9 : 0.4}
@@ -286,12 +286,12 @@ export default function LinkAnalysisPage() {
                   )
                   
                   // Style configurations
-                  let nodeColor = '#3b82f6'
+                  let nodeColor = '#e60023'
                   let r = 18
                   if (node.type === 'suspect') {
                     nodeColor = '#f43f5e' // Red
                   } else if (node.type === 'victim') {
-                    nodeColor = '#10b981' // Green
+                    nodeColor = '#7B8F65' // Green
                   } else if (node.type === 'incident') {
                     nodeColor = '#eab308' // Yellow
                     r = 15
@@ -316,9 +316,9 @@ export default function LinkAnalysisPage() {
                         opacity={selectedNode && !isSelected && !isLinked ? 0.4 : 1}
                       />
                       {node.type === 'incident' ? (
-                        <rect x="-6" y="-6" width="12" height="12" fill="#0f172a" />
+                        <rect x="-6" y="-6" width="12" height="12" fill="#000000" />
                       ) : (
-                        <circle r="4" fill="#0f172a" />
+                        <circle r="4" fill="#000000" />
                       )}
                       
                       {/* Node Text labels */}
@@ -346,46 +346,46 @@ export default function LinkAnalysisPage() {
             <div style={{
               background: '#ffffff',
               borderRadius: '16px',
-              border: '1px solid #e2e8f0',
+              border: '1px solid #dadad3',
               padding: '24px',
               boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)',
               minHeight: '220px'
             }}>
               {selectedNode ? (
                 <div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', borderBottom: '1px solid #e2e8f0', paddingBottom: '12px', marginBottom: '16px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', borderBottom: '1px solid #dadad3', paddingBottom: '12px', marginBottom: '16px' }}>
                     <div>
-                      <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: selectedNode.type === 'suspect' ? '#f43f5e' : selectedNode.type === 'victim' ? '#10b981' : '#eab308' }}>
+                      <div style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: selectedNode.type === 'suspect' ? '#f43f5e' : selectedNode.type === 'victim' ? '#7B8F65' : '#eab308' }}>
                         {selectedNode.type} profile
                       </div>
-                      <h3 style={{ fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: '18px', color: '#0f172a', marginTop: '2px' }}>
+                      <h3 style={{ fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: '18px', color: '#000000', marginTop: '2px' }}>
                         {selectedNode.label}
                       </h3>
                     </div>
                   </div>
 
                   {selectedNode.type === 'incident' ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '12px', color: '#334155' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '12px', color: '#262622' }}>
                       <div><strong>Location:</strong> {selectedNode.val.location}, {selectedNode.val.district}</div>
                       <div><strong>Modus Operandi:</strong> {selectedNode.val.modus_operandi}</div>
                       <div><strong>Description:</strong> {selectedNode.val.description}</div>
                       <div><strong>Threat Level:</strong> {selectedNode.val.priority.toUpperCase()}</div>
                     </div>
                   ) : (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '12px', color: '#334155' }}>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px', fontSize: '12px', color: '#262622' }}>
                       <div><strong>Age / Gender:</strong> {selectedNode.val.demographics?.age} / {selectedNode.val.demographics?.gender}</div>
                       <div><strong>Last Known Profession:</strong> {selectedNode.val.demographics?.occupation}</div>
                       
                       {/* Connection links list */}
                       <div style={{ marginTop: '8px' }}>
-                        <div style={{ fontWeight: 700, marginBottom: '6px', color: '#0f172a' }}>Linked Cases:</div>
+                        <div style={{ fontWeight: 700, marginBottom: '6px', color: '#000000' }}>Linked Cases:</div>
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                           {connections
                             .filter(c => c.person_id === selectedNode.id)
                             .map(c => {
                               const inc = incidents.find(i => i.id === c.incident_id)
                               return (
-                                <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 8px', background: '#f8fafc', borderRadius: '4px', border: '1px solid #e2e8f0' }}>
+                                <div key={c.id} style={{ display: 'flex', justifyContent: 'space-between', padding: '6px 8px', background: '#f6f6f3', borderRadius: '4px', border: '1px solid #dadad3' }}>
                                   <span>📁 {inc?.case_number}</span>
                                   <span style={{ fontWeight: 600, color: '#f43f5e' }}>{c.role}</span>
                                 </div>
@@ -398,7 +398,7 @@ export default function LinkAnalysisPage() {
                 </div>
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '180px', color: '#94a3b8', textAlign: 'center' }}>
-                  <Users size={32} style={{ marginBottom: '10px', color: '#cbd5e1' }} />
+                  <Users size={32} style={{ marginBottom: '10px', color: '#dadad3' }} />
                   <p style={{ fontSize: '13px' }}>Click any suspect or case node on the link graph to analyze associations</p>
                 </div>
               )}
@@ -408,14 +408,14 @@ export default function LinkAnalysisPage() {
             <div style={{
               background: '#ffffff',
               borderRadius: '16px',
-              border: '1px solid #e2e8f0',
+              border: '1px solid #dadad3',
               padding: '24px',
               boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)'
             }}>
-              <h3 style={{ fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: '18px', color: '#0f172a', marginBottom: '4px' }}>
+              <h3 style={{ fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: '18px', color: '#000000', marginBottom: '4px' }}>
                 Repeat Offender Profiles
               </h3>
-              <p style={{ fontSize: '12px', color: '#64748b', marginBottom: '16px' }}>
+              <p style={{ fontSize: '12px', color: '#262622', marginBottom: '16px' }}>
                 Cross-jurisdictional offenders linked to multiple incidents across KSP.
               </p>
 
@@ -428,7 +428,7 @@ export default function LinkAnalysisPage() {
                       onClick={() => setSelectedNode(nodes.find(n => n.id === ro.person?.id))}
                       style={{
                         padding: '12px',
-                        borderRadius: '8px',
+                        borderRadius: '16px',
                         border: '1px solid #fca5a5',
                         background: '#fff5f5',
                         cursor: 'pointer',

@@ -20,9 +20,15 @@ type MenuItem = {
 }
 
 const MENU_ITEMS: Record<'citizen' | 'officer' | 'admin', MenuItem[]> = {
-  citizen: [],
-  officer: [],
+  citizen: [
+    { label: 'Citizen Home', href: '/citizen/home', icon: Home },
+  ],
+  officer: [
+    { label: 'Ward Dashboard', href: '/official/dashboard/ward', icon: Kanban },
+    { label: 'Dept Dashboard', href: '/official/dashboard/department', icon: ClipboardList },
+  ],
   admin: [
+    { label: 'City Operations', href: '/official/dashboard', icon: Home },
     { label: 'KSP Crime Hotspots', href: '/admin/crime-intelligence', icon: Compass },
     { label: 'KSP Link Analysis', href: '/admin/link-analysis', icon: GitFork },
     { label: 'KSP Predictive Risk', href: '/admin/predictive-insights', icon: ShieldAlert },
@@ -55,7 +61,7 @@ export default function Sidebar({ role, userName, userSub }: SidebarProps) {
         top: 0,
         bottom: 0,
         width: isHovered ? '240px' : '64px',
-        backgroundColor: '#0F172A', // Sleek dark slate
+        backgroundColor: '#000000', // Sleek dark slate
         color: '#F8FAFC',
         zIndex: 5000,
         display: 'flex',
@@ -76,7 +82,7 @@ export default function Sidebar({ role, userName, userSub }: SidebarProps) {
               alt="KSP CIAP"
               width={40}
               height={40}
-              style={{ borderRadius: '8px', objectFit: 'cover' }}
+              style={{ borderRadius: '16px', objectFit: 'cover' }}
             />
           </div>
           {isHovered && (
@@ -84,7 +90,7 @@ export default function Sidebar({ role, userName, userSub }: SidebarProps) {
               fontWeight: 800, 
               fontSize: '18px', 
               letterSpacing: '1px', 
-              color: '#FFFFFF',
+              color: '#ffffff',
               animation: 'fadeIn 0.15s ease-out'
             }}>
               KSP CIAP
@@ -108,16 +114,16 @@ export default function Sidebar({ role, userName, userSub }: SidebarProps) {
                   justifyContent: isHovered ? 'flex-start' : 'center',
                   width: isHovered ? '100%' : '44px',
                   height: '44px',
-                  borderRadius: '8px',
+                  borderRadius: '16px',
                   textDecoration: 'none',
-                  color: isActive ? '#FFFFFF' : '#94A3B8',
+                  color: isActive ? '#ffffff' : '#94A3B8',
                   background: isActive ? '#1E293B' : 'transparent',
                   fontWeight: isActive ? 600 : 500,
                   fontSize: '14px',
                   transition: 'all 150ms ease-in-out'
                 }}
                 onMouseEnter={e => {
-                  if (!isActive) e.currentTarget.style.color = '#FFFFFF'
+                  if (!isActive) e.currentTarget.style.color = '#ffffff'
                   if (!isActive) e.currentTarget.style.background = 'rgba(255, 255, 255, 0.04)'
                 }}
                 onMouseLeave={e => {
@@ -159,7 +165,7 @@ export default function Sidebar({ role, userName, userSub }: SidebarProps) {
             height: '40px',
             borderRadius: '50%',
             backgroundColor: '#0EA5E9',
-            color: '#FFFFFF',
+            color: '#ffffff',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -178,7 +184,7 @@ export default function Sidebar({ role, userName, userSub }: SidebarProps) {
               <div style={{ 
                 fontSize: '13px', 
                 fontWeight: 600, 
-                color: '#FFFFFF',
+                color: '#ffffff',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
                 whiteSpace: 'nowrap'
@@ -209,7 +215,7 @@ export default function Sidebar({ role, userName, userSub }: SidebarProps) {
             justifyContent: isHovered ? 'flex-start' : 'center',
             width: isHovered ? '100%' : '44px',
             height: '44px',
-            borderRadius: '8px',
+            borderRadius: '16px',
             border: 'none',
             background: 'transparent',
             color: '#EF4444',
