@@ -3,21 +3,44 @@
 import React, { useState, useEffect } from 'react'
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
 import { 
   Bell, Search, Home, Compass, GitFork, ShieldAlert, 
-  BarChart2, LogOut, ChevronDown, ChevronUp 
+  BarChart2, LogOut, ChevronDown, ChevronUp, ClipboardList,
+  FilePlus, Scale, Kanban, Lock, AlertTriangle, Users
 } from 'lucide-react'
 
 export default function Navbar() {
   const pathname = usePathname()
   const router = useRouter()
   const searchParams = useSearchParams()
+  const supabase = createClient()
   
   const [isHovered, setIsHovered] = useState(false)
   const [dropdownOpen, setDropdownOpen] = useState(false)
+  const [userName, setUserName] = useState('User')
+  const [userRole, setUserRole] = useState('Member')
+
+  useEffect(() => {
+    const load = async () => {
+      const { data: { user } } = await supabase.auth.getUser()
+      if (user) {
+        if (user.user_metadata?.name) {
+          setUserName(user.user_metadata.name)
+        } else if (user.email) {
+          setUserName(user.email.split('@')[0])
+        }
+        if (user.user_metadata?.role) {
+          const r = user.user_metadata.role
+          setUserRole(r === 'admin' ? 'Super Admin' : r === 'officer' ? 'Ward Officer' : r)
+        }
+      }
+    }
+    load()
+  }, [])
 
   // Determine user mode based on route path
-  const isOfficial = pathname?.startsWith('/official') || pathname?.startsWith('/admin')
+  const isOfficial = pathname?.startsWith('/official') || pathname?.startsWith('/admin') || pathname?.startsWith('/officer')
   const isCitizen = pathname?.startsWith('/citizen')
   const isPortal = isOfficial || isCitizen
 
@@ -154,90 +177,157 @@ export default function Navbar() {
 
             {/* Navigation links */}
             <nav style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '12px' }}>
-              <Link 
-                href="/official/dashboard" 
-                className={`sidebar-link ${pathname === '/official/dashboard' ? 'active' : ''}`}
-              >
-                <Home size={20} style={{ flexShrink: 0 }} />
-                {isHovered && <span style={{ animation: 'fadeIn 0.15s ease-out' }}>City Overview</span>}
-              </Link>
+              {pathname?.startsWith('/officer') ? (
+                <>
+                  <Link 
+                    href="/officer/dashboard" 
+                    className={`sidebar-link ${pathname === '/officer/dashboard' ? 'active' : ''}`}
+                  >
+                    <Scale size={20} style={{ flexShrink: 0 }} />
+                    {isHovered && <span style={{ animation: 'fadeIn 0.15s ease-out' }}>Grievance Queue</span>}
+                  </Link>
 
-              {/* Heatmaps Dropdown Accordion */}
-              <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
-                <button
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setDropdownOpen(!dropdownOpen)
-                  }}
-                  className={`sidebar-link ${pathname?.startsWith('/admin/crime-intelligence') ? 'active' : ''}`}
-                >
-                  <Compass size={20} style={{ flexShrink: 0 }} />
-                  {isHovered && (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', animation: 'fadeIn 0.15s ease-out' }}>
-                      <span style={{ flex: 1 }}>Heatmaps</span>
-                      {dropdownOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-                    </div>
-                  )}
-                </button>
+                  <Link 
+                    href="/officer/pipeline" 
+                    className={`sidebar-link ${pathname === '/officer/pipeline' ? 'active' : ''}`}
+                  >
+                    <Kanban size={20} style={{ flexShrink: 0 }} />
+                    {isHovered && <span style={{ animation: 'fadeIn 0.15s ease-out' }}>Pipeline Board</span>}
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link 
+                    href="/official/dashboard" 
+                    className={`sidebar-link ${pathname === '/official/dashboard' ? 'active' : ''}`}
+                  >
+                    <Home size={20} style={{ flexShrink: 0 }} />
+                    {isHovered && <span style={{ animation: 'fadeIn 0.15s ease-out' }}>City Overview</span>}
+                  </Link>
 
-                {/* Dropdown Items */}
-                {isHovered && dropdownOpen && (
-                  <div style={{ display: 'flex', flexDirection: 'column', background: '#f6f6f3', padding: '4px 0' }}>
-                    <Link
-                      href="/admin/crime-intelligence?type=aqi"
-                      onClick={() => setDropdownOpen(false)}
-                      className={`sidebar-link ${(pathname?.startsWith('/admin/crime-intelligence') && activeType === 'aqi') ? 'active' : ''}`}
-                      style={{ paddingLeft: '44px', fontSize: '12px' }}
+                  {/* Heatmaps Dropdown Accordion */}
+                  <div style={{ display: 'flex', flexDirection: 'column', width: '100%' }}>
+                    <button
+                      onClick={(e) => {
+                        e.stopPropagation()
+                        setDropdownOpen(!dropdownOpen)
+                      }}
+                      className={`sidebar-link ${pathname?.startsWith('/admin/crime-intelligence') ? 'active' : ''}`}
                     >
-                      <BarChart2 size={16} />
-                      <span>🌬️ AQI Heatmap</span>
-                    </Link>
-                    <Link
-                      href="/admin/crime-intelligence?type=weather"
-                      onClick={() => setDropdownOpen(false)}
-                      className={`sidebar-link ${(pathname?.startsWith('/admin/crime-intelligence') && activeType === 'weather') ? 'active' : ''}`}
-                      style={{ paddingLeft: '44px', fontSize: '12px' }}
-                    >
-                      <BarChart2 size={16} />
-                      <span>🌦️ Weather &amp; Temp</span>
-                    </Link>
-                    <Link
-                      href="/admin/crime-intelligence?type=incidents"
-                      onClick={() => setDropdownOpen(false)}
-                      className={`sidebar-link ${(pathname?.startsWith('/admin/crime-intelligence') && activeType === 'incidents') ? 'active' : ''}`}
-                      style={{ paddingLeft: '44px', fontSize: '12px' }}
-                    >
-                      <BarChart2 size={16} />
-                      <span>🚨 Incident Counts</span>
-                    </Link>
-                    <Link
-                      href="/admin/crime-intelligence?type=crime"
-                      onClick={() => setDropdownOpen(false)}
-                      className={`sidebar-link ${(pathname?.startsWith('/admin/crime-intelligence') && activeType === 'crime') ? 'active' : ''}`}
-                      style={{ paddingLeft: '44px', fontSize: '12px' }}
-                    >
-                      <BarChart2 size={16} />
-                      <span>🛡️ Crime Density</span>
-                    </Link>
+                      <Compass size={20} style={{ flexShrink: 0 }} />
+                      {isHovered && (
+                        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', width: '100%', animation: 'fadeIn 0.15s ease-out' }}>
+                          <span style={{ flex: 1 }}>Heatmaps</span>
+                          {dropdownOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                        </div>
+                      )}
+                    </button>
+
+                    {/* Dropdown Items */}
+                    {isHovered && dropdownOpen && (
+                      <div style={{ display: 'flex', flexDirection: 'column', background: '#f6f6f3', padding: '4px 0' }}>
+                        <Link
+                          href="/admin/crime-intelligence?type=aqi"
+                          onClick={() => setDropdownOpen(false)}
+                          className={`sidebar-link ${(pathname?.startsWith('/admin/crime-intelligence') && activeType === 'aqi') ? 'active' : ''}`}
+                          style={{ paddingLeft: '44px', fontSize: '12px' }}
+                        >
+                          <BarChart2 size={16} />
+                          <span>🌬️ AQI Heatmap</span>
+                        </Link>
+                        <Link
+                          href="/admin/crime-intelligence?type=weather"
+                          onClick={() => setDropdownOpen(false)}
+                          className={`sidebar-link ${(pathname?.startsWith('/admin/crime-intelligence') && activeType === 'weather') ? 'active' : ''}`}
+                          style={{ paddingLeft: '44px', fontSize: '12px' }}
+                        >
+                          <BarChart2 size={16} />
+                          <span>🌦️ Weather &amp; Temp</span>
+                        </Link>
+                        <Link
+                          href="/admin/crime-intelligence?type=incidents"
+                          onClick={() => setDropdownOpen(false)}
+                          className={`sidebar-link ${(pathname?.startsWith('/admin/crime-intelligence') && activeType === 'incidents') ? 'active' : ''}`}
+                          style={{ paddingLeft: '44px', fontSize: '12px' }}
+                        >
+                          <BarChart2 size={16} />
+                          <span>🚨 Incident Counts</span>
+                        </Link>
+                        <Link
+                          href="/admin/crime-intelligence?type=crime"
+                          onClick={() => setDropdownOpen(false)}
+                          className={`sidebar-link ${(pathname?.startsWith('/admin/crime-intelligence') && activeType === 'crime') ? 'active' : ''}`}
+                          style={{ paddingLeft: '44px', fontSize: '12px' }}
+                        >
+                          <BarChart2 size={16} />
+                          <span>🛡️ Crime Density</span>
+                        </Link>
+                      </div>
+                    )}
                   </div>
-                )}
-              </div>
 
-              <Link 
-                href="/admin/link-analysis" 
-                className={`sidebar-link ${pathname === '/admin/link-analysis' ? 'active' : ''}`}
-              >
-                <GitFork size={20} style={{ flexShrink: 0 }} />
-                {isHovered && <span style={{ animation: 'fadeIn 0.15s ease-out' }}>KSP Link Analysis</span>}
-              </Link>
+                  <Link 
+                    href="/admin/link-analysis" 
+                    className={`sidebar-link ${pathname === '/admin/link-analysis' ? 'active' : ''}`}
+                  >
+                    <GitFork size={20} style={{ flexShrink: 0 }} />
+                    {isHovered && <span style={{ animation: 'fadeIn 0.15s ease-out' }}>KSP Link Analysis</span>}
+                  </Link>
 
-              <Link 
-                href="/admin/predictive-insights" 
-                className={`sidebar-link ${pathname === '/admin/predictive-insights' ? 'active' : ''}`}
-              >
-                <ShieldAlert size={20} style={{ flexShrink: 0 }} />
-                {isHovered && <span style={{ animation: 'fadeIn 0.15s ease-out' }}>KSP Predictive Risk</span>}
-              </Link>
+                  <Link 
+                    href="/admin/predictive-insights" 
+                    className={`sidebar-link ${pathname === '/admin/predictive-insights' ? 'active' : ''}`}
+                  >
+                    <ShieldAlert size={20} style={{ flexShrink: 0 }} />
+                    {isHovered && <span style={{ animation: 'fadeIn 0.15s ease-out' }}>KSP Predictive Risk</span>}
+                  </Link>
+
+                  {/* Admin Console & Tools from main branch */}
+                  <div style={{ margin: '8px 16px 4px', borderTop: '1px solid #dadad3', paddingTop: '8px' }}>
+                    {isHovered && <span style={{ fontSize: '10px', fontWeight: 700, color: '#94a3b8', letterSpacing: '0.5px' }}>SYSTEM CONTROL</span>}
+                  </div>
+
+                  <Link 
+                    href="/admin/dashboard" 
+                    className={`sidebar-link ${pathname === '/admin/dashboard' ? 'active' : ''}`}
+                  >
+                    <Lock size={20} style={{ flexShrink: 0 }} />
+                    {isHovered && <span style={{ animation: 'fadeIn 0.15s ease-out' }}>Admin Console</span>}
+                  </Link>
+
+                  <Link 
+                    href="/admin/analytics" 
+                    className={`sidebar-link ${pathname === '/admin/analytics' ? 'active' : ''}`}
+                  >
+                    <BarChart2 size={20} style={{ flexShrink: 0 }} />
+                    {isHovered && <span style={{ animation: 'fadeIn 0.15s ease-out' }}>SentinelPulse</span>}
+                  </Link>
+
+                  <Link 
+                    href="/admin/escalations" 
+                    className={`sidebar-link ${pathname === '/admin/escalations' ? 'active' : ''}`}
+                  >
+                    <AlertTriangle size={20} style={{ flexShrink: 0 }} />
+                    {isHovered && <span style={{ animation: 'fadeIn 0.15s ease-out' }}>Escalation &amp; SLA</span>}
+                  </Link>
+
+                  <Link 
+                    href="/admin/categories" 
+                    className={`sidebar-link ${pathname === '/admin/categories' ? 'active' : ''}`}
+                  >
+                    <GitFork size={20} style={{ flexShrink: 0 }} />
+                    {isHovered && <span style={{ animation: 'fadeIn 0.15s ease-out' }}>Categories &amp; Routing</span>}
+                  </Link>
+
+                  <Link 
+                    href="/admin/users" 
+                    className={`sidebar-link ${pathname === '/admin/users' ? 'active' : ''}`}
+                  >
+                    <Users size={20} style={{ flexShrink: 0 }} />
+                    {isHovered && <span style={{ animation: 'fadeIn 0.15s ease-out' }}>User Management</span>}
+                  </Link>
+                </>
+              )}
             </nav>
           </div>
 
@@ -246,12 +336,12 @@ export default function Navbar() {
             {/* User Profile Card */}
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 12px 4px' }}>
               <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#e60023', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', color: '#FFFFFF', fontWeight: 700, fontSize: '13px', flexShrink: 0 }}>
-                SA
+                {userName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'U'}
               </div>
               {isHovered && (
                 <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, animation: 'fadeIn 0.15s ease-out' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#262622', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>Admin User</span>
-                  <span style={{ fontSize: '10px', color: '#64748b' }}>Super Admin</span>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#262622', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{userName}</span>
+                  <span style={{ fontSize: '10px', color: '#64748b' }}>{userRole}</span>
                 </div>
               )}
             </div>
@@ -360,6 +450,30 @@ export default function Navbar() {
                 <Home size={20} style={{ flexShrink: 0 }} />
                 {isHovered && <span style={{ animation: 'fadeIn 0.15s ease-out' }}>Citizen Home</span>}
               </Link>
+
+              <Link 
+                href="/citizen/complaints" 
+                className={`sidebar-link ${pathname?.startsWith('/citizen/complaints') ? 'active' : ''}`}
+              >
+                <ClipboardList size={20} style={{ flexShrink: 0 }} />
+                {isHovered && <span style={{ animation: 'fadeIn 0.15s ease-out' }}>My Complaints</span>}
+              </Link>
+
+              <Link 
+                href="/citizen/complaint/new" 
+                className={`sidebar-link ${pathname === '/citizen/complaint/new' ? 'active' : ''}`}
+              >
+                <FilePlus size={20} style={{ flexShrink: 0 }} />
+                {isHovered && <span style={{ animation: 'fadeIn 0.15s ease-out' }}>Raise Complaint</span>}
+              </Link>
+
+              <Link 
+                href="/citizen/track" 
+                className={`sidebar-link ${pathname === '/citizen/track' ? 'active' : ''}`}
+              >
+                <Search size={20} style={{ flexShrink: 0 }} />
+                {isHovered && <span style={{ animation: 'fadeIn 0.15s ease-out' }}>Track by ID</span>}
+              </Link>
             </nav>
           </div>
 
@@ -367,12 +481,12 @@ export default function Navbar() {
           <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', paddingBottom: '16px', borderTop: '1px solid #dadad3' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px', padding: '12px 12px 4px' }}>
               <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: '#e60023', display: 'flex', alignItems: 'center', justifyItems: 'center', justifyContent: 'center', color: '#FFFFFF', fontWeight: 700, fontSize: '13px', flexShrink: 0 }}>
-                CU
+                {userName.split(' ').map(n => n[0]).join('').substring(0, 2).toUpperCase() || 'U'}
               </div>
               {isHovered && (
                 <div style={{ display: 'flex', flexDirection: 'column', minWidth: 0, animation: 'fadeIn 0.15s ease-out' }}>
-                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#262622', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>Citizen User</span>
-                  <span style={{ fontSize: '10px', color: '#64748b' }}>Resident</span>
+                  <span style={{ fontSize: '12px', fontWeight: 700, color: '#262622', textOverflow: 'ellipsis', overflow: 'hidden', whiteSpace: 'nowrap' }}>{userName}</span>
+                  <span style={{ fontSize: '10px', color: '#64748b' }}>{userRole}</span>
                 </div>
               )}
             </div>
