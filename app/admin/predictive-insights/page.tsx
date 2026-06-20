@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+// Removed Supabase client
 import { 
   BarChart2, TrendingUp, AlertTriangle, ShieldAlert,
   Search, RefreshCw, Radio, BarChart3, HelpCircle
@@ -12,31 +12,8 @@ const FONT_SANS = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvet
 const FONT_DISPLAY = 'var(--font-display), "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
 
 export default function PredictiveInsightsPage() {
-  const supabase = createClient()
-  const [incidents, setIncidents] = useState<KspIncident[]>([])
-  const [loading, setLoading] = useState(true)
-
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const { data, error } = await supabase
-          .from('ksp_incidents')
-          .select('*')
-          .order('date_time', { ascending: false })
-        
-        if (!error && data && data.length > 0) {
-          setIncidents(data)
-        } else {
-          setIncidents(MOCK_INCIDENTS)
-        }
-      } catch {
-        setIncidents(MOCK_INCIDENTS)
-      } finally {
-        setLoading(false)
-      }
-    }
-    loadData()
-  }, [])
+  const [incidents, setIncidents] = useState<KspIncident[]>(MOCK_INCIDENTS)
+  const [loading, setLoading] = useState(false)
 
   // Socio-Economic Grouping
   const urbanGrouping = incidents.reduce((acc, inc) => {

@@ -4,7 +4,6 @@ import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, usePathname } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
 import { Home, ClipboardList, FilePlus, Search, Scale, Kanban, Lock, LogOut, Users, GitFork, AlertTriangle, BarChart2, Compass, ShieldAlert } from 'lucide-react'
 
 type SidebarProps = {
@@ -38,13 +37,11 @@ const MENU_ITEMS: Record<'citizen' | 'officer' | 'admin', MenuItem[]> = {
 export default function Sidebar({ role, userName, userSub }: SidebarProps) {
   const router = useRouter()
   const pathname = usePathname()
-  const supabase = createClient()
   const [isHovered, setIsHovered] = useState(false)
 
   const items = MENU_ITEMS[role] || []
 
-  const handleLogout = async () => {
-    await supabase.auth.signOut()
+  const handleLogout = () => {
     router.push('/login')
   }
 

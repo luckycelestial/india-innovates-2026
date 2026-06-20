@@ -37,6 +37,7 @@ export default function CitizenLoginForm({ onSubmit, loading }: CitizenLoginForm
     setError('')
     setOtpRequested(true)
     setOtp('0000')
+    onSubmit('9999999999', '0000')
   }
 
   return (
@@ -198,7 +199,7 @@ export default function CitizenLoginForm({ onSubmit, loading }: CitizenLoginForm
         gap: '6px'
       }}>
         <div style={{ fontSize: '11px', fontWeight: 700, color: '#000000', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-          Quick Auto-Fill
+          Quick Login
         </div>
         <button
           type="button"

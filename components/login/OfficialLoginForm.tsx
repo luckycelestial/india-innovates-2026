@@ -25,6 +25,7 @@ export default function OfficialLoginForm({ onSubmit, loading }: OfficialLoginFo
     setEmail('admin@nagaragupta.dev')
     setPassword('demo123')
     setError('')
+    onSubmit('admin@nagaragupta.dev', 'demo123')
   }
 
   return (
@@ -118,7 +119,7 @@ export default function OfficialLoginForm({ onSubmit, loading }: OfficialLoginFo
         gap: '6px'
       }}>
         <div style={{ fontSize: '11px', fontWeight: 700, color: '#000000', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-          Quick Demo Credentials
+          Quick Login
         </div>
         <button
           type="button"

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-import { createClient } from '@/lib/supabase/client'
+// Removed Supabase client
 import AuthShell from '@/components/layout/AuthShell'
 import RoleToggle from '@/components/login/RoleToggle'
 import CitizenLoginForm from '@/components/login/CitizenLoginForm'
@@ -25,16 +25,7 @@ export default function LoginPage() {
     }
     setLoading(true)
 
-    try {
-      const supabase = createClient()
-      const email = 'citizen.demo@nagaragupta.dev'
-      await supabase.auth.signInWithPassword({
-        email,
-        password: 'PrajaDemo2026!'
-      })
-    } catch (err) {
-      console.log('Supabase signin skipped or failed in demo mode.')
-    }
+    // Local demo mode bypassed Supabase
 
     setTimeout(() => {
       setLoading(false)
@@ -54,15 +45,7 @@ export default function LoginPage() {
     }
     setLoading(true)
 
-    try {
-      const supabase = createClient()
-      await supabase.auth.signInWithPassword({
-        email,
-        password: 'PrajaDemo2026!'
-      })
-    } catch (err) {
-      console.log('Supabase signin skipped or failed in demo mode.')
-    }
+    // Local demo mode bypassed Supabase
 
     setTimeout(() => {
       setLoading(false)

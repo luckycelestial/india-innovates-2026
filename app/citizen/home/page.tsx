@@ -75,29 +75,6 @@ export default function CitizenHome() {
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       color: '#000000'
     }}>
-      {/* Navbar */}
-      <header style={{
-        background: '#262622',
-        color: '#ffffff',
-        height: '64px',
-        display: 'flex',
-        alignItems: 'center',
-        borderBottom: '1px solid #dadad3',
-        padding: '0 24px'
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-          <div style={{ width: '32px', height: '32px', background: '#e60023', borderRadius: '6px', display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#ffffff', fontWeight: 800 }}>
-            N
-          </div>
-          <span style={{ fontWeight: 800, fontSize: '18px', letterSpacing: '0.5px' }}>Nagaragupta Citizen Portal</span>
-        </div>
-        <div style={{ marginLeft: 'auto' }}>
-          <Link href="/login" style={{ color: '#ffffff', textDecoration: 'none', fontSize: '13px', fontWeight: 700 }}>
-            Logout
-          </Link>
-        </div>
-      </header>
-
       {/* Main Grid */}
       <main style={{
         maxWidth: '1200px',

@@ -327,7 +327,6 @@ function Footer() {
 export default function HomePage() {
   return (
     <main style={{ background: '#ffffff', fontFamily: FONT_SANS }}>
-      <Navbar />
       <HeroSection />
       <ConnectedExperiences />
       <CoreDataLayers />

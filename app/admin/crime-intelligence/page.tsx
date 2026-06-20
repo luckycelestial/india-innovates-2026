@@ -1,7 +1,8 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState, useMemo, Suspense } from 'react'
+import { useSearchParams, useRouter, usePathname } from 'next/navigation'
+// Removed Supabase client
 import { 
   ShieldAlert, MapPin, Clock, Search, RefreshCw, 
   Layers, Compass, Flame, Radio, AlertTriangle
@@ -12,15 +13,10 @@ import { runStDbscan, detectMoSeriesInCluster, analyzeTemporalTrends, detectCont
 const FONT_SANS = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
 const FONT_DISPLAY = 'var(--font-display), "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
 
-const DISTRICT_COORDS: Record<string, [number, number]> = {
-  "Bengaluru Urban": [12.9716, 77.5946],
-  "Mysuru": [12.2958, 76.6394],
-  "Hubballi-Dharwad": [15.3524, 75.1381],
-  "Belagavi": [15.8497, 74.4977],
-  "Mangaluru": [12.9141, 74.8560],
-  "Mandya": [12.5218, 76.8973],
-  "Kalaburagi": [17.3297, 76.8343]
-}
+
+
+
+
 
 const KARNATAKA_BORDER: [number, number][] = [
   [18.4735, 77.3484], // Bidar North
@@ -59,10 +55,33 @@ function normalizeDistrictName(name: string): string {
   if (normalized === 'belgaum' || normalized === 'belagavi') return 'Belagavi'
   if (normalized === 'gulbarga' || normalized === 'kalaburagi') return 'Kalaburagi'
   if (normalized === 'mysore' || normalized === 'mysuru') return 'Mysuru'
-  if (normalized === 'dharwad' || normalized === 'hubli-dharwad' || normalized === 'hubballi-dharwad') return 'Hubballi-Dharwad'
+  if (normalized === 'dharwad' || normalized === 'hubli-dharwad' || normalized === 'hubballi-dharwad') return 'Dharwad'
   if (normalized === 'dakshina kannada' || normalized === 'mangalore' || normalized === 'mangaluru') return 'Mangaluru'
+  if (normalized === 'bellary' || normalized === 'ballari') return 'Ballari'
+  if (normalized === 'bijapur' || normalized === 'vijayapura') return 'Vijayapura'
+  if (normalized === 'chamrajnagar' || normalized === 'chamarajanagar') return 'Chamarajanagar'
+  if (normalized === 'chikmagalur' || normalized === 'chikkamagaluru') return 'Chikkamagaluru'
+  if (normalized === 'shimoga' || normalized === 'shivamogga') return 'Shivamogga'
+  if (normalized === 'tumkur' || normalized === 'tumakuru') return 'Tumakuru'
+  if (normalized === 'bangalore rural' || normalized === 'bengaluru rural') return 'Bengaluru Rural'
+  if (normalized === 'chikkaballapura') return 'Chikkaballapura'
+  if (normalized === 'bagalkot') return 'Bagalkot'
+  if (normalized === 'ramanagara') return 'Ramanagara'
+  if (normalized === 'bidar') return 'Bidar'
+  if (normalized === 'chitradurga') return 'Chitradurga'
+  if (normalized === 'davanagere') return 'Davanagere'
+  if (normalized === 'gadag') return 'Gadag'
+  if (normalized === 'hassan') return 'Hassan'
+  if (normalized === 'haveri') return 'Haveri'
+  if (normalized === 'kodagu') return 'Kodagu'
+  if (normalized === 'koppal') return 'Koppal'
   if (normalized === 'mandya') return 'Mandya'
-  return name
+  if (normalized === 'raichur') return 'Raichur'
+  if (normalized === 'udupi') return 'Udupi'
+  if (normalized === 'uttara kannada') return 'Uttara Kannada'
+  if (normalized === 'kolar') return 'Kolar'
+  if (normalized === 'yadgir') return 'Yadgir'
+  return name.charAt(0).toUpperCase() + name.slice(1)
 }
 
 declare global {
@@ -71,21 +90,64 @@ declare global {
   }
 }
 
+const getAqiStatus = (aqi: number) => {
+  if (aqi <= 50) return 'Good'
+  if (aqi <= 100) return 'Satisfactory'
+  if (aqi <= 200) return 'Moderate'
+  return 'Poor'
+}
+
+const formatTime = (dateStr: string): string => {
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return dateStr
+  let hours = d.getHours()
+  const minutes = d.getMinutes()
+  const ampm = hours >= 12 ? 'PM' : 'AM'
+  hours = hours % 12
+  hours = hours ? hours : 12
+  const minStr = minutes < 10 ? '0' + minutes : minutes
+  return `${hours.toString().padStart(2, '0')}:${minStr} ${ampm}`
+}
+
+const formatDate = (dateStr: string | number): string => {
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return String(dateStr)
+  const year = d.getFullYear()
+  const month = (d.getMonth() + 1).toString().padStart(2, '0')
+  const day = d.getDate().toString().padStart(2, '0')
+  return `${year}-${month}-${day}`
+}
+
+const formatDateLong = (dateStr: string | number): string => {
+  const d = new Date(dateStr)
+  if (isNaN(d.getTime())) return String(dateStr)
+  const weekdays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December']
+  return `${weekdays[d.getDay()]}, ${months[d.getMonth()]} ${d.getDate()}, ${d.getFullYear()}`
+}
+
 function CrimeLeafletMap({ 
   incidents, 
   selectedDistrict,
   timeOfDayFilter,
   onSelectDistrict,
-  onSelectIncident
+  onSelectIncident,
+  heatmapType,
+  aqiData,
+  districts
 }: { 
   incidents: KspIncident[]
   selectedDistrict: string
   timeOfDayFilter: 'all' | 'day' | 'night'
   onSelectDistrict: (district: string) => void
   onSelectIncident?: (incidentId: string) => void
+  heatmapType: string
+  aqiData: any[]
+  districts: any[]
 }) {
   const [mapLoaded, setMapLoaded] = useState(false)
   const [geoJsonData, setGeoJsonData] = useState<any>(null)
+
 
   useEffect(() => {
     if (window.L) {
@@ -111,18 +173,52 @@ function CrimeLeafletMap({
   useEffect(() => {
     if (!mapLoaded || !window.L || !geoJsonData) return
 
+    let fitTimer: any = null
+
     const container = document.getElementById('ksp-map-container')
     if (!container) return
     container.innerHTML = '<div id="ksp-actual-map" style="height: 100%; width: 100%; border-radius: 16px;"></div>'
 
     const L = window.L
     
+    // Build district lookups dynamically from database data
+    const DISTRICT_COORDS: Record<string, [number, number]> = {}
+    const tempPerDistrict: Record<string, number> = {}
+    const civicPerDistrict: Record<string, number> = {}
+    const aqiPerDistrict: Record<string, number> = {}
+
+    districts.forEach(d => {
+      const key = normalizeDistrictName(d.name)
+      DISTRICT_COORDS[key] = [d.latitude, d.longitude]
+      tempPerDistrict[key] = d.temp
+      civicPerDistrict[key] = d.civic_complaints
+      aqiPerDistrict[key] = 85 // Fallback value
+    })
+
+    if (heatmapType === 'aqi' && aqiData.length > 0) {
+      aqiData.forEach(item => {
+        const key = normalizeDistrictName(item.name)
+        aqiPerDistrict[key] = item.aqi
+      })
+    }
+
     // Center on state of Karnataka by default, otherwise zoom in on the specific district
     const defaultCoords: [number, number] = selectedDistrict === 'all' 
-      ? [15.3173, 75.7139] 
-      : (DISTRICT_COORDS[selectedDistrict] || [12.9716, 77.5946])
-    const zoomLevel = selectedDistrict === 'all' ? 7 : 11
-    const map = L.map('ksp-actual-map').setView(defaultCoords, zoomLevel)
+      ? [14.85, 76.2] 
+      : (DISTRICT_COORDS[normalizeDistrictName(selectedDistrict)] || [12.9716, 77.5946])
+    const zoomLevel = selectedDistrict === 'all' ? 7.8 : 11
+    const map = L.map('ksp-actual-map', {
+      zoomSnap: 0.1,
+      zoomDelta: 0.1,
+      zoomControl: false,
+      scrollWheelZoom: false,
+      doubleClickZoom: false,
+      touchZoom: false,
+      boxZoom: false,
+      keyboard: false,
+      dragging: false
+    }).setView(defaultCoords, zoomLevel)
+
 
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
@@ -146,13 +242,34 @@ function CrimeLeafletMap({
       style: (feature: any) => {
         const dName = feature.properties.Dist_Name || ''
         const normalizedName = normalizeDistrictName(dName)
-        const count = crimeCountsPerDistrict[normalizedName] || 0
-        
-        let fillClr = '#7B8F65' // 0 cases - vibrant green
-        if (count >= 4) fillClr = '#ef4444' // Very High - Red
-        else if (count === 3) fillClr = '#f97316' // High - Orange
-        else if (count === 2) fillClr = '#eab308' // Medium - Yellow
-        else if (count === 1) fillClr = '#6D9998' // Low - Dark green
+        let fillClr = '#7B8F65'
+
+        if (heatmapType === 'aqi') {
+          const val = aqiPerDistrict[normalizedName] || 50
+          if (val >= 150) fillClr = '#ef4444'
+          else if (val >= 100) fillClr = '#f97316'
+          else if (val >= 50) fillClr = '#eab308'
+          else fillClr = '#7B8F65'
+        } else if (heatmapType === 'weather') {
+          const val = tempPerDistrict[normalizedName] || 25
+          if (val >= 32) fillClr = '#ef4444'
+          else if (val >= 28) fillClr = '#f97316'
+          else if (val >= 24) fillClr = '#eab308'
+          else fillClr = '#6D9998'
+        } else if (heatmapType === 'incidents') {
+          const val = civicPerDistrict[normalizedName] || 0
+          if (val >= 10) fillClr = '#ef4444'
+          else if (val >= 5) fillClr = '#f97316'
+          else if (val >= 2) fillClr = '#eab308'
+          else fillClr = '#7B8F65'
+        } else {
+          const count = crimeCountsPerDistrict[normalizedName] || 0
+          if (count >= 4) fillClr = '#ef4444'
+          else if (count === 3) fillClr = '#f97316'
+          else if (count === 2) fillClr = '#eab308'
+          else if (count === 1) fillClr = '#6D9998'
+          else fillClr = '#7B8F65'
+        }
         
         return {
           color: '#6D9998', // Green border
@@ -171,13 +288,27 @@ function CrimeLeafletMap({
           onSelectDistrict(normalizedName)
         })
 
+        let popupLabel = ''
+        if (heatmapType === 'aqi') {
+          const val = aqiPerDistrict[normalizedName] || 50
+          popupLabel = `AQI Index: <strong>${val}</strong> (${val > 150 ? 'Poor' : val > 100 ? 'Moderate' : 'Good'})`
+        } else if (heatmapType === 'weather') {
+          const val = tempPerDistrict[normalizedName] || 25
+          popupLabel = `Temperature: <strong>${val}°C</strong> | Rain: <strong>${val > 30 ? '0.0' : '2.4'} mm</strong>`
+        } else if (heatmapType === 'incidents') {
+          const val = civicPerDistrict[normalizedName] || 0
+          popupLabel = `Civic Grievances: <strong>${val} cases logged</strong>`
+        } else {
+          popupLabel = `Active Crimes: <strong>${count} cases</strong>`
+        }
+
         layer.bindPopup(`
           <div style="font-family: ${FONT_SANS}; min-width: 140px; padding: 4px;">
             <h4 style="margin: 0 0 4px; font-size: 13px; font-weight: 700; color: #262622; border-bottom: 1px solid #dadad3; padding-bottom: 4px;">
               📍 ${dName} Limit
             </h4>
             <div style="font-size: 11px; display: flex; flex-direction: column; gap: 4px; color: #262622;">
-              <span>Active Crimes: <strong>${count} cases</strong></span>
+              <span>${popupLabel}</span>
             </div>
           </div>
         `)
@@ -185,13 +316,18 @@ function CrimeLeafletMap({
     }).addTo(map)
 
     // Fit bounds of the GeoJSON layer to fit the state/district stretch perfectly in vertical viewport
-    try {
-      if (geoJsonLayer.getLayers().length > 0) {
-        map.fitBounds(geoJsonLayer.getBounds(), { padding: [10, 10] })
+    fitTimer = setTimeout(() => {
+      try {
+        map.invalidateSize()
+        if (selectedDistrict === 'all') {
+          map.setView([14.85, 76.2], 7.8)
+        } else if (geoJsonLayer.getLayers().length > 0) {
+          map.fitBounds(geoJsonLayer.getBounds(), { padding: [5, 5] })
+        }
+      } catch (err) {
+        console.error('Failed to fit bounds:', err)
       }
-    } catch (err) {
-      console.error('Failed to fit bounds:', err)
-    }
+    }, 200)
 
     // Run ST-DBSCAN spatiotemporal clustering on input incidents
     const clusterPoints = incidents.map((inc, index) => ({
@@ -204,84 +340,161 @@ function CrimeLeafletMap({
     const clusters = runStDbscan(clusterPoints, 15, 7 * 24 * 60 * 60 * 1000, 2)
 
     // Plot clusters as shaded circles with dashed borders
-    clusters.forEach(c => {
-      const clusterSeries = detectMoSeriesInCluster(c.points, incidents, 0.35)
-      const seriesText = clusterSeries.length > 0
-        ? clusterSeries.map(s => `• Series #${s.seriesId}: ${Math.round(s.averageSimilarity * 100)}% similarity (${s.points.length} cases)`).join('<br/>')
-        : 'No repetitive MO series detected'
+    if (heatmapType === 'crime') {
+      clusters.forEach(c => {
+        const clusterSeries = detectMoSeriesInCluster(c.points, incidents, 0.35)
+        const seriesText = clusterSeries.length > 0
+          ? clusterSeries.map(s => `• Series #${s.seriesId}: ${Math.round(s.averageSimilarity * 100)}% similarity (${s.points.length} cases)`).join('<br/>')
+          : 'No repetitive MO series detected'
 
-      L.circle([c.centerLat, c.centerLon], {
-        color: '#8b5cf6', // Purple for clusters
-        fillColor: '#8b5cf6',
-        fillOpacity: 0.15,
-        radius: c.radiusKm * 1000,
-        dashArray: '6, 6',
-        weight: 2
-      }).addTo(map).bindPopup(`
-        <div style="font-family: ${FONT_SANS}; min-width: 220px; padding: 4px;">
-          <h4 style="margin: 0 0 6px; font-size: 13px; font-weight: 700; color: #6d28d9; border-bottom: 1px solid #dadad3; padding-bottom: 4px;">
-            🌌 Spatiotemporal Cluster #${c.clusterId}
-          </h4>
-          <div style="font-size: 11px; display: flex; flex-direction: column; gap: 4px; color: #262622;">
-            <span>Incidents: <strong>${c.points.length} cases</strong></span>
-            <span>Span Radius: <strong>${c.radiusKm.toFixed(2)} km</strong></span>
-            <span>Duration: <strong>${new Date(c.startTime).toLocaleDateString()} - ${new Date(c.endTime).toLocaleDateString()}</strong></span>
-            <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #dadad3;">
-              <span style="font-weight: 700; color: #6d28d9;">Detected MO Series:</span><br/>
-              <span style="color: #262622; line-height: 1.4; display: block; margin-top: 2px;">${seriesText}</span>
+        L.circle([c.centerLat, c.centerLon], {
+          color: '#8b5cf6', // Purple for clusters
+          fillColor: '#8b5cf6',
+          fillOpacity: 0.15,
+          radius: c.radiusKm * 1000,
+          dashArray: '6, 6',
+          weight: 2
+        }).addTo(map).bindPopup(`
+          <div style="font-family: ${FONT_SANS}; min-width: 220px; padding: 4px;">
+            <h4 style="margin: 0 0 6px; font-size: 13px; font-weight: 700; color: #6d28d9; border-bottom: 1px solid #dadad3; padding-bottom: 4px;">
+              🌌 Spatiotemporal Cluster #${c.clusterId}
+            </h4>
+            <div style="font-size: 11px; display: flex; flex-direction: column; gap: 4px; color: #262622;">
+              <span>Incidents: <strong>${c.points.length} cases</strong></span>
+              <span>Span Radius: <strong>${c.radiusKm.toFixed(2)} km</strong></span>
+              <span>Duration: <strong>${formatDate(c.startTime)} - ${formatDate(c.endTime)}</strong></span>
+              <div style="margin-top: 6px; padding-top: 6px; border-top: 1px dashed #dadad3;">
+                <span style="font-weight: 700; color: #6d28d9;">Detected MO Series:</span><br/>
+                <span style="color: #262622; line-height: 1.4; display: block; margin-top: 2px;">${seriesText}</span>
+              </div>
             </div>
           </div>
-        </div>
-      `)
-    })
+        `)
+      })
+    }
 
-    // Filter and plot crime hotspots
-    incidents.forEach(inc => {
-      const hour = new Date(inc.date_time).getUTCHours()
-      const isNight = hour < 6 || hour >= 18
-      if (timeOfDayFilter === 'day' && isNight) return
-      if (timeOfDayFilter === 'night' && !isNight) return
+    // Filter and plot crime hotspots or custom sensor points
+    if (heatmapType === 'crime') {
+      incidents.forEach(inc => {
+        const hour = new Date(inc.date_time).getUTCHours()
+        const isNight = hour < 6 || hour >= 18
+        if (timeOfDayFilter === 'day' && isNight) return
+        if (timeOfDayFilter === 'night' && !isNight) return
 
-      const coords: [number, number] = [inc.latitude, inc.longitude]
-      let color = '#e60023'
-      if (inc.priority === 'urgent') color = '#ef4444'
-      else if (inc.priority === 'high') color = '#f97316'
+        const coords: [number, number] = [inc.latitude, inc.longitude]
+        let color = '#e60023'
+        if (inc.priority === 'urgent') color = '#ef4444'
+        else if (inc.priority === 'high') color = '#f97316'
 
-      const circleObj = L.circle(coords, {
-        color: color,
-        fillColor: color,
-        fillOpacity: 0.5,
-        radius: inc.priority === 'urgent' ? 300 : 180
-      }).addTo(map)
+        const circleObj = L.circle(coords, {
+          color: color,
+          fillColor: color,
+          fillOpacity: 0.5,
+          radius: inc.priority === 'urgent' ? 300 : 180
+        }).addTo(map)
 
-      if (onSelectIncident) {
-        circleObj.on('click', () => {
-          onSelectIncident(inc.id)
-        })
-      }
+        if (onSelectIncident) {
+          circleObj.on('click', () => {
+            onSelectIncident(inc.id)
+          })
+        }
 
-      circleObj.bindPopup(`
-        <div style="font-family: ${FONT_SANS}; min-width: 180px; padding: 4px;">
-          <h4 style="margin: 0 0 6px; font-size: 13px; font-weight: 700; color: #262622; border-bottom: 1px solid #dadad3; padding-bottom: 4px;">
-            🚨 ${inc.case_number} (${inc.category.toUpperCase()})
-          </h4>
-          <div style="font-size: 11px; display: flex; flex-direction: column; gap: 4px; color: #262622;">
-            <span>Location: <strong>${inc.location}, ${inc.district}</strong></span>
-            <span>MO: <i>${inc.modus_operandi}</i></span>
-            <span style="color: ${color}; font-weight: 600;">Priority: ${inc.priority.toUpperCase()}</span>
-            <span>Risk Index Score: <strong>${inc.risk_score}</strong></span>
+        circleObj.bindPopup(`
+          <div style="font-family: ${FONT_SANS}; min-width: 180px; padding: 4px;">
+            <h4 style="margin: 0 0 6px; font-size: 13px; font-weight: 700; color: #262622; border-bottom: 1px solid #dadad3; padding-bottom: 4px;">
+              🚨 ${inc.case_number} (${inc.category.toUpperCase()})
+            </h4>
+            <div style="font-size: 11px; display: flex; flex-direction: column; gap: 4px; color: #262622;">
+              <span>Location: <strong>${inc.location}, ${inc.district}</strong></span>
+              <span>MO: <i>${inc.modus_operandi}</i></span>
+              <span style="color: ${color}; font-weight: 600;">Priority: ${inc.priority.toUpperCase()}</span>
+              <span>Risk Index Score: <strong>${inc.risk_score}</strong></span>
+            </div>
           </div>
-        </div>
-      `)
-    })
+        `)
+      })
+    } else if (heatmapType === 'aqi') {
+      const stations = aqiData.length > 0 ? aqiData.map(item => {
+        const coords = DISTRICT_COORDS[normalizeDistrictName(item.name)] || [12.9716, 77.5946]
+        return {
+          name: `${item.name} Station`,
+          coords,
+          aqi: item.aqi
+        }
+      }) : [
+        { name: 'KSPCB Bengaluru Central', coords: [12.9716, 77.5946], aqi: 142 },
+        { name: 'Mysuru Eco Sensor', coords: [12.2958, 76.6394], aqi: 58 },
+        { name: 'Dharwad Industrial Node', coords: [15.3524, 75.1381], aqi: 88 },
+        { name: 'Belagavi Fort Sensor', coords: [15.8497, 74.4977], aqi: 110 },
+        { name: 'Mangaluru Port Sensor', coords: [12.9141, 74.8560], aqi: 35 }
+      ]
+      stations.forEach(st => {
+        const circleObj = L.circle(st.coords as any, {
+          color: '#8b5cf6',
+          fillColor: '#8b5cf6',
+          fillOpacity: 0.6,
+          radius: 2500
+        }).addTo(map)
+        circleObj.bindPopup(`
+          <div style="font-family: ${FONT_SANS}; min-width: 150px; padding: 4px;">
+            <h4 style="margin: 0 0 4px; font-size: 12px; font-weight: 700; color: #262622;">🌬️ AQI station: ${st.name}</h4>
+            <div style="font-size: 11px;">AQI index: <strong>${st.aqi}</strong></div>
+          </div>
+        `)
+      })
+    } else if (heatmapType === 'weather') {
+      const stations = [
+        { name: 'IMD Bengaluru Command', coords: [12.9716, 77.5946], temp: 24.2, conditions: 'Rain Alert' },
+        { name: 'IMD Mysuru Hub', coords: [12.2958, 76.6394], temp: 26.5, conditions: 'Partly Cloudy' },
+        { name: 'IMD Hubballi Sensor', coords: [15.3524, 75.1381], temp: 27.8, conditions: 'Sunny' },
+        { name: 'IMD Mangaluru Coastal', coords: [12.9141, 74.8560], temp: 32.1, conditions: 'Humid' }
+      ]
+      stations.forEach(st => {
+        const circleObj = L.circle(st.coords as any, {
+          color: '#0ea5e9',
+          fillColor: '#0ea5e9',
+          fillOpacity: 0.6,
+          radius: 3000
+        }).addTo(map)
+        circleObj.bindPopup(`
+          <div style="font-family: ${FONT_SANS}; min-width: 150px; padding: 4px;">
+            <h4 style="margin: 0 0 4px; font-size: 12px; font-weight: 700; color: #262622;">🌦️ Weather Hub: ${st.name}</h4>
+            <div style="font-size: 11px;">Temp: <strong>${st.temp}°C</strong> | Conditions: <strong>${st.conditions}</strong></div>
+          </div>
+        `)
+      })
+    } else if (heatmapType === 'incidents') {
+      const incidentsList = [
+        { desc: 'Water pipeline burst', coords: [12.96, 77.58], category: 'Water & Sewerage' },
+        { desc: 'Garbage dump overflow', coords: [12.98, 77.61], category: 'Solid Waste' },
+        { desc: 'Blocked storm drain', coords: [12.94, 77.57], category: 'Water & Sewerage' },
+        { desc: 'Major road pothole', coords: [12.29, 76.64], category: 'Roads & Lights' },
+        { desc: 'Vandalized street lamps', coords: [15.35, 75.14], category: 'Roads & Lights' }
+      ]
+      incidentsList.forEach(inc => {
+        const circleObj = L.circle(inc.coords as any, {
+          color: '#ea580c',
+          fillColor: '#ea580c',
+          fillOpacity: 0.6,
+          radius: 2000
+        }).addTo(map)
+        circleObj.bindPopup(`
+          <div style="font-family: ${FONT_SANS}; min-width: 150px; padding: 4px;">
+            <h4 style="margin: 0 0 4px; font-size: 12px; font-weight: 700; color: #262622;">🚨 Civic Incident</h4>
+            <div style="font-size: 11px;">Details: <strong>${inc.desc}</strong></div>
+          </div>
+        `)
+      })
+    }
 
     return () => {
+      if (fitTimer) clearTimeout(fitTimer)
       map.remove()
     }
-  }, [mapLoaded, geoJsonData, incidents, selectedDistrict, timeOfDayFilter, onSelectIncident])
+  }, [mapLoaded, geoJsonData, incidents, selectedDistrict, timeOfDayFilter, onSelectIncident, heatmapType, aqiData, districts])
 
   return (
-    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column' }}>
+    <div className="absolute inset-0 flex flex-col">
       {(!mapLoaded || !geoJsonData) && (
         <div style={{
           position: 'absolute',
@@ -302,32 +515,35 @@ function CrimeLeafletMap({
       <div id="ksp-map-container" style={{ flex: 1, width: '100%', borderRadius: '16px', overflow: 'hidden' }}></div>
 
       {/* Map Legend Overlay */}
-      <div style={{
-        position: 'absolute',
-        bottom: '20px',
-        left: '20px',
-        zIndex: 1000,
-        background: '#ffffff',
-        border: '1px solid #dadad3',
-        borderRadius: '16px',
-        padding: '12px 16px',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-        width: '140px',
-        fontFamily: FONT_SANS
-      }}>
-        <div style={{ fontSize: '11px', fontWeight: 700, color: '#262622', marginBottom: '8px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-          Crime Density
+      <div className="absolute bottom-5 left-5 bg-white border border-[#dadad3] rounded-2xl p-3 shadow-md w-[150px] font-sans" style={{ zIndex: 500 }}>
+        <div className="text-[11px] font-bold text-[#262622] mb-2 uppercase tracking-[0.5px]">
+          {heatmapType === 'aqi' ? 'AQI Levels' : heatmapType === 'weather' ? 'Temperature' : heatmapType === 'incidents' ? 'Civic Incidents' : 'Crime Density'}
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-          {[
+          {(heatmapType === 'aqi' ? [
+            { label: 'Poor (150+)', color: '#ef4444' },
+            { label: 'Moderate (100-150)', color: '#f97316' },
+            { label: 'Satisfactory (50-100)', color: '#eab308' },
+            { label: 'Good (<50)', color: '#7B8F65' }
+          ] : heatmapType === 'weather' ? [
+            { label: 'Hot (>32°C)', color: '#ef4444' },
+            { label: 'Warm (28-32°C)', color: '#f97316' },
+            { label: 'Mild (24-28°C)', color: '#eab308' },
+            { label: 'Cool (<24°C)', color: '#6D9998' }
+          ] : heatmapType === 'incidents' ? [
+            { label: 'Heavy (>10)', color: '#ef4444' },
+            { label: 'Moderate (5-10)', color: '#f97316' },
+            { label: 'Light (2-5)', color: '#eab308' },
+            { label: 'Minimal (<2)', color: '#7B8F65' }
+          ] : [
             { label: 'Very High', color: '#ef4444' },
             { label: 'High', color: '#f97316' },
             { label: 'Medium', color: '#eab308' },
             { label: 'Low', color: '#6D9998' },
             { label: 'Very Low', color: '#7B8F65' }
-          ].map(item => (
-            <div key={item.label} style={{ display: 'flex', alignItems: 'center', gap: '8px', fontSize: '11px', fontWeight: 600, color: '#262622' }}>
-              <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: item.color }} />
+          ]).map(item => (
+            <div key={item.label} className="flex items-center gap-2 text-[11px] font-semibold text-[#262622]">
+              <div className="w-2 h-2 rounded-full" style={{ background: item.color }} />
               <span>{item.label}</span>
             </div>
           ))}
@@ -335,27 +551,12 @@ function CrimeLeafletMap({
       </div>
 
       {/* Last Updated Overlay */}
-      <div style={{
-        position: 'absolute',
-        bottom: '20px',
-        right: '20px',
-        zIndex: 1000,
-        background: '#ffffff',
-        border: '1px solid #dadad3',
-        borderRadius: '16px',
-        padding: '8px 12px',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
-        display: 'flex',
-        alignItems: 'center',
-        gap: '6px',
-        fontFamily: FONT_SANS,
-        fontSize: '11px',
-        color: '#262622',
-        fontWeight: 600
-      }}>
+      <div className="absolute bottom-5 right-5 bg-white border border-[#dadad3] rounded-2xl py-2 px-3 shadow-md flex items-center gap-1.5 font-sans text-[11px] text-[#262622] font-semibold" style={{ zIndex: 500 }}>
         <Clock size={12} />
         <span>Last Updated Today, 08:30 AM</span>
       </div>
+
+
     </div>
   )
 }
@@ -363,60 +564,90 @@ function CrimeLeafletMap({
 
 function KpiCard({ title, value, subtitle, icon, color }: { title: string, value: any, subtitle: string, icon: any, color: string }) {
   return (
-    <div style={{
-      background: '#ffffff',
-      border: '1px solid #dadad3',
-      borderRadius: '16px',
-      padding: '20px',
-      display: 'flex',
-      alignItems: 'center',
-      gap: '16px',
-      boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)'
-    }}>
-      <div style={{ background: `${color}15`, color: color, padding: '12px', borderRadius: '16px' }}>
+    <div className="bg-white border border-[#dadad3] rounded-2xl p-5 flex items-center gap-4 shadow-sm">
+      <div className="p-3 rounded-2xl" style={{ background: `${color}15`, color: color }}>
         {icon}
       </div>
       <div>
-        <div style={{ fontSize: '12px', fontWeight: 600, color: '#262622', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{title}</div>
-        <div style={{ fontSize: '24px', fontWeight: 700, color: '#000000', margin: '2px 0' }}>{value}</div>
-        <div style={{ fontSize: '11px', color: '#94a3b8' }}>{subtitle}</div>
+        <div className="text-xs font-semibold text-[#262622] uppercase tracking-[0.5px]">{title}</div>
+        <div className="text-2xl font-bold text-black my-0.5">{value}</div>
+        <div className="text-[11px] text-slate-400">{subtitle}</div>
       </div>
     </div>
   )
 }
 
-export default function CrimeIntelligencePage() {
-  const supabase = createClient()
-  const [incidents, setIncidents] = useState<KspIncident[]>([])
-  const [loading, setLoading] = useState(true)
+function CrimeIntelligenceContent() {
+  const searchParams = useSearchParams()
+  const heatmapType = searchParams.get('type') || 'crime'
+  
+  const [incidents, setIncidents] = useState<KspIncident[]>(MOCK_INCIDENTS)
+  const [loading, setLoading] = useState(false)
+  const [aqiData, setAqiData] = useState<any[]>([])
+  const [districts, setDistricts] = useState<any[]>([])
+
+  useEffect(() => {
+    fetch('/api/districts')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setDistricts(data)
+        }
+      })
+      .catch(err => console.error('Failed to fetch districts:', err))
+
+    fetch('/api/aqi')
+      .then(res => res.json())
+      .then(data => {
+        if (Array.isArray(data)) {
+          setAqiData(data)
+        }
+      })
+      .catch(err => console.error('Failed to fetch AQI:', err))
+  }, [])
+
+  const districtCoords = useMemo(() => {
+    const coords: Record<string, [number, number]> = {}
+    districts.forEach(d => {
+      coords[d.name] = [d.latitude, d.longitude]
+    })
+    return coords
+  }, [districts])
+
+  const aqiListToRender = aqiData
+
+  const aqiStats = useMemo(() => {
+    if (aqiData.length === 0) {
+      return { avg: 0, maxVal: 0, maxStation: 'N/A', minVal: 0, minStation: 'N/A', count: 0 }
+    }
+    const count = aqiData.length
+    const sum = aqiData.reduce((acc, d) => acc + d.aqi, 0)
+    const avg = Math.round(sum / count)
+    const sorted = [...aqiData].sort((a, b) => b.aqi - a.aqi)
+    const maxVal = sorted[0].aqi
+    const maxStation = sorted[0].name
+    const minVal = sorted[sorted.length - 1].aqi
+    const minStation = sorted[sorted.length - 1].name
+    return { avg, maxVal, maxStation, minVal, minStation, count }
+  }, [aqiData])
 
   // Filters
-  const [districtFilter, setDistrictFilter] = useState('all')
+  const router = useRouter()
+  const pathname = usePathname()
+  const districtFilter = searchParams.get('district') || 'all'
+
+  const setDistrictFilter = (district: string) => {
+    const params = new URLSearchParams(searchParams.toString())
+    if (district === 'all') {
+      params.delete('district')
+    } else {
+      params.set('district', district)
+    }
+    router.push(`${pathname}?${params.toString()}`)
+  }
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [timeOfDayFilter, setTimeOfDayFilter] = useState<'all' | 'day' | 'night'>('all')
   const [selectedIncidentId, setSelectedIncidentId] = useState<string | null>(null)
-
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const { data, error } = await supabase
-          .from('ksp_incidents')
-          .select('*')
-          .order('date_time', { ascending: false })
-        
-        if (!error && data && data.length > 0) {
-          setIncidents(data)
-        } else {
-          setIncidents(MOCK_INCIDENTS)
-        }
-      } catch {
-        setIncidents(MOCK_INCIDENTS)
-      } finally {
-        setLoading(false)
-      }
-    }
-    loadData()
-  }, [])
 
   // Filters logic
   const filtered = incidents.filter(inc => {
@@ -578,7 +809,7 @@ export default function CrimeIntelligencePage() {
   }).filter(Boolean) as (KspPerson & { role: string })[]
 
   return (
-    <main style={{ minHeight: '100vh', background: '#f6f6f3', padding: '40px 24px', fontFamily: FONT_SANS }}>
+    <main className="min-h-screen bg-[#f6f6f3] py-10 px-6 font-sans">
       <style>{`
         .hover-row:hover {
           background-color: #f6f6f3 !important;
@@ -592,110 +823,123 @@ export default function CrimeIntelligencePage() {
           to { transform: scale(1); opacity: 1; }
         }
       `}</style>
-      <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
+      <div className="w-full px-8">
         
         {/* Header Row */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '16px',
-          marginBottom: '24px'
-        }}>
+        <div className="flex justify-between items-center flex-wrap gap-4 mb-6">
           <div>
             <h1 style={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: '28px', color: '#000000' }}>
-              Crime-Specific Hotspots
+              {heatmapType === 'aqi' ? 'AQI Telemetry Heatmap' : heatmapType === 'weather' ? 'Weather & Temperature Grid' : heatmapType === 'incidents' ? 'Civic Incident Density' : 'Crime-Specific Hotspots'}
             </h1>
             <p style={{ fontSize: '14px', color: '#262622', marginTop: '4px' }}>
-              Select a crime type to view complaints density by district
+              {heatmapType === 'aqi' ? 'Air Quality index sensor data across Karnataka state' : heatmapType === 'weather' ? 'Live regional temperature and rain conditions' : heatmapType === 'incidents' ? 'Density of citizen complaints and public infrastructure reports' : 'Select a crime type to view complaints density by district'}
             </p>
           </div>
           
           {/* District Selector Dropdown (Styled like the mockup top-bar dropdown) */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{ fontSize: '13px', fontWeight: 600, color: '#262622' }}>District:</span>
+          <div className="flex items-center gap-2">
+            <span className="text-[13px] font-semibold text-[#262622]">District:</span>
             <select
               value={districtFilter}
               onChange={e => setDistrictFilter(e.target.value)}
-              style={{
-                height: '40px',
-                padding: '0 32px 0 16px',
-                borderRadius: '16px',
-                border: '1px solid #dadad3',
-                fontSize: '14px',
-                fontWeight: 700,
-                color: '#000000',
-                background: '#ffffff',
-                cursor: 'pointer',
-                boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-                outline: 'none',
-                appearance: 'none',
-                backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%230f172a\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpolyline points=\'6 9 12 15 18 9\'%3E%3C/polyline%3E%3C/svg%3E")',
-                backgroundRepeat: 'no-repeat',
-                backgroundPosition: 'right 12px center',
-                backgroundSize: '16px'
-              }}
+              className="h-10 pl-4 pr-10 rounded-2xl border border-[#dadad3] text-sm font-bold text-black bg-white cursor-pointer shadow-sm outline-none appearance-none min-w-[200px]" style={{ backgroundImage: 'url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 24 24\' fill=\'none\' stroke=\'%230f172a\' stroke-width=\'2\' stroke-linecap=\'round\' stroke-linejoin=\'round\'%3E%3Cpolyline points=\'6 9 12 15 18 9\'%3E%3C/polyline%3E%3C/svg%3E")', backgroundRepeat: 'no-repeat', backgroundPosition: 'right 12px center', backgroundSize: '16px' }}
             >
               <option value="all">All Karnataka Districts</option>
-              {Object.keys(DISTRICT_COORDS).map(d => <option key={d} value={d}>{d}</option>)}
+              {Object.keys(districtCoords).map(d => <option key={d} value={d}>{d}</option>)}
             </select>
           </div>
         </div>
 
         {/* Horizontal Category Cards */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '16px',
-          marginBottom: '24px'
-        }}>
-          {categoryCardsData.map(card => {
-            const isSelected = categoryFilter === card.id
-            const IconComponent = card.icon
-            return (
-              <button
+        <div className="grid grid-cols-[repeat(auto-fit,minmax(200px,1fr))] gap-4 mb-6">
+          {heatmapType === 'aqi' ? (
+            [
+              {
+                id: 'avg',
+                label: 'State Average AQI',
+                value: `${aqiStats.avg} AQI`,
+                color: '#6D9998',
+                subtitle: 'Satisfactory average'
+              },
+              {
+                id: 'max',
+                label: 'Max AQI Spike',
+                value: `${aqiStats.maxVal} AQI`,
+                color: '#ef4444',
+                subtitle: `At ${aqiStats.maxStation}`
+              },
+              {
+                id: 'min',
+                label: 'Min AQI (Cleanest)',
+                value: `${aqiStats.minVal} AQI`,
+                color: '#7B8F65',
+                subtitle: `At ${aqiStats.minStation}`
+              },
+              {
+                id: 'count',
+                label: 'Active Stations',
+                value: `${aqiStats.count} sensors`,
+                color: '#36375D',
+                subtitle: 'MySQL telemetry feeds'
+              }
+            ].map(card => (
+              <div
                 key={card.id}
-                onClick={() => setCategoryFilter(card.id)}
-                style={{
-                  background: '#ffffff',
-                  border: isSelected ? `2.5px solid ${card.color}` : '1.5px solid #dadad3',
-                  borderRadius: '16px',
-                  padding: '16px 20px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '14px',
-                  cursor: 'pointer',
-                  textAlign: 'left',
-                  boxShadow: isSelected ? `0 4px 12px ${card.color}15` : '0 1px 2px rgba(0,0,0,0.05)',
-                  transition: 'all 150ms ease-in-out',
-                  outline: 'none'
-                }}
+                className="bg-white border-1.5 border-[#dadad3] rounded-2xl py-4 px-5 flex flex-col gap-1 shadow-sm text-left"
               >
-                <div style={{
-                  background: `${card.color}12`,
-                  color: card.color,
-                  padding: '10px',
-                  borderRadius: '16px',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center'
-                }}>
-                  <IconComponent size={24} />
-                </div>
-                <div>
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#000000' }}>{card.label}</div>
-                  <div style={{ fontSize: '12px', color: '#262622', marginTop: '2px', fontWeight: 500 }}>
-                    {card.count} {card.count === 1 ? 'incident' : 'incidents'}
+                <span className="text-[11px] font-bold text-[#555550] uppercase tracking-[0.5px]">{card.label}</span>
+                <span className="text-2xl font-extrabold text-black my-1 font-display">{card.value}</span>
+                <span className="text-[11px] text-[#64748B] font-medium">{card.subtitle}</span>
+              </div>
+            ))
+          ) : (
+            categoryCardsData.map(card => {
+              const isSelected = categoryFilter === card.id
+              const IconComponent = card.icon
+              return (
+                <button
+                  key={card.id}
+                  onClick={() => setCategoryFilter(card.id)}
+                  style={{
+                    background: '#ffffff',
+                    border: isSelected ? `2.5px solid ${card.color}` : '1.5px solid #dadad3',
+                    borderRadius: '16px',
+                    padding: '16px 20px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '14px',
+                    cursor: 'pointer',
+                    textAlign: 'left',
+                    boxShadow: isSelected ? `0 4px 12px ${card.color}15` : '0 1px 2px rgba(0,0,0,0.05)',
+                    transition: 'all 150ms ease-in-out',
+                    outline: 'none'
+                  }}
+                >
+                  <div style={{
+                    background: `${card.color}12`,
+                    color: card.color,
+                    padding: '10px',
+                    borderRadius: '16px',
+                    display: 'flex',
+                    alignItems: 'center',
+                    justifyContent: 'center'
+                  }}>
+                    <IconComponent size={24} />
                   </div>
-                </div>
-              </button>
-            )
-          })}
+                  <div>
+                    <div style={{ fontSize: '14px', fontWeight: 700, color: '#000000' }}>{card.label}</div>
+                    <div style={{ fontSize: '12px', color: '#262622', marginTop: '2px', fontWeight: 500 }}>
+                      {card.count} {card.count === 1 ? 'incident' : 'incidents'}
+                    </div>
+                  </div>
+                </button>
+              )
+            })
+          )}
         </div>
 
         {/* Pulsing alerts ticker panel if there are emerging category spikes */}
-        {spikes.length > 0 && (
+        {heatmapType !== 'aqi' && spikes.length > 0 && (
           <div style={{
             background: '#fee2e2',
             border: '1px solid #fca5a5',
@@ -708,376 +952,319 @@ export default function CrimeIntelligencePage() {
             color: '#b91c1c'
           }}>
             <Flame size={20} className="animate-bounce" />
-            <div style={{ fontSize: '13px', fontWeight: 700 }}>
+            <div className="text-[13px] font-bold">
               Emerging Trend Warning: Spikes detected in categories (
               {spikes.map(s => `${s.category.toUpperCase()}: ${s.count} cases`).join(', ')}
               ) in selected filters!
             </div>
-            <span style={{
-              marginLeft: 'auto',
-              background: '#ef4444',
-              color: '#fff',
-              fontSize: '10px',
-              fontWeight: 700,
-              padding: '2px 8px',
-              borderRadius: '20px',
-              animation: 'pulse 1.5s infinite'
-            }}>RED-ZONE PULSING</span>
+            <span className="ml-auto bg-[#ef4444] text-white text-[10px] font-bold py-0.5 px-2 rounded-full animate-pulse">RED-ZONE PULSING</span>
           </div>
         )}
 
         {/* Map & Detail Panel Grid Layout */}
-        <div style={{
-          display: 'flex',
-          flexWrap: 'wrap',
-          gap: '24px',
-          marginBottom: '16px',
-          width: '100%'
-        }}>
+        <div className="flex flex-wrap gap-6 mb-4 w-full">
           
           {/* Left Side: Map Card */}
-          <div style={{
-            background: '#ffffff',
-            borderRadius: '16px',
-            border: '1px solid #dadad3',
-            padding: '24px',
-            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)',
-            display: 'flex',
-            flexDirection: 'column',
-            flex: '2 1 600px',
-            minWidth: '320px'
-          }}>
-            <div style={{ 
-              flex: 1, 
-              width: '100%', 
-              background: '#f6f6f3', 
-              borderRadius: '16px', 
-              overflow: 'hidden',
-              boxShadow: '0 4px 12px rgba(0, 0, 0, 0.05)',
-              border: '1px solid #dadad3',
-              position: 'relative',
-              minHeight: '760px',
-              display: 'flex',
-              flexDirection: 'column'
-            }}>
+          <div className="bg-white rounded-2xl border border-[#dadad3] p-6 shadow-sm flex flex-col flex-[2_1_600px] min-w-[320px]">
+            <div className="flex-1 w-full bg-[#f6f6f3] rounded-2xl overflow-hidden shadow-md border border-[#dadad3] relative min-h-[760px] flex flex-col">
               <CrimeLeafletMap 
                 incidents={filtered} 
                 selectedDistrict={districtFilter}
                 timeOfDayFilter={timeOfDayFilter}
                 onSelectDistrict={setDistrictFilter}
                 onSelectIncident={setSelectedIncidentId}
+                heatmapType={heatmapType}
+                aqiData={aqiData}
+                districts={districts}
               />
             </div>
           </div>
 
           {/* Right Side: Details Panel */}
-          <div style={{
-            background: '#ffffff',
-            borderRadius: '16px',
-            border: '1px solid #dadad3',
-            padding: '24px',
-            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: '20px',
-            flex: '1 1 320px',
-            minWidth: '300px'
-          }}>
-            {/* Detail Panel Header */}
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', borderBottom: '1px solid #dadad3', paddingBottom: '12px' }}>
-              <div>
-                <h3 style={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: '20px', color: '#000000' }}>
-                  {districtFilter === 'all' ? 'Karnataka State' : districtFilter}
-                </h3>
-                <span style={{ fontSize: '11px', color: '#262622', fontWeight: 600 }}>JURISDICTION OVERVIEW</span>
-              </div>
-              <span style={{
-                background: districtStats.badgeBg,
-                color: districtStats.badgeText,
-                fontSize: '11px',
-                fontWeight: 700,
-                padding: '4px 10px',
-                borderRadius: '20px',
-                textTransform: 'uppercase'
-              }}>
-                {districtStats.statusLabel}
-              </span>
-            </div>
-
-            {/* Sub-Header overview category */}
-            <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: categoryInfo.color, fontSize: '13px', fontWeight: 700, margin: '-8px 0 4px' }}>
-              <OverviewIcon size={16} />
-              <span>{categoryInfo.label} Overview</span>
-            </div>
-
-            {/* 3-Column Stats Grid */}
-            <div style={{
-              display: 'flex',
-              border: '1px solid #dadad3',
-              borderRadius: '16px',
-              background: '#ffffff',
-              overflow: 'hidden',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.02)'
-            }}>
-              <div style={{ flex: 1, padding: '12px 10px', textAlign: 'center', borderRight: '1px solid #dadad3' }}>
-                <div style={{ fontSize: '11px', color: '#262622', fontWeight: 600 }}>Total Cases</div>
-                <div style={{ fontSize: '20px', fontWeight: 800, color: '#000000', margin: '4px 0' }}>{districtStats.total}</div>
-                <div style={{ fontSize: '10px', color: '#ef4444', fontWeight: 600 }}>↑ 12% vs last wk</div>
-              </div>
-              <div style={{ flex: 1, padding: '12px 10px', textAlign: 'center', borderRight: '1px solid #dadad3' }}>
-                <div style={{ fontSize: '11px', color: '#262622', fontWeight: 600 }}>Solved</div>
-                <div style={{ fontSize: '20px', fontWeight: 800, color: '#6D9998', margin: '4px 0' }}>{Math.round(districtStats.total * 0.6)}</div>
-                <div style={{ fontSize: '10px', color: '#262622', fontWeight: 500 }}>60% solved</div>
-              </div>
-              <div style={{ flex: 1, padding: '12px 10px', textAlign: 'center' }}>
-                <div style={{ fontSize: '11px', color: '#262622', fontWeight: 600 }}>Active</div>
-                <div style={{ fontSize: '20px', fontWeight: 800, color: '#ea580c', margin: '4px 0' }}>{districtStats.total - Math.round(districtStats.total * 0.6)}</div>
-                <div style={{ fontSize: '10px', color: '#262622', fontWeight: 500 }}>40% active</div>
-              </div>
-            </div>
-
-            {/* 2-Column Stats Row */}
-            <div style={{
-              display: 'flex',
-              gap: '12px',
-              width: '100%'
-            }}>
-              <div style={{
-                flex: 1,
-                border: '1px solid #dadad3',
-                borderRadius: '16px',
-                padding: '10px 12px',
-                background: '#f6f6f3',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '2px'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#262622', fontWeight: 600 }}>
-                  <Clock size={12} /> Avg. Response
-                </div>
-                <div style={{ fontSize: '16px', fontWeight: 800, color: '#000000' }}>18m</div>
-                <span style={{ fontSize: '10px', color: '#6D9998', fontWeight: 600 }}>↓ 3m from yesterday</span>
-              </div>
-              <div style={{
-                flex: 1,
-                border: '1px solid #dadad3',
-                borderRadius: '16px',
-                padding: '10px 12px',
-                background: '#f6f6f3',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '2px'
-              }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '4px', fontSize: '11px', color: '#262622', fontWeight: 600 }}>
-                  <ShieldAlert size={12} /> Escalations
-                </div>
-                <div style={{ fontSize: '16px', fontWeight: 800, color: '#ef4444' }}>{districtStats.urgent}</div>
-                <span style={{ fontSize: '10px', color: '#ef4444', fontWeight: 600 }}>↑ 1 from yesterday</span>
-              </div>
-            </div>
-
-            {/* Category distribution list */}
-            <div>
-              <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#262622', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Top Sub-Issues
-              </h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                {districtStats.categories.map(cat => (
-                  <div key={cat.name} style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-                    <span style={{ fontSize: '11px', fontWeight: 600, color: '#262622', width: '90px', textTransform: 'capitalize', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>
-                      {cat.name}
-                    </span>
-                    <div style={{ flex: 1, height: '8px', background: '#f6f6f3', borderRadius: '4px', overflow: 'hidden' }}>
-                      <div style={{ height: '100%', width: `${cat.pct}%`, background: cat.color, borderRadius: '4px' }} />
-                    </div>
-                    <span style={{ fontSize: '11px', fontWeight: 700, color: '#262622', width: '50px', textAlign: 'right' }}>
-                      {cat.count} ({cat.pct}%)
-                    </span>
+          <div className="bg-white rounded-2xl border border-[#dadad3] p-6 shadow-sm flex flex-col gap-5 flex-[1_1_320px] min-w-[300px]">
+            {heatmapType === 'aqi' ? (
+              <div className="flex flex-col gap-5">
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', borderBottom: '1px solid #dadad3', paddingBottom: '12px' }}>
+                  <div>
+                    <h3 style={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: '20px', color: '#000000' }}>
+                      AQI Sensor Readings
+                    </h3>
+                    <span style={{ fontSize: '11px', color: '#262622', fontWeight: 600 }}>MYSQL DATABASE LEDGER</span>
                   </div>
-                ))}
+                  <span style={{
+                    background: '#dcfce7',
+                    color: '#6D9998',
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    padding: '4px 10px',
+                    borderRadius: '20px'
+                  }}>
+                    Live
+                  </span>
+                </div>
+
+                {/* Table of Live Readings */}
+                <div className="overflow-x-auto border border-[#dadad3] rounded-2xl bg-white p-3">
+                  <table className="w-full border-collapse text-left text-xs">
+                    <thead>
+                      <tr className="border-b border-[#dadad3] text-[#555550] font-bold">
+                        <th className="p-2">Station</th>
+                        <th className="p-2">AQI</th>
+                        <th className="p-2">PM2.5</th>
+                        <th className="p-2">PM10</th>
+                        <th className="p-2">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {aqiListToRender.map((row: any) => {
+                        const status = getAqiStatus(row.aqi)
+                        return (
+                          <tr key={row.stationId} className="border-b border-[#f6f6f3]">
+                            <td className="p-2 font-bold">{row.name}</td>
+                            <td className="p-2 font-bold" style={{ color: row.aqi > 100 ? '#ef4444' : '#7B8F65' }}>{row.aqi}</td>
+                            <td className="p-2">{row.pm25}</td>
+                            <td className="p-2">{row.pm10}</td>
+                            <td className="p-2">
+                              <span className="text-[10px] py-0.5 px-1.5 rounded font-bold" style={{ background: row.aqi > 150 ? 'rgba(239,68,68,0.08)' : row.aqi > 100 ? 'rgba(249,115,22,0.08)' : 'rgba(123,143,101,0.08)', color: row.aqi > 150 ? '#ef4444' : row.aqi > 100 ? '#f97316' : '#7B8F65' }}>{status}</span>
+                            </td>
+                          </tr>
+                        )
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+
+                {/* Sync Trigger button to hit POST /api/aqi */}
+                <button
+                  onClick={async () => {
+                    try {
+                      const res = await fetch('/api/aqi', { method: 'POST' })
+                      const json = await res.json()
+                      if (json.success && Array.isArray(json.data)) {
+                        setAqiData(json.data)
+                        alert('Database refreshed successfully with live WAQI API telemetry!')
+                      }
+                    } catch (err) {
+                      console.error('Failed to sync AQI:', err)
+                    }
+                  }}
+                  className="h-10 rounded-2xl border-none bg-[#36375D] text-white text-[13px] font-bold cursor-pointer flex items-center justify-center gap-2 shadow-[0_4px_12px_rgba(54,55,93,0.15)] transition-all duration-150"
+                >
+                  🔄 Fetch Live WAQI Updates
+                </button>
               </div>
-            </div>
-
-
-            {/* Temporal Autocorrelation & Rhythms */}
-            <div style={{ borderTop: '1px solid #dadad3', paddingTop: '16px' }}>
-              <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#262622', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Temporal Autocorrelation &amp; Trends
-              </h4>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '11px', color: '#4b5563' }}>
-                <div style={{ display: 'flex', alignItems: 'start', gap: '8px' }}>
-                  <span style={{ fontWeight: 700, color: '#262622', minWidth: '85px' }}>Weekly Pattern:</span>
-                  <span>{temporalTrends.weeklyPattern}</span>
+            ) : (
+              <>
+                {/* Detail Panel Header */}
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', borderBottom: '1px solid #dadad3', paddingBottom: '12px' }}>
+                  <div>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                      {districtFilter !== 'all' && (
+                        <button 
+                          onClick={() => setDistrictFilter('all')}
+                          className="p-1.5 hover:bg-[#f6f6f3] rounded-lg transition-colors flex items-center justify-center border border-[#dadad3] active:scale-95 text-[#262622]"
+                          title="Back to State View"
+                        >
+                          ←
+                        </button>
+                      )}
+                      <h3 style={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: '20px', color: '#000000', margin: 0 }}>
+                        {districtFilter === 'all' ? 'Karnataka State' : districtFilter}
+                      </h3>
+                    </div>
+                    <span style={{ fontSize: '11px', color: '#262622', fontWeight: 600, display: 'block', marginTop: '4px' }}>JURISDICTION OVERVIEW</span>
+                  </div>
+                  <span style={{
+                    background: districtStats.badgeBg,
+                    color: districtStats.badgeText,
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    padding: '4px 10px',
+                    borderRadius: '20px',
+                    textTransform: 'uppercase'
+                  }}>
+                    {districtStats.statusLabel}
+                  </span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'start', gap: '8px' }}>
-                  <span style={{ fontWeight: 700, color: '#262622', minWidth: '85px' }}>Diurnal Rhythm:</span>
-                  <span>{temporalTrends.diurnalPattern}</span>
+
+                {/* Sub-Header overview category */}
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: categoryInfo.color, fontSize: '13px', fontWeight: 700, margin: '-8px 0 4px' }}>
+                  <OverviewIcon size={16} />
+                  <span>{categoryInfo.label} Overview</span>
                 </div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '2px' }}>
-                  <span style={{ fontWeight: 700, color: '#262622' }}>Cyclical Rhythms:</span>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', background: '#f6f6f3', padding: '6px 10px', borderRadius: '6px', border: '1px solid #dadad3', marginTop: '2px' }}>
-                    {temporalTrends.cyclicalRhythms.map((rhythm, rIdx) => (
-                      <div key={rIdx} style={{ color: '#0369a1', fontWeight: 600 }}>• {rhythm}</div>
+
+                {/* 3-Column Stats Grid */}
+                <div className="flex border border-[#dadad3] rounded-2xl bg-white overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+                  <div className="flex-1 py-3 px-2.5 text-center border-r border-[#dadad3]">
+                    <div style={{ fontSize: '11px', color: '#262622', fontWeight: 600 }}>Total Cases</div>
+                    <div style={{ fontSize: '20px', fontWeight: 800, color: '#000000', margin: '4px 0' }}>{districtStats.total}</div>
+                    <div className="text-[10px] text-red-500 font-semibold">↑ 12% vs last wk</div>
+                  </div>
+                  <div className="flex-1 py-3 px-2.5 text-center border-r border-[#dadad3]">
+                    <div style={{ fontSize: '11px', color: '#262622', fontWeight: 600 }}>Solved</div>
+                    <div style={{ fontSize: '20px', fontWeight: 800, color: '#6D9998', margin: '4px 0' }}>{Math.round(districtStats.total * 0.6)}</div>
+                    <div style={{ fontSize: '10px', color: '#262622', fontWeight: 500 }}>60% solved</div>
+                  </div>
+                  <div className="flex-1 py-3 px-2.5 text-center">
+                    <div style={{ fontSize: '11px', color: '#262622', fontWeight: 600 }}>Active</div>
+                    <div style={{ fontSize: '20px', fontWeight: 800, color: '#ea580c', margin: '4px 0' }}>{districtStats.total - Math.round(districtStats.total * 0.6)}</div>
+                    <div style={{ fontSize: '10px', color: '#262622', fontWeight: 500 }}>40% active</div>
+                  </div>
+                </div>
+
+                {/* 2-Column Stats Row */}
+                <div className="flex gap-3 w-full">
+                  <div className="flex-1 border border-[#dadad3] rounded-2xl p-2.5 bg-[#f6f6f3] flex flex-col gap-0.5">
+                    <div className="flex items-center gap-1 text-[11px] text-[#262622] font-semibold">
+                      <Clock size={12} /> Avg. Response
+                    </div>
+                    <div className="text-base font-extrabold text-black">18m</div>
+                    <span className="text-[10px] text-[#6D9998] font-semibold">↓ 3m from yesterday</span>
+                  </div>
+                  <div className="flex-1 border border-[#dadad3] rounded-2xl p-2.5 bg-[#f6f6f3] flex flex-col gap-0.5">
+                    <div className="flex items-center gap-1 text-[11px] text-[#262622] font-semibold">
+                      <ShieldAlert size={12} /> Escalations
+                    </div>
+                    <div className="text-base font-extrabold text-red-500">{districtStats.urgent}</div>
+                    <span className="text-[10px] text-red-500 font-semibold">↑ 1 from yesterday</span>
+                  </div>
+                </div>
+
+                {/* Category distribution list */}
+                <div>
+                  <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#262622', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Top Sub-Issues
+                  </h4>
+                  <div className="flex flex-col gap-2.5">
+                    {districtStats.categories.map(cat => (
+                      <div key={cat.name} className="flex items-center gap-3">
+                        <span className="text-[11px] font-semibold text-[#262622] w-[90px] capitalize whitespace-nowrap overflow-hidden text-ellipsis">
+                          {cat.name}
+                        </span>
+                        <div className="flex-1 h-2 bg-[#f6f6f3] rounded-full overflow-hidden">
+                          <div className="h-full rounded-full" style={{ width: `${cat.pct}%`, background: cat.color }} />
+                        </div>
+                        <span className="text-[11px] font-bold text-[#262622] w-[50px] text-right">
+                          {cat.count} ({cat.pct}%)
+                        </span>
+                      </div>
                     ))}
                   </div>
                 </div>
-              </div>
-            </div>
 
 
-            {/* Contextual Anomaly Detection */}
-            <div style={{ borderTop: '1px solid #dadad3', paddingTop: '16px' }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#262622', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
-                  Contextual Anomalies
-                </h4>
-                {anomaliesCount > 0 ? (
-                  <span style={{ fontSize: '10px', background: '#fee2e2', color: '#ef4444', padding: '2px 8px', borderRadius: '16px', fontWeight: 700 }}>
-                    {anomaliesCount} flagged
-                  </span>
-                ) : (
-                  <span style={{ fontSize: '10px', background: '#dcfce7', color: '#6D9998', padding: '2px 8px', borderRadius: '16px', fontWeight: 700 }}>
-                    Nominal
-                  </span>
-                )}
-              </div>
-              
-              {/* List Anomalous Incidents */}
-              {anomaliesCount === 0 ? (
-                <div style={{ fontSize: '12px', color: '#262622', background: '#f6f6f3', padding: '10px 12px', borderRadius: '16px', border: '1px dashed #dadad3', textAlign: 'center' }}>
-                  Isolation Forest: All cases nominal.
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto' }}>
-                  {anomalyResults.filter(r => r.isAnomaly).map((r, idx) => {
-                    const matchedInc = districtIncidents.find(i => i.id === r.id)
-                    if (!matchedInc) return null
-                    return (
-                      <div key={idx} style={{
-                        background: '#fffafb',
-                        border: '1px solid #ffe4e6',
-                        borderRadius: '16px',
-                        padding: '10px 12px',
-                        display: 'flex',
-                        flexDirection: 'column',
-                        gap: '4px'
-                      }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                          <span style={{ fontSize: '11px', fontWeight: 700, color: '#be123c' }}>{matchedInc.case_number}</span>
-                          <span style={{ fontSize: '10px', color: '#be123c', fontWeight: 700 }}>
-                            Score: {r.score}
-                          </span>
-                        </div>
-                        <div style={{ fontSize: '11px', color: '#4b5563', lineHeight: '1.4' }}>
-                          <strong>Anomaly Reasons:</strong>
-                          <ul style={{ margin: '4px 0 0', paddingLeft: '16px', listStyleType: 'disc' }}>
-                            {r.reasons.map((reason, rIdx) => (
-                              <li key={rIdx} style={{ color: '#e11d48' }}>{reason}</li>
-                            ))}
-                          </ul>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-
-            {/* Spatiotemporal Series Analysis */}
-            <div style={{ borderTop: '1px solid #dadad3', paddingTop: '16px' }}>
-              <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#262622', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-                Detected MO Series
-              </h4>
-              {detectedSeries.length === 0 ? (
-                <div style={{ fontSize: '12px', color: '#262622', background: '#f6f6f3', padding: '10px 12px', borderRadius: '16px', border: '1px dashed #dadad3', textAlign: 'center' }}>
-                  No serial MO patterns detected.
-                </div>
-              ) : (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', maxHeight: '180px', overflowY: 'auto' }}>
-                  {detectedSeries.map((s, idx) => (
-                    <div key={idx} style={{
-                      background: '#fcfaff',
-                      border: '1px solid #e8dbff',
-                      borderRadius: '16px',
-                      padding: '10px 12px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '4px'
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                        <span style={{ fontSize: '11px', fontWeight: 700, color: '#6d28d9' }}>Series #{s.seriesId} (Cluster #{s.clusterId})</span>
-                        <span style={{ fontSize: '10px', background: '#f3e8ff', color: '#7c3aed', padding: '1px 6px', borderRadius: '16px', fontWeight: 700 }}>
-                          {Math.round(s.averageSimilarity * 100)}% Match
-                        </span>
-                      </div>
-                      <div style={{ fontSize: '11px', color: '#4b5563', lineHeight: '1.4' }}>
-                        <strong>Pattern:</strong> <span style={{ fontStyle: 'italic' }}>{s.commonPattern}</span>
-                      </div>
-                      <div style={{ fontSize: '10px', color: '#6b7280', marginTop: '2px' }}>
-                        Linked Cases: <strong>{s.points.length} incident records</strong>
+                {/* Temporal Autocorrelation & Rhythms */}
+                <div className="border-t border-[#dadad3] pt-4">
+                  <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#262622', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Temporal Autocorrelation &amp; Trends
+                  </h4>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '11px', color: '#4b5563' }}>
+                    <div style={{ display: 'flex', alignItems: 'start', gap: '8px' }}>
+                      <span style={{ fontWeight: 700, color: '#262622', minWidth: '85px' }}>Weekly Pattern:</span>
+                      <span>{temporalTrends.weeklyPattern}</span>
+                    </div>
+                    <div style={{ display: 'flex', alignItems: 'start', gap: '8px' }}>
+                      <span style={{ fontWeight: 700, color: '#262622', minWidth: '85px' }}>Diurnal Rhythm:</span>
+                      <span>{temporalTrends.diurnalPattern}</span>
+                    </div>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', marginTop: '2px' }}>
+                      <span style={{ fontWeight: 700, color: '#262622' }}>Cyclical Rhythms:</span>
+                      <div style={{ display: 'flex', flexDirection: 'column', gap: '2px', background: '#f6f6f3', padding: '6px 10px', borderRadius: '6px', border: '1px solid #dadad3', marginTop: '2px' }}>
+                        {temporalTrends.cyclicalRhythms.map((rhythm, rIdx) => (
+                          <div key={rIdx} style={{ color: '#0369a1', fontWeight: 600 }}>• {rhythm}</div>
+                        ))}
                       </div>
                     </div>
-                  ))}
+                  </div>
                 </div>
-              )}
-            </div>
 
-            {/* Button action */}
-            <button
-              onClick={() => {
-                const logsTable = document.getElementById('station-logs-section')
-                if (logsTable) {
-                  logsTable.scrollIntoView({ behavior: 'smooth' })
-                }
-              }}
-              style={{
-                marginTop: 'auto',
-                width: '100%',
-                height: '44px',
-                background: '#e60023',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: '16px',
-                fontSize: '14px',
-                fontWeight: 700,
-                cursor: 'pointer',
-                transition: 'all 120ms',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: '6px'
-              }}
-              onMouseEnter={e => e.currentTarget.style.background = '#e60023'}
-              onMouseLeave={e => e.currentTarget.style.background = '#e60023'}
-            >
-              View All Complaints &rarr;
-            </button>
+
+                {/* Contextual Anomaly Detection */}
+                <div className="border-t border-[#dadad3] pt-4">
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
+                    <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#262622', textTransform: 'uppercase', letterSpacing: '0.5px', margin: 0 }}>
+                      Contextual Anomalies
+                    </h4>
+                    {anomaliesCount > 0 ? (
+                      <span className="text-[10px] bg-[#fee2e2] text-red-500 py-0.5 px-2 rounded-full font-bold">
+                        {anomaliesCount} flagged
+                      </span>
+                    ) : (
+                      <span className="text-[10px] bg-[#dcfce7] text-[#6D9998] py-0.5 px-2 rounded-full font-bold">
+                        0 flagged
+                      </span>
+                    )}
+                  </div>
+                  {anomaliesCount > 0 && (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {anomalyResults.filter(r => r.isAnomaly).map((r, idx) => {
+                        const matchedInc = districtIncidents.find(i => i.id === r.id)
+                        if (!matchedInc) return null
+                        return (
+                          <div key={idx} className="bg-[#fee2e2] border border-[#fca5a5] p-3 rounded-xl text-[11px]">
+                            <div className="font-bold text-[#b91c1c]">⚠️ {matchedInc.case_number} ({matchedInc.category.toUpperCase()})</div>
+                            <div className="text-[#7f1d1d] mt-0.5">MO: {matchedInc.modus_operandi}</div>
+                            <div className="text-[#991b1b] font-semibold text-[10px] mt-1">Anomaly Score: {r.score.toFixed(3)}</div>
+                          </div>
+                        )
+                      })}
+                    </div>
+                  )}
+                </div>
+
+
+                {/* Repetitive MO patterns */}
+                <div className="border-t border-[#dadad3] pt-4">
+                  <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#262622', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    Repetitive MO Crime Series
+                  </h4>
+                  {detectedSeries.length === 0 ? (
+                    <div style={{ fontSize: '11px', color: '#6b7280', fontStyle: 'italic' }}>
+                      No repetitive modus operandi series identified in filtered region.
+                    </div>
+                  ) : (
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                      {detectedSeries.map((s, sIdx) => (
+                        <div key={sIdx} className="bg-[#f5f3ff] border border-[#ddd6fe] py-2.5 px-3 rounded-xl text-[11px]">
+                          <div className="font-bold text-[#6d28d9] flex justify-between">
+                            <span>Series #{s.seriesId} (Cluster #{s.clusterId})</span>
+                            <span>{Math.round(s.averageSimilarity * 100)}% Match</span>
+                          </div>
+                          <div className="text-[#5b21b6] mt-1 leading-snug">
+                            <strong>Pattern:</strong> <span style={{ fontStyle: 'italic' }}>{s.commonPattern}</span>
+                          </div>
+                          <div className="text-[10px] text-gray-500 mt-0.5">
+                            Linked Cases: <strong>{s.points.length} incident records</strong>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Button action */}
+                <button
+                  onClick={() => {
+                    const logsTable = document.getElementById('station-logs-section')
+                    if (logsTable) {
+                      logsTable.scrollIntoView({ behavior: 'smooth' })
+                    }
+                  }}
+                  className="mt-auto w-full h-11 bg-[#e60023] text-white border-none rounded-2xl text-sm font-bold cursor-pointer transition-all duration-120 flex items-center justify-center gap-1.5"
+                  onMouseEnter={e => e.currentTarget.style.background = '#e60023'}
+                  onMouseLeave={e => e.currentTarget.style.background = '#e60023'}
+                >
+                  View All Complaints &rarr;
+                </button>
+              </>
+            )}
           </div>
         </div>
 
         {/* Footer Actions Row */}
-        <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          flexWrap: 'wrap',
-          gap: '16px',
-          marginTop: '8px',
-          marginBottom: '32px',
-          width: '100%'
-        }}>
+        <div className="flex justify-between items-center flex-wrap gap-4 mt-2 mb-8 w-full">
           {/* Left: Tip Banner */}
-          <div style={{
-            display: 'flex',
-            alignItems: 'center',
-            gap: '8px',
-            background: '#eff6ff',
-            color: '#1e3a8a',
-            padding: '10px 16px',
-            borderRadius: '16px',
-            fontSize: '12px',
-            fontWeight: 600
-          }}>
+          <div className="flex items-center gap-2 bg-[#eff6ff] text-[#1e3a8a] py-2.5 px-4 rounded-2xl text-xs font-semibold">
             <AlertTriangle size={14} style={{ color: '#e60023' }} />
             <span>Tip: Click on any district boundary to view detailed complaints and trends</span>
           </div>
@@ -1085,21 +1272,7 @@ export default function CrimeIntelligencePage() {
           {/* Right: Download Button */}
           <button
             onClick={() => alert('Feature: Downloading PDF crime intelligence report...')}
-            style={{
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px',
-              background: '#ffffff',
-              border: '1px solid #dadad3',
-              borderRadius: '16px',
-              padding: '10px 16px',
-              fontSize: '12px',
-              fontWeight: 600,
-              color: '#262622',
-              cursor: 'pointer',
-              boxShadow: '0 1px 2px rgba(0,0,0,0.05)',
-              transition: 'all 120ms'
-            }}
+            className="flex items-center gap-1.5 bg-white border border-[#dadad3] rounded-2xl py-2.5 px-4 text-xs font-semibold text-[#262622] cursor-pointer shadow-sm transition-all duration-120"
             onMouseEnter={e => e.currentTarget.style.background = '#f6f6f3'}
             onMouseLeave={e => e.currentTarget.style.background = '#ffffff'}
           >
@@ -1108,116 +1281,114 @@ export default function CrimeIntelligencePage() {
           </button>
         </div>
 
-        {/* Police Station details listing */}
-        <div id="station-logs-section" style={{
-          background: '#ffffff',
-          borderRadius: '16px',
-          border: '1px solid #dadad3',
-          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)',
-          overflow: 'hidden'
-        }}>
-          <div style={{ padding: '20px 24px', borderBottom: '1px solid #dadad3' }}>
-            <h3 style={{ fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: '18px', color: '#000000' }}>
-              Jurisdiction / Station Metrics
+        {/* Police Station details / AQI listing */}
+        <div id="station-logs-section" className="bg-white rounded-2xl border border-[#dadad3] shadow-sm overflow-hidden">
+          <div className="py-5 px-6 border-b border-[#dadad3] flex justify-between items-center">
+            <h3 style={{ fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: '18px', color: '#000000', margin: 0 }}>
+              {heatmapType === 'aqi' ? 'Air Quality Index (AQI) Telemetry' : 'Jurisdiction / Station Metrics'}
             </h3>
+            {heatmapType === 'aqi' && (
+              <span style={{ fontSize: '12px', color: '#64748B', fontWeight: 600 }}>MySQL Database Ledger</span>
+            )}
           </div>
-          <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'left' }}>
-            <thead>
-              <tr style={{ background: '#f6f6f3', color: '#262622', fontWeight: 600, borderBottom: '1px solid #dadad3' }}>
-                <th style={{ padding: '12px 24px' }}>Case Number</th>
-                <th style={{ padding: '12px 16px' }}>Category</th>
-                <th style={{ padding: '12px 16px' }}>Station</th>
-                <th style={{ padding: '12px 16px' }}>District</th>
-                <th style={{ padding: '12px 16px' }}>Time of Day</th>
-                <th style={{ padding: '12px 24px', textAlign: 'right' }}>Threat Index</th>
-              </tr>
-            </thead>
-            <tbody>
-              {filtered.map(inc => (
-                <tr 
-                  key={inc.id} 
-                  onClick={() => setSelectedIncidentId(inc.id)}
-                  className="hover-row"
-                  style={{ 
-                    borderBottom: '1px solid #f6f6f3', 
-                    color: '#262622',
-                    cursor: 'pointer',
-                    transition: 'background 120ms ease'
-                  }}
-                >
-                  <td style={{ padding: '14px 24px', fontWeight: 700, color: '#000000' }}>{inc.case_number}</td>
-                  <td style={{ padding: '14px 16px', textTransform: 'capitalize' }}>{inc.category}</td>
-                  <td style={{ padding: '14px 16px' }}>{inc.police_station}</td>
-                  <td style={{ padding: '14px 16px' }}>{inc.district}</td>
-                  <td style={{ padding: '14px 16px' }}>{new Date(inc.date_time).toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}</td>
-                  <td style={{ padding: '14px 24px', textAlign: 'right', fontWeight: 600 }}>{inc.risk_score}</td>
-                </tr>
-              ))}
-            </tbody>
+          <table className="w-full border-collapse text-[15px] text-left">
+            {heatmapType === 'aqi' ? (
+              <>
+                <thead>
+                  <tr className="text-[#262622] font-semibold border-b border-[#dadad3] text-sm">
+                    <th className="py-4 pl-8 pr-4 bg-[#f6f6f3]">Station ID</th>
+                    <th className="py-4 px-4 bg-[#f6f6f3]">Station Name</th>
+                    <th className="py-4 px-4 bg-[#f6f6f3]">District / Ward</th>
+                    <th className="py-4 px-4 bg-[#f6f6f3]">AQI</th>
+                    <th className="py-4 px-4 bg-[#f6f6f3]">PM2.5</th>
+                    <th className="py-4 px-4 bg-[#f6f6f3]">PM10</th>
+                    <th className="py-4 px-4 bg-[#f6f6f3]">Status</th>
+                    <th className="py-4 pl-4 pr-8 text-right bg-[#f6f6f3]">Last Updated</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {aqiListToRender.map((row: any) => {
+                    const status = getAqiStatus(row.aqi)
+                    return (
+                      <tr 
+                        key={row.stationId} 
+                        className="border-b border-[#f6f6f3] text-[#262622]"
+                      >
+                        <td className="py-4 pl-8 pr-4 font-bold text-black">{row.stationId}</td>
+                        <td className="py-4 px-4">{row.name} Station</td>
+                        <td className="py-4 px-4">{row.name}</td>
+                        <td className="py-4 px-4 font-bold" style={{ color: row.aqi > 100 ? '#ef4444' : '#7B8F65' }}>{row.aqi}</td>
+                        <td className="py-4 px-4">{row.pm25}</td>
+                        <td className="py-4 px-4">{row.pm10}</td>
+                        <td className="py-4 px-4">
+                          <span className="text-[11px] py-0.5 px-2 rounded font-bold" style={{ background: row.aqi > 150 ? 'rgba(239,68,68,0.08)' : row.aqi > 100 ? 'rgba(249,115,22,0.08)' : 'rgba(123,143,101,0.08)', color: row.aqi > 150 ? '#ef4444' : row.aqi > 100 ? '#f97316' : '#7B8F65' }}>{status}</span>
+                        </td>
+                        <td className="py-4 pl-4 pr-8 text-right font-medium">
+                          {row.timestamp ? new Date(row.timestamp).toLocaleDateString() : new Date().toLocaleDateString()}
+                        </td>
+                      </tr>
+                    )
+                  })}
+                </tbody>
+              </>
+            ) : (
+              <>
+                <thead>
+                  <tr className="text-[#262622] font-semibold border-b border-[#dadad3] text-sm">
+                    <th className="py-4 pl-8 pr-4 bg-[#f6f6f3]">Case Number</th>
+                    <th className="py-4 px-4 bg-[#f6f6f3]">Category</th>
+                    <th className="py-4 px-4 bg-[#f6f6f3]">Station</th>
+                    <th className="py-4 px-4 bg-[#f6f6f3]">District</th>
+                    <th className="py-4 px-4 bg-[#f6f6f3]">Time of Day</th>
+                    <th className="py-4 pl-4 pr-8 text-right bg-[#f6f6f3]">Threat Index</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {filtered.map(inc => (
+                    <tr 
+                      key={inc.id} 
+                      onClick={() => setSelectedIncidentId(inc.id)}
+                      className="hover-row"
+                      style={{ 
+                        borderBottom: '1px solid #f6f6f3', 
+                        color: '#262622',
+                        cursor: 'pointer',
+                        transition: 'background 120ms ease'
+                      }}
+                    >
+                      <td className="py-4 pl-8 pr-4 font-bold text-black">{inc.case_number}</td>
+                      <td className="py-4 px-4 capitalize">{inc.category}</td>
+                      <td className="py-4 px-4">{inc.police_station}</td>
+                      <td className="py-4 px-4">{inc.district}</td>
+                      <td className="py-4 px-4">{formatTime(inc.date_time)}</td>
+                      <td className="py-4 pl-4 pr-8 text-right font-semibold">{inc.risk_score}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </>
+            )}
           </table>
         </div>
 
       </div>
 
       {selectedIncidentId && (
-        <div style={{
-          position: 'fixed',
-          inset: 0,
-          background: 'rgba(15, 23, 42, 0.6)',
-          backdropFilter: 'blur(8px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 9999,
-          padding: '24px',
-          animation: 'fadeIn 200ms ease-out'
-        }}>
+        <div className="fixed inset-0 bg-[rgba(15,23,42,0.6)] backdrop-blur-sm flex items-center justify-center z-[9999] p-6 animate-fade-in">
           {/* Modal Container */}
-          <div style={{
-            background: '#ffffff',
-            borderRadius: '20px',
-            width: '100%',
-            maxWidth: '840px',
-            boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
-            border: '1px solid #dadad3',
-            overflow: 'hidden',
-            display: 'flex',
-            flexDirection: 'column',
-            maxHeight: '90vh',
-            animation: 'scaleUp 250ms cubic-bezier(0.16, 1, 0.3, 1)'
-          }}>
+          <div className="bg-white rounded-[20px] w-full max-w-[840px] shadow-2xl border border-[#dadad3] overflow-hidden flex flex-col max-h-[90vh] animate-scale-up">
             {/* Header */}
-            <div style={{
-              background: '#000000',
-              color: '#ffffff',
-              padding: '20px 28px',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center'
-            }}>
+            <div className="bg-black text-white py-5 px-7 flex justify-between items-center">
               <div>
-                <span style={{ fontSize: '11px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '1px' }}>
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider">
                   CRIME INTELLIGENCE CASE FILE
                 </span>
-                <h2 style={{ fontSize: '22px', fontWeight: 800, margin: '2px 0 0', fontFamily: FONT_DISPLAY }}>
+                <h2 className="text-[22px] font-extrabold mt-0.5 mb-0 font-display">
                   Case: {selectedIncident?.case_number}
                 </h2>
               </div>
               <button 
                 onClick={() => setSelectedIncidentId(null)}
-                style={{
-                  background: 'rgba(255,255,255,0.1)',
-                  border: 'none',
-                  color: '#ffffff',
-                  width: '36px',
-                  height: '36px',
-                  borderRadius: '50%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  cursor: 'pointer',
-                  transition: 'background 150ms'
-                }}
+                className="bg-white/10 border-none text-white w-9 h-9 rounded-full flex items-center justify-center cursor-pointer transition-colors duration-150"
                 onMouseEnter={e => e.currentTarget.style.background = 'rgba(255,255,255,0.2)'}
                 onMouseLeave={e => e.currentTarget.style.background = 'rgba(255,255,255,0.1)'}
               >
@@ -1226,77 +1397,69 @@ export default function CrimeIntelligencePage() {
             </div>
 
             {/* Content Body */}
-            <div style={{ padding: '28px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '24px' }}>
+            <div className="p-7 overflow-y-auto flex flex-col gap-6">
               
               {/* Top Summary Row */}
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '16px', background: '#f6f6f3', padding: '16px', borderRadius: '16px', border: '1px solid #dadad3' }}>
+              <div className="grid grid-cols-[repeat(auto-fit,minmax(160px,1fr))] gap-4 bg-[#f6f6f3] p-4 rounded-2xl border border-[#dadad3]">
                 <div>
-                  <div style={{ fontSize: '11px', color: '#262622', fontWeight: 600, textTransform: 'uppercase' }}>Police Station</div>
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#000000', marginTop: '2px' }}>{selectedIncident?.police_station}</div>
+                  <div className="text-[11px] text-[#262622] font-semibold uppercase">Police Station</div>
+                  <div className="text-sm font-bold text-black mt-0.5">{selectedIncident?.police_station}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '11px', color: '#262622', fontWeight: 600, textTransform: 'uppercase' }}>Date &amp; Time</div>
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#000000', marginTop: '2px' }}>
-                    {selectedIncident ? new Date(selectedIncident.date_time).toLocaleDateString([], { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' }) : ''}
-                    <span style={{ display: 'block', fontSize: '12px', fontWeight: 500, color: '#262622', marginTop: '1px' }}>
-                      {selectedIncident ? new Date(selectedIncident.date_time).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : ''}
+                  <div className="text-[11px] text-[#262622] font-semibold uppercase">Date &amp; Time</div>
+                  <div className="text-sm font-bold text-black mt-0.5">
+                    {selectedIncident ? formatDateLong(selectedIncident.date_time) : ''}
+                    <span className="block text-xs font-medium text-[#262622] mt-0.5">
+                      {selectedIncident ? formatTime(selectedIncident.date_time) : ''}
                     </span>
                   </div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '11px', color: '#262622', fontWeight: 600, textTransform: 'uppercase' }}>Location &amp; District</div>
-                  <div style={{ fontSize: '14px', fontWeight: 700, color: '#000000', marginTop: '2px' }}>{selectedIncident?.location}</div>
-                  <div style={{ fontSize: '11px', color: '#262622', fontWeight: 500 }}>{selectedIncident?.district}</div>
+                  <div className="text-[11px] text-[#262622] font-semibold uppercase">Location &amp; District</div>
+                  <div className="text-sm font-bold text-black mt-0.5">{selectedIncident?.location}</div>
+                  <div className="text-[11px] text-[#262622] font-medium">{selectedIncident?.district}</div>
                 </div>
                 <div>
-                  <div style={{ fontSize: '11px', color: '#262622', fontWeight: 600, textTransform: 'uppercase' }}>Threat / Priority</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px', marginTop: '4px' }}>
-                    <span style={{
-                      background: selectedIncident?.priority === 'urgent' ? '#fee2e2' : selectedIncident?.priority === 'high' ? '#ffedd5' : '#fef3c7',
-                      color: selectedIncident?.priority === 'urgent' ? '#b91c1c' : selectedIncident?.priority === 'high' ? '#c2410c' : '#d97706',
-                      fontSize: '11px',
-                      fontWeight: 700,
-                      padding: '2px 8px',
-                      borderRadius: '16px',
-                      textTransform: 'uppercase'
-                    }}>
+                  <div className="text-[11px] text-[#262622] font-semibold uppercase">Threat / Priority</div>
+                  <div className="flex items-center gap-1.5 mt-1">
+                    <span className="text-[11px] font-bold py-0.5 px-2 rounded-full uppercase" style={{ background: selectedIncident?.priority === 'urgent' ? '#fee2e2' : selectedIncident?.priority === 'high' ? '#ffedd5' : '#fef3c7', color: selectedIncident?.priority === 'urgent' ? '#b91c1c' : selectedIncident?.priority === 'high' ? '#c2410c' : '#d97706' }}>
                       {selectedIncident?.priority}
                     </span>
-                    <span style={{ fontSize: '13px', fontWeight: 700, color: '#000000' }}>Score: {selectedIncident?.risk_score}</span>
+                    <span className="text-[13px] font-bold text-black">Score: {selectedIncident?.risk_score}</span>
                   </div>
                 </div>
               </div>
 
               {/* Main Split Layout */}
-              <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '28px', flexWrap: 'wrap' }}>
+              <div className="grid grid-cols-[1.5fr_1fr] gap-7 flex-wrap">
                 
                 {/* Left side: Case Narrative */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div className="flex flex-col gap-5">
                   <div>
-                    <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#262622', borderBottom: '2px solid #dadad3', paddingBottom: '6px', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <h3 className="text-sm font-bold text-[#262622] border-b-2 border-[#dadad3] pb-1.5 mb-2.5 uppercase tracking-[0.5px]">
                       📜 Case History / Description
                     </h3>
-                    <p style={{ fontSize: '14px', color: '#262622', lineHeight: '1.6', background: '#f6f6f3', padding: '16px', borderRadius: '16px', border: '1.5px solid #dadad3', margin: 0 }}>
+                    <p className="text-sm text-[#262622] leading-relaxed bg-[#f6f6f3] p-4 rounded-2xl border-1.5 border-[#dadad3] m-0">
                       {selectedIncident?.description}
                     </p>
                   </div>
 
                   <div>
-                    <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#262622', borderBottom: '2px solid #dadad3', paddingBottom: '6px', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <h3 className="text-sm font-bold text-[#262622] border-b-2 border-[#dadad3] pb-1.5 mb-2.5 uppercase tracking-[0.5px]">
                       ⚙️ Modus Operandi Details
                     </h3>
-                    <p style={{ fontSize: '14px', color: '#262622', lineHeight: '1.6', fontStyle: 'italic', background: '#fcfaff', padding: '16px', borderRadius: '16px', border: '1.5px solid #e8dbff', margin: 0 }}>
+                    <p className="text-sm text-[#262622] leading-relaxed italic bg-[#fcfaff] p-4 rounded-2xl border-1.5 border-[#e8dbff] m-0">
                       {selectedIncident?.modus_operandi}
                     </p>
                   </div>
                 </div>
 
                 {/* Right side: Associated entities & Socio-economic context */}
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+                <div className="flex flex-col gap-5">
                   
                   {/* Suspects / Victims List */}
                   <div>
-                    <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#262622', borderBottom: '2px solid #dadad3', paddingBottom: '6px', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <h3 className="text-sm font-bold text-[#262622] border-b-2 border-[#dadad3] pb-1.5 mb-2.5 uppercase tracking-[0.5px]">
                       👥 Associated Entities
                     </h3>
                     {associatedPeople.length === 0 ? (
@@ -1318,7 +1481,7 @@ export default function CrimeIntelligencePage() {
                               gap: '4px'
                             }}>
                               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                <span style={{ fontSize: '13px', fontWeight: 700, color: isSuspect ? '#be123c' : '#0369a1' }}>
+                                <span className="text-[13px] font-bold" style={{ color: isSuspect ? '#be123c' : '#0369a1' }}>
                                   {person.name}
                                 </span>
                                 <span style={{
@@ -1333,10 +1496,10 @@ export default function CrimeIntelligencePage() {
                                   {person.role.replace('_', ' ')}
                                 </span>
                               </div>
-                              <div style={{ fontSize: '11px', color: '#262622' }}>
+                              <div className="text-[11px] text-[#262622]">
                                 Age: {person.demographics.age} | Gender: {person.demographics.gender}
                               </div>
-                              <div style={{ fontSize: '11px', color: '#262622', fontStyle: 'italic' }}>
+                              <div className="text-[11px] text-[#262622] italic">
                                 Occupation: {person.demographics.occupation}
                               </div>
                             </div>
@@ -1348,34 +1511,25 @@ export default function CrimeIntelligencePage() {
 
                   {/* Socio-Economic Context */}
                   <div>
-                    <h3 style={{ fontSize: '14px', fontWeight: 700, color: '#262622', borderBottom: '2px solid #dadad3', paddingBottom: '6px', marginBottom: '10px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                    <h3 className="text-sm font-bold text-[#262622] border-b-2 border-[#dadad3] pb-1.5 mb-2.5 uppercase tracking-[0.5px]">
                       📊 Demographics Context
                     </h3>
-                    <div style={{
-                      background: '#f6f6f3',
-                      border: '1.5px solid #dadad3',
-                      padding: '12px',
-                      borderRadius: '16px',
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: '8px',
-                      fontSize: '12px'
-                    }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#262622', fontWeight: 600 }}>Urbanization Rate:</span>
-                        <span style={{ fontWeight: 700, color: '#000000', textTransform: 'capitalize' }}>
+                    <div className="bg-[#f6f6f3] border-1.5 border-[#dadad3] p-3 rounded-2xl flex flex-col gap-2 text-xs">
+                      <div className="flex justify-between">
+                        <span className="text-[#262622] font-semibold">Urbanization Rate:</span>
+                        <span className="font-bold text-black capitalize">
                           {selectedIncident?.socio_economic_factors?.urbanization}
                         </span>
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#262622', fontWeight: 600 }}>Population Density:</span>
-                        <span style={{ fontWeight: 700, color: '#000000', textTransform: 'capitalize' }}>
+                      <div className="flex justify-between">
+                        <span className="text-[#262622] font-semibold">Population Density:</span>
+                        <span className="font-bold text-black capitalize">
                           {selectedIncident?.socio_economic_factors?.density}
                         </span>
                       </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                        <span style={{ color: '#262622', fontWeight: 600 }}>Poverty Index:</span>
-                        <span style={{ fontWeight: 700, color: '#000000', textTransform: 'capitalize' }}>
+                      <div className="flex justify-between">
+                        <span className="text-[#262622] font-semibold">Poverty Index:</span>
+                        <span className="font-bold text-black capitalize">
                           {selectedIncident?.socio_economic_factors?.poverty_index}
                         </span>
                       </div>
@@ -1389,28 +1543,10 @@ export default function CrimeIntelligencePage() {
             </div>
 
             {/* Footer Panel */}
-            <div style={{
-              background: '#f6f6f3',
-              borderTop: '1px solid #dadad3',
-              padding: '16px 28px',
-              display: 'flex',
-              justifyContent: 'flex-end',
-              gap: '12px'
-            }}>
+            <div className="bg-[#f6f6f3] border-t border-[#dadad3] py-4 px-7 flex justify-end gap-3">
               <button
                 onClick={() => setSelectedIncidentId(null)}
-                style={{
-                  height: '38px',
-                  padding: '0 20px',
-                  background: '#000000',
-                  color: '#ffffff',
-                  border: 'none',
-                  borderRadius: '6px',
-                  fontSize: '13px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  transition: 'background 120ms'
-                }}
+                className="h-[38px] px-5 bg-black text-white border-none rounded font-bold text-[13px] cursor-pointer transition-colors duration-120 hover:bg-neutral-800"
                 onMouseEnter={e => e.currentTarget.style.background = '#262622'}
                 onMouseLeave={e => e.currentTarget.style.background = '#000000'}
               >
@@ -1422,5 +1558,13 @@ export default function CrimeIntelligencePage() {
         </div>
       )}
     </main>
+  )
+}
+
+export default function CrimeIntelligencePage() {
+  return (
+    <Suspense fallback={<div className="py-10 px-6 bg-[#f6f6f3] min-h-screen text-center text-[#262622] font-semibold">Loading Intelligence Dashboard...</div>}>
+      <CrimeIntelligenceContent />
+    </Suspense>
   )
 }

@@ -65,7 +65,16 @@
   --shadow-floating: 0 8px 24px rgba(26,26,26,0.12);
 }
 
-* { box-sizing: border-box; margin: 0; padding: 0; }
+*, ::before, ::after {
+  box-sizing: border-box;
+}
+
+@layer base {
+  body, h1, h2, h3, h4, h5, h6, p, ol, ul, menu, table, th, td, input, button, select, textarea {
+    margin: 0;
+    padding: 0;
+  }
+}
 
 body {
   background: var(--color-canvas);

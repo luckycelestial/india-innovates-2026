@@ -40,8 +40,7 @@ if not api_key:
     print("[ERROR] GROQ_API_KEY is not set in .env.local")
     sys.exit(1)
 if not supabase_url or not supabase_key:
-    print("[ERROR] Supabase environment variables are not set in .env.local")
-    sys.exit(1)
+    print("[WARN] Supabase environment variables are not set in .env.local. Running in local fallback mode.")
 
 # In-memory dictionary mapping user JID to their conversation history
 chat_histories = {}
@@ -142,6 +141,21 @@ def submit_to_supabase(data: dict):
         "department": dept
     }
     
+    if not supabase_url or not supabase_key:
+        print("[INFO] Saving complaint to local file...")
+        try:
+            filepath = "local_complaints.json"
+            existing = []
+            if os.path.exists(filepath):
+                with open(filepath, "r", encoding="utf-8") as f:
+                    existing = json.load(f)
+            existing.append(payload)
+            with open(filepath, "w", encoding="utf-8") as f:
+                json.dump(existing, f, indent=2)
+            return {"id": len(existing), **payload}, None
+        except Exception as e:
+            return None, f"Failed to save locally: {str(e)}"
+
     url = f"{supabase_url.rstrip('/')}/rest/v1/complaints"
     headers = {
         "apikey": supabase_key,

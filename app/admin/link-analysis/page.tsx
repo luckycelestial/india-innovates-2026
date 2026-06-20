@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+// Removed Supabase client
 import { 
   Users, MapPin, Search, RefreshCw, Radio, 
   HelpCircle, ExternalLink, ShieldAlert, Award
@@ -12,13 +12,10 @@ const FONT_SANS = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvet
 const FONT_DISPLAY = 'var(--font-display), "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
 
 export default function LinkAnalysisPage() {
-  const supabase = createClient()
-  
-  // Data State
-  const [incidents, setIncidents] = useState<KspIncident[]>([])
-  const [people, setPeople] = useState<KspPerson[]>([])
-  const [connections, setConnections] = useState<KspConnection[]>([])
-  const [loading, setLoading] = useState(true)
+  const [incidents, setIncidents] = useState<KspIncident[]>(MOCK_INCIDENTS)
+  const [people, setPeople] = useState<KspPerson[]>(MOCK_PEOPLE)
+  const [connections, setConnections] = useState<KspConnection[]>(MOCK_CONNECTIONS)
+  const [loading, setLoading] = useState(false)
 
   // Layout Nodes State
   const [nodes, setNodes] = useState<any[]>([])
@@ -27,33 +24,6 @@ export default function LinkAnalysisPage() {
 
   // Search Filter
   const [searchTerm, setSearchTerm] = useState('')
-
-  useEffect(() => {
-    async function loadData() {
-      try {
-        const { data: incs } = await supabase.from('ksp_incidents').select('*')
-        const { data: ppl } = await supabase.from('ksp_people').select('*')
-        const { data: conns } = await supabase.from('ksp_connections').select('*')
-        
-        if (incs && incs.length > 0 && ppl && ppl.length > 0) {
-          setIncidents(incs)
-          setPeople(ppl)
-          setConnections(conns || [])
-        } else {
-          setIncidents(MOCK_INCIDENTS)
-          setPeople(MOCK_PEOPLE)
-          setConnections(MOCK_CONNECTIONS)
-        }
-      } catch {
-        setIncidents(MOCK_INCIDENTS)
-        setPeople(MOCK_PEOPLE)
-        setConnections(MOCK_CONNECTIONS)
-      } finally {
-        setLoading(false)
-      }
-    }
-    loadData()
-  }, [])
 
   // Dynamic spring-force simulation loop
   useEffect(() => {
