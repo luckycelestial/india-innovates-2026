@@ -1,11 +1,34 @@
 import { NextResponse } from 'next/server'
 import { pool, initDb } from '@/lib/mysql'
 
+function convertDates(val: any): any {
+  if (typeof val === 'string') {
+    const isoDateRegex = /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/
+    if (isoDateRegex.test(val)) {
+      const d = new Date(val)
+      if (!isNaN(d.getTime())) {
+        return d
+      }
+    }
+  } else if (Array.isArray(val)) {
+    return val.map(convertDates)
+  } else if (val !== null && typeof val === 'object') {
+    const res: any = {}
+    for (const k of Object.keys(val)) {
+      res[k] = convertDates(val[k])
+    }
+    return res
+  }
+  return val
+}
+
 export async function POST(req: Request) {
   try {
     await initDb()
     const body = await req.json()
-    const { action, table, payload, selects, filters, limit, single, orderColumn, orderAscending } = body
+    const { action, table, selects, limit, single, orderColumn, orderAscending } = body
+    const payload = convertDates(body.payload)
+    const filters = convertDates(body.filters)
 
     if (action === 'select') {
       let query = `SELECT * FROM \`${table}\``
@@ -119,6 +142,28 @@ export async function POST(req: Request) {
         return NextResponse.json({ data: updatedRows[0] || null })
       }
       return NextResponse.json({ data: updatedRows })
+    }
+
+    if (action === 'delete') {
+      let query = `DELETE FROM \`${table}\``
+      const params: any[] = []
+
+      if (filters && filters.length > 0) {
+        const filterClauses = filters.map((f: any) => {
+          if (f.type === 'eq') {
+            params.push(f.value)
+            return `\`${f.column}\` = ?`
+          } else if (f.type === 'neq') {
+            params.push(f.value)
+            return `\`${f.column}\` != ?`
+          }
+          return '1=1'
+        })
+        query += ' WHERE ' + filterClauses.join(' AND ')
+      }
+
+      await pool.query(query, params)
+      return NextResponse.json({ data: { success: true } })
     }
 
     return NextResponse.json({ error: 'Unsupported action' }, { status: 400 })

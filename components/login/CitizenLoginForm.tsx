@@ -3,20 +3,21 @@
 import React, { useState } from 'react'
 
 type CitizenLoginFormProps = {
-  onSubmit: (mobile: string, otp: string) => Promise<void>
+  onSubmit: (aadhaar: string, otp: string) => Promise<void>
   loading: boolean
 }
 
 export default function CitizenLoginForm({ onSubmit, loading }: CitizenLoginFormProps) {
-  const [mobile, setMobile] = useState('')
+  const [aadhaar, setAadhaar] = useState('')
   const [otp, setOtp] = useState('')
   const [otpRequested, setOtpRequested] = useState(false)
   const [error, setError] = useState('')
 
   const handleSendOtp = (e: React.FormEvent) => {
     e.preventDefault()
-    if (mobile.replace(/\D/g, '').length !== 10) {
-      setError('Please enter a valid 10-digit mobile number.')
+    const cleanAadhaar = aadhaar.replace(/\D/g, '')
+    if (cleanAadhaar.length !== 12) {
+      setError('Please enter a valid 12-digit Aadhaar number.')
       return
     }
     setError('')
@@ -29,15 +30,22 @@ export default function CitizenLoginForm({ onSubmit, loading }: CitizenLoginForm
       setError('Enter the 4-digit OTP.')
       return
     }
-    onSubmit(mobile, otp)
+    onSubmit(aadhaar.replace(/\D/g, ''), otp)
   }
 
   const fillDemo = () => {
-    setMobile('9999999999')
+    setAadhaar('999999999999')
     setError('')
     setOtpRequested(true)
     setOtp('0000')
-    onSubmit('9999999999', '0000')
+    onSubmit('999999999999', '0000')
+  }
+
+  // Format Aadhaar with spaces: 0000 0000 0000
+  const formatAadhaar = (val: string) => {
+    const clean = val.replace(/\D/g, '').slice(0, 12)
+    const matches = clean.match(/\d{1,4}/g)
+    return matches ? matches.join(' ') : clean
   }
 
   return (
@@ -46,7 +54,7 @@ export default function CitizenLoginForm({ onSubmit, loading }: CitizenLoginForm
         <form onSubmit={handleSendOtp} style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
           <div>
             <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#000000', marginBottom: '6px' }}>
-              Mobile Number
+              Aadhaar Card Number
             </label>
             <div style={{ display: 'flex', gap: '8px' }}>
               <span style={{
@@ -56,19 +64,20 @@ export default function CitizenLoginForm({ onSubmit, loading }: CitizenLoginForm
                 background: '#f6f6f3',
                 border: '1px solid #dadad3',
                 borderRadius: '16px',
-                fontSize: '14px',
+                fontSize: '13px',
                 color: '#000000',
-                fontWeight: 600
-              }}>+91</span>
+                fontWeight: 700
+              }}>UIDAI</span>
               <input
-                type="tel"
-                value={mobile}
+                type="text"
+                inputMode="numeric"
+                value={aadhaar}
                 onChange={(e) => {
-                  setMobile(e.target.value.replace(/\D/g, '').slice(0, 10))
+                  setAadhaar(formatAadhaar(e.target.value))
                   setError('')
                 }}
-                placeholder="99999 99999"
-                maxLength={10}
+                placeholder="0000 0000 0000"
+                maxLength={14} // 12 digits + 2 spaces
                 required
                 style={{
                   flex: 1,
@@ -87,7 +96,7 @@ export default function CitizenLoginForm({ onSubmit, loading }: CitizenLoginForm
           </div>
 
           <p style={{ fontSize: '12px', color: '#262622', margin: 0, lineHeight: 1.4 }}>
-            No password required. We use OTP to verify your identity.
+            Verification OTP will be sent to the mobile number registered with your Aadhaar Card.
           </p>
 
           <button
@@ -163,7 +172,7 @@ export default function CitizenLoginForm({ onSubmit, loading }: CitizenLoginForm
                 textDecoration: 'underline'
               }}
             >
-              Change Number
+              Change Aadhaar
             </button>
           </div>
 
@@ -210,14 +219,14 @@ export default function CitizenLoginForm({ onSubmit, loading }: CitizenLoginForm
             background: '#ffffff',
             border: '1px solid #dadad3',
             borderRadius: '6px',
-            fontSize: '12px',
+            fontSize: '11px',
             color: '#000000',
             cursor: 'pointer',
             fontFamily: 'inherit',
             fontWeight: 500
           }}
         >
-          📱 Mobile: 99999 99999 (OTP: 0000)
+          💳 Aadhaar: 9999 9999 9999 (OTP: 0000)
         </button>
       </div>
     </div>

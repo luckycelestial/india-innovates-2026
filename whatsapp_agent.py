@@ -31,16 +31,12 @@ def load_env():
 
 load_env()
 
-# Verify GROQ_API_KEY and Supabase Config
+# Verify GROQ_API_KEY
 api_key = os.environ.get("GROQ_API_KEY")
-supabase_url = os.environ.get("NEXT_PUBLIC_SUPABASE_URL")
-supabase_key = os.environ.get("NEXT_PUBLIC_SUPABASE_ANON_KEY")
 
 if not api_key:
     print("[ERROR] GROQ_API_KEY is not set in .env.local")
     sys.exit(1)
-if not supabase_url or not supabase_key:
-    print("[WARN] Supabase environment variables are not set in .env.local. Running in local fallback mode.")
 
 # In-memory dictionary mapping user JID to their conversation history
 chat_histories = {}
@@ -112,7 +108,7 @@ def get_ai_reply_with_history(user_message: str, chat_user: str) -> str:
     except Exception as e:
         return f"Error: Failed to contact AI agent ({str(e)})"
 
-def submit_to_supabase(data: dict):
+def submit_to_local_db(data: dict):
     # Map category to department (matching getCategoryDept in frontend)
     category_depts = {
         'road': 'Public Works Department',
@@ -140,36 +136,24 @@ def submit_to_supabase(data: dict):
         "submitted_by": None,
         "department": dept
     }
-    
-    if not supabase_url or not supabase_key:
-        print("[INFO] Saving complaint to local file...")
-        try:
-            filepath = "local_complaints.json"
-            existing = []
-            if os.path.exists(filepath):
-                with open(filepath, "r", encoding="utf-8") as f:
-                    existing = json.load(f)
-            existing.append(payload)
-            with open(filepath, "w", encoding="utf-8") as f:
-                json.dump(existing, f, indent=2)
-            return {"id": len(existing), **payload}, None
-        except Exception as e:
-            return None, f"Failed to save locally: {str(e)}"
 
-    url = f"{supabase_url.rstrip('/')}/rest/v1/complaints"
+    url = "http://127.0.0.1:3000/api/db"
     headers = {
-        "apikey": supabase_key,
-        "Authorization": f"Bearer {supabase_key}",
-        "Content-Type": "application/json",
-        "Prefer": "return=representation"
+        "Content-Type": "application/json"
+    }
+    req_payload = {
+        "action": "insert",
+        "table": "complaints",
+        "payload": payload,
+        "single": True
     }
     
     try:
-        response = requests.post(url, headers=headers, json=payload, timeout=20)
+        response = requests.post(url, headers=headers, json=req_payload, timeout=20)
         if response.status_code in [200, 201]:
             res_data = response.json()
-            if res_data and len(res_data) > 0:
-                return res_data[0], None
+            if res_data and "data" in res_data:
+                return res_data["data"], None
             return None, "Empty response from database insert."
         else:
             return None, f"Database insert failed (status {response.status_code}): {response.text}"
@@ -264,8 +248,8 @@ def on_message(cl: NewClient, message: MessageEv):
                 
                 complaint_data = json.loads(json_str)
                 
-                # Submit to Supabase
-                res, err = submit_to_supabase(complaint_data)
+                # Submit to local database
+                res, err = submit_to_local_db(complaint_data)
                 if err:
                     err_msg = f"Failed to submit complaint to PRAJA database: {err}"
                     print(f"[ERROR] {err_msg}")

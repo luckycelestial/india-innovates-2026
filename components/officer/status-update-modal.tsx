@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '@/lib/db/client'
 import { Settings, CheckCircle2, XCircle, AlertOctagon, AlertTriangle, AlertCircle, PartyPopper, ChevronRight, X } from 'lucide-react'
 
 type Note = {
@@ -40,7 +40,7 @@ export default function StatusUpdateModal({
   onSuccess,
   initialTargetStatus,
 }: StatusUpdateModalProps) {
-  const supabase = createClient()
+  const db = createClient()
   
   const [targetStatus, setTargetStatus] = useState('in_progress')
   
@@ -139,7 +139,7 @@ export default function StatusUpdateModal({
 
       const serializedNotes = JSON.stringify(newNotes)
 
-      // 3. Write to Supabase complaints registry
+      // 3. Write to DB complaints registry
       const updates: Record<string, any> = {
         status: targetStatus,
         notes: serializedNotes,
@@ -150,7 +150,7 @@ export default function StatusUpdateModal({
         updates.department = escalationTarget
       }
 
-      const { error } = await supabase
+      const { error } = await db
         .from('complaints')
         .update(updates)
         .eq('id', complaintId)

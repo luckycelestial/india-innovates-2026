@@ -1,1859 +1,734 @@
 'use client'
 
-import React, { useState, useMemo, useEffect } from 'react'
-import { 
-  MapPin, Bell, Search, Compass, CheckCircle2, ChevronRight, User, 
-  TrendingUp, BarChart3, Settings, Kanban, ClipboardList, Filter, X, 
-  Plus, AlertTriangle, ShieldAlert, Thermometer, Wind, Car, RefreshCw, 
-  Layers, Map, FileSpreadsheet, Eye, Info, Check, Send, AlertCircle, Calendar 
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react'
+import {
+  MapPin, Search, Compass, ChevronRight, TrendingUp, BarChart3, X,
+  AlertTriangle, ShieldAlert, Thermometer, Wind, Car, RefreshCw,
+  Layers, Map, Eye, Info, Check, AlertCircle, ArrowUpDown, Activity, CloudRain, Award
 } from 'lucide-react'
+import { createClient } from '@/lib/db/client'
+import { normalizeDistrictName, getComplaintDistrict } from '@/lib/utils/district'
+import OverviewLeafletMap, { ProcessedDistrict, HeatmapMetric } from '@/components/official/OverviewLeafletMap'
 
-// Types
-type Comment = {
-  sender: string
-  text: string
-  time: string
-}
-
-type Grievance = {
-  id: string
-  citizen: string
-  category: string
-  ward: string
-  urgency: 'Urgent' | 'High' | 'Medium' | 'Low'
-  status: 'Pending' | 'In Progress' | 'Resolved'
-  assignedAgent: string
-  assignedDept: string
-  date: string
-  x: number // Map coordinate X%
-  y: number // Map coordinate Y%
-  description: string
-  comments: Comment[]
-}
-
-const getAqiStatus = (aqi: number) => {
-  if (aqi <= 50) return 'Good'
-  if (aqi <= 100) return 'Satisfactory'
-  if (aqi <= 200) return 'Moderate'
-  return 'Poor'
-}
-
-// Mock initial data
-const INITIAL_GRIEVANCES: Grievance[] = [
-  {
-    id: '#COMP-1092',
-    citizen: 'Aarav Mehta',
-    category: 'Water Disruption',
-    ward: 'Malleshwaram',
-    urgency: 'Urgent',
-    status: 'In Progress',
-    assignedAgent: 'Ramesh K.',
-    assignedDept: 'Water & Sewerage',
-    date: '2026-06-15',
-    x: 32,
-    y: 35,
-    description: 'No water supply on 8th Cross Road since yesterday morning. Pipeline pressure is zero.',
-    comments: [
-      { sender: 'System', text: 'Complaint registered.', time: '2026-06-15 09:00' },
-      { sender: 'Admin', text: 'Dispatched Ramesh K. from Water & Sewerage team.', time: '2026-06-15 11:30' }
-    ]
-  },
-  {
-    id: '#COMP-2104',
-    citizen: 'Priya Sharma',
-    category: 'Waste Overflow',
-    ward: 'Indiranagar',
-    urgency: 'High',
-    status: 'Pending',
-    assignedAgent: 'Unassigned',
-    assignedDept: 'Solid Waste',
-    date: '2026-06-15',
-    x: 72,
-    y: 45,
-    description: 'Commercial garbage dumped near the public park entrance. Foul smell spreading rapidly.',
-    comments: [
-      { sender: 'System', text: 'Complaint registered.', time: '2026-06-15 10:15' }
-    ]
-  },
-  {
-    id: '#COMP-3091',
-    citizen: 'Amit Patel',
-    category: 'Drainage Overflow',
-    ward: 'Jayanagar',
-    urgency: 'Urgent',
-    status: 'Pending',
-    assignedAgent: 'Unassigned',
-    assignedDept: 'Water & Sewerage',
-    date: '2026-06-14',
-    x: 48,
-    y: 78,
-    description: 'Blocked drain flooding the main crossing. Commuters unable to cross without stepping in wastewater.',
-    comments: [
-      { sender: 'System', text: 'Complaint registered.', time: '2026-06-14 17:00' }
-    ]
-  },
-  {
-    id: '#COMP-4512',
-    citizen: 'Rohan Sen',
-    category: 'Broken Streetlight',
-    ward: 'Rajajinagar',
-    urgency: 'Medium',
-    status: 'Resolved',
-    assignedAgent: 'Suresh Kumar',
-    assignedDept: 'Roads & Lights',
-    date: '2026-06-13',
-    x: 20,
-    y: 55,
-    description: 'Streetlight pole number R-14 has been blinking and dim for 3 consecutive days.',
-    comments: [
-      { sender: 'System', text: 'Complaint registered.', time: '2026-06-13 20:30' },
-      { sender: 'Suresh Kumar', text: 'Replaced LED bulb and terminal connector.', time: '2026-06-14 14:00' },
-      { sender: 'System', text: 'Status updated to Resolved.', time: '2026-06-14 14:00' }
-    ]
-  },
-  {
-    id: '#COMP-5201',
-    citizen: 'Sneha Rao',
-    category: 'Road Damage',
-    ward: 'Koramangala',
-    urgency: 'High',
-    status: 'In Progress',
-    assignedAgent: 'Manoj S.',
-    assignedDept: 'Roads & Lights',
-    date: '2026-06-13',
-    x: 65,
-    y: 72,
-    description: 'Deep pothole developed near the corner of 5th Block junction. Extremely dangerous for two-wheelers.',
-    comments: [
-      { sender: 'System', text: 'Complaint registered.', time: '2026-06-13 11:00' },
-      { sender: 'Manoj S.', text: 'Site inspected. Asphalt patch crew scheduled for local repair.', time: '2026-06-14 09:00' }
-    ]
+// Dynamic Leaflet typings
+declare global {
+  interface Window {
+    L: any
   }
-]
-
-// Open datasets data
-type Dataset = {
-  id: string
-  name: string
-  source: string
-  refresh: string
-  desc: string
-  fields: string[]
-  rows: Record<string, any>[]
 }
 
-const DATASETS: Dataset[] = [
-  {
-    id: 'ds-aqi',
-    name: 'Bengaluru AQI Sensor Feed',
-    source: 'KSPCB IoT Network',
-    refresh: '15 Mins',
-    desc: 'Real-time particulate matter (PM2.5, PM10) and gas readings across smart ward stations.',
-    fields: ['Station ID', 'Ward', 'PM2.5 (µg/m³)', 'PM10 (µg/m³)', 'AQI Value', 'Status'],
-    rows: [
-      { id: 'AQI-01', ward: 'Malleshwaram', pm25: 42, pm10: 84, aqi: 142, status: 'Moderate' },
-      { id: 'AQI-02', ward: 'Indiranagar', pm25: 18, pm10: 35, aqi: 58, status: 'Satisfactory' },
-      { id: 'AQI-03', ward: 'Jayanagar', pm25: 12, pm10: 22, aqi: 45, status: 'Good' },
-      { id: 'AQI-04', ward: 'Rajajinagar', pm25: 55, pm10: 110, aqi: 155, status: 'Poor' },
-      { id: 'AQI-05', ward: 'Koramangala', pm25: 31, pm10: 62, aqi: 110, status: 'Moderate' }
-    ]
-  },
-  {
-    id: 'ds-accidents',
-    name: 'KSP Traffic Accident Ledger',
-    source: 'OpenCity / KSP Data',
-    refresh: 'Daily',
-    desc: 'Daily reporting of vehicular collisions, hot zones, and traffic obstructions from local control rooms.',
-    fields: ['Ledger ID', 'Intersection', 'Ward', 'Incident Type', 'Severity', 'Response Time (min)'],
-    rows: [
-      { id: 'ACC-512', intersection: '10th Main Road', ward: 'Malleshwaram', type: 'Two-Wheeler Slip', severity: 'Minor', response: 8 },
-      { id: 'ACC-513', intersection: '100 Feet Rd Junction', ward: 'Indiranagar', type: 'Rear-End collision', severity: 'Minor', response: 12 },
-      { id: 'ACC-514', intersection: 'Silk Board flyover ramp', ward: 'Koramangala', type: 'Heavy Vehicle Breakdown', severity: 'Critical', response: 22 },
-      { id: 'ACC-515', intersection: 'Nanda Road Circle', ward: 'Jayanagar', type: 'Pedestrian Cross Hit', severity: 'Major', response: 15 }
-    ]
-  },
-  {
-    id: 'ds-crime',
-    name: 'KSP Crime Incident Logs',
-    source: 'Karnataka State Police (KSP)',
-    refresh: 'Weekly',
-    desc: 'Anonymized official incident logs for ward intelligence matching, including vandalism and public disturbance.',
-    fields: ['Record ID', 'Offense', 'Ward', 'Location Type', 'Report Date', 'Status'],
-    rows: [
-      { id: 'CRM-009', offense: 'Public Disturbance', ward: 'Malleshwaram', type: 'Commercial Street', date: '2026-06-12', status: 'Closed' },
-      { id: 'CRM-010', offense: 'Vandalism / Defacement', ward: 'Indiranagar', type: 'Transit Hub', date: '2026-06-13', status: 'Under Review' },
-      { id: 'CRM-011', offense: 'Theft / Petty Larceny', ward: 'Koramangala', type: 'Residential area', date: '2026-06-14', status: 'Active' },
-      { id: 'CRM-012', offense: 'Public Intoxication', ward: 'Jayanagar', type: 'Public Park', date: '2026-06-15', status: 'Closed' }
-    ]
-  },
-  {
-    id: 'ds-boundaries',
-    name: 'BBMP Ward Boundaries GIS',
-    source: 'BBMP Smart City Portal',
-    refresh: 'Static',
-    desc: 'GIS geometry shapefiles and census aggregates defining ward authority borders and command scopes.',
-    fields: ['Ward Code', 'Ward Name', 'Area (SqKm)', 'Population', 'Officers Assigned', 'Control Hub'],
-    rows: [
-      { code: 'W-014', name: 'Malleshwaram', area: 4.8, pop: 85000, officers: 6, hub: 'North-Command' },
-      { code: 'W-022', name: 'Indiranagar', area: 5.2, pop: 98000, officers: 8, hub: 'East-Command' },
-      { code: 'W-009', name: 'Jayanagar', area: 6.1, pop: 112000, officers: 9, hub: 'South-Command' },
-      { code: 'W-004', name: 'Rajajinagar', area: 4.2, pop: 76000, officers: 5, hub: 'West-Command' },
-      { code: 'W-012', name: 'Koramangala', area: 5.9, pop: 104000, officers: 7, hub: 'Southeast-Command' }
-    ]
-  }
-]
+interface WeatherRow {
+  id: number
+  district_name: string
+  latitude: number
+  longitude: number
+  temperature: number
+  humidity: number
+  precipitation: number
+  weather_code: number
+  wind_speed: number
+  condition_label: string
+  fetched_at: string
+}
 
-export default function OfficialOperationsDashboard() {
-  const [grievances, setGrievances] = useState<Grievance[]>(INITIAL_GRIEVANCES)
-  const [selectedGrievance, setSelectedGrievance] = useState<Grievance | null>(null)
-  
-  // Role switcher state
-  const [roleMode, setRoleMode] = useState<'admin' | 'ward' | 'dept'>('admin')
-  
-  // Search and Filter States
-  const [searchTerm, setSearchTerm] = useState('')
-  const [wardFilter, setWardFilter] = useState('All Wards')
-  const [deptFilter, setDeptFilter] = useState('All Departments')
-  const [urgencyFilter, setUrgencyFilter] = useState('All Urgency')
-  const [statusFilter, setStatusFilter] = useState('All Status')
-  const [kpiFilter, setKpiFilter] = useState<string | null>(null) // KPI click filtering
-
-  // Map settings
-  const [mapLayers, setMapLayers] = useState<string[]>(['boundaries', 'pins'])
-  const [hoveredWard, setHoveredWard] = useState<string | null>(null)
-
-  // Dispatch / Action states
-  const [assignedAgent, setAssignedAgent] = useState('Ramesh K.')
-  const [actionNote, setActionNote] = useState('')
-  const [newCommentText, setNewCommentText] = useState('')
-
-  // Dataset modal
-  const [activePreviewDataset, setActivePreviewDataset] = useState<Dataset | null>(null)
-  const [pinnedWidgets, setPinnedWidgets] = useState<string[]>(['ds-aqi', 'ds-accidents'])
-
-  // Smart environmental feed simulation
-  const [selectedStationAqi, setSelectedStationAqi] = useState({
-    ward: 'Malleshwaram',
-    aqi: 142,
-    pm25: 42,
-    pm10: 84,
-    status: 'Moderate'
+function computeStressRanks(
+  districts: any[],
+  aqiData: any[],
+  trafficData: any[],
+  weatherData: any[],
+  crimeData: any,
+  complaints: any[]
+): ProcessedDistrict[] {
+  const complaintsByDistrict: Record<string, number> = {}
+  complaints.forEach(c => {
+    const dist = getComplaintDistrict(c.location)
+    complaintsByDistrict[dist] = (complaintsByDistrict[dist] || 0) + 1
   })
 
-  // Live AQI state from MySQL
+  const crimesByDistrict: Record<string, number> = {}
+  if (crimeData && Array.isArray(crimeData.incidents)) {
+    crimeData.incidents.forEach((inc: any) => {
+      const dist = normalizeDistrictName(inc.district || '')
+      crimesByDistrict[dist] = (crimesByDistrict[dist] || 0) + 1
+    })
+  }
+
+  const list: ProcessedDistrict[] = districts.map(d => {
+    const normName = normalizeDistrictName(d.name)
+    
+    const baselineComplaints = d.civic_complaints || 0
+    const activeComplaints = complaintsByDistrict[normName] || 0
+    const totalComplaints = baselineComplaints + activeComplaints
+
+    const crimes = crimesByDistrict[normName] || 0
+
+    const aqiReading = aqiData.find((a: any) => normalizeDistrictName(a.name) === normName)
+    const aqi = aqiReading ? aqiReading.aqi : 50
+
+    const trafficReading = trafficData.find((t: any) => normalizeDistrictName(t.district_name) === normName)
+    const congestion = trafficReading ? trafficReading.congestion_score : 10
+
+    const weatherReading = weatherData.find((w: any) => normalizeDistrictName(w.district_name) === normName)
+    const temp = weatherReading ? weatherReading.temperature : (d.temp || 25)
+    const rain = weatherReading ? weatherReading.precipitation : 0
+
+    return {
+      name: normName,
+      latitude: d.latitude,
+      longitude: d.longitude,
+      civicComplaints: totalComplaints,
+      crimesCount: crimes,
+      aqi,
+      congestion,
+      temp,
+      rain,
+      civicScore: 0,
+      crimeScore: 0,
+      aqiScore: 0,
+      trafficScore: 0,
+      tempScore: 0,
+      rainScore: 0,
+      overallScore: 0,
+      civicRank: 0,
+      crimeRank: 0,
+      aqiRank: 0,
+      trafficRank: 0,
+      tempRank: 0,
+      rainRank: 0,
+      overallRank: 0
+    }
+  })
+
+  const maxCivic = Math.max(...list.map(x => x.civicComplaints), 1)
+  const maxCrime = Math.max(...list.map(x => x.crimesCount), 1)
+  const maxAqi = Math.max(...list.map(x => x.aqi), 1)
+  const maxTraffic = Math.max(...list.map(x => x.congestion), 1)
+  const maxTemp = Math.max(...list.map(x => x.temp), 1)
+  const maxRain = Math.max(...list.map(x => x.rain), 1)
+
+  list.forEach(item => {
+    item.civicScore = (item.civicComplaints / maxCivic) * 100
+    item.crimeScore = (item.crimesCount / maxCrime) * 100
+    item.aqiScore = (item.aqi / maxAqi) * 100
+    item.trafficScore = (item.congestion / maxTraffic) * 100
+    item.tempScore = (item.temp / maxTemp) * 100
+    item.rainScore = (item.rain / maxRain) * 100
+    
+    item.overallScore = (
+      item.civicScore * 2.0 +
+      item.crimeScore * 2.0 +
+      item.aqiScore * 1.5 +
+      item.trafficScore * 1.5 +
+      item.tempScore * 0.5 +
+      item.rainScore * 0.5
+    ) / 8.0
+  })
+
+  const assignRankForKey = (key: keyof ProcessedDistrict, rankKey: keyof ProcessedDistrict) => {
+    const sorted = [...list].sort((a, b) => {
+      const va = a[key] as number
+      const vb = b[key] as number
+      return vb - va
+    })
+    sorted.forEach((item, index) => {
+      const found = list.find(x => x.name === item.name)
+      if (found) {
+        (found as any)[rankKey] = index + 1
+      }
+    })
+  }
+
+  assignRankForKey('civicComplaints', 'civicRank')
+  assignRankForKey('crimesCount', 'crimeRank')
+  assignRankForKey('aqi', 'aqiRank')
+  assignRankForKey('congestion', 'trafficRank')
+  assignRankForKey('temp', 'tempRank')
+  assignRankForKey('rain', 'rainRank')
+  assignRankForKey('overallScore', 'overallRank')
+
+  return list
+}
+
+
+
+export default function OfficialOperationsDashboard() {
+  const db = createClient()
+
+  // State arrays
+  const [districts, setDistricts] = useState<any[]>([])
   const [aqiData, setAqiData] = useState<any[]>([])
+  const [trafficData, setTrafficData] = useState<any[]>([])
+  const [weatherData, setWeatherData] = useState<any[]>([])
+  const [crimeData, setCrimeData] = useState<any>({ incidents: [], people: [], connections: [] })
+  const [complaints, setComplaints] = useState<any[]>([])
+
+  const [loading, setLoading] = useState(true)
+  const [refreshing, setRefreshing] = useState(false)
+  const [search, setSearch] = useState('')
+  const [selectedDistrictName, setSelectedDistrictName] = useState<string | null>(null)
+  const [heatmapType, setHeatmapType] = useState<HeatmapMetric>('overall')
+  const [sortBy, setSortBy] = useState<HeatmapMetric>('overall')
+  const [sortDir, setSortDir] = useState<'asc' | 'desc'>('asc')
+
+  const loadData = async () => {
+    try {
+      const [districtsRes, aqiRes, trafficRes, weatherRes, crimeRes, complaintsRes] = await Promise.all([
+        fetch('/api/districts').then(res => res.json()),
+        fetch('/api/aqi').then(res => res.json()),
+        fetch('/api/traffic').then(res => res.json()),
+        fetch('/api/weather').then(res => res.json()),
+        fetch('/api/crime').then(res => res.json()),
+        db.from('complaints').select('*')
+      ])
+
+      setDistricts(Array.isArray(districtsRes) ? districtsRes : [])
+      setAqiData(Array.isArray(aqiRes) ? aqiRes : [])
+      setTrafficData(Array.isArray(trafficRes) ? trafficRes : [])
+      setWeatherData(Array.isArray(weatherRes) ? weatherRes : [])
+      setCrimeData(crimeRes || { incidents: [], people: [], connections: [] })
+      setComplaints(complaintsRes?.data || [])
+    } catch (e) {
+      console.error('Error fetching dashboard telemetry:', e)
+    }
+  }
 
   useEffect(() => {
-    fetch('/api/aqi')
-      .then(res => res.json())
-      .then(data => {
-        if (Array.isArray(data) && data.length > 0) {
-          setAqiData(data)
-          const blr = data.find((d: any) => d.stationId === 'AQI-BLR' || d.name === 'Bengaluru Urban') || data[0]
-          if (blr) {
-            setSelectedStationAqi({
-              ward: blr.name,
-              aqi: blr.aqi,
-              pm25: blr.pm25,
-              pm10: blr.pm10,
-              status: getAqiStatus(blr.aqi)
-            })
-          }
-        }
-      })
-      .catch(err => {
-        console.error('Error fetching live AQI:', err)
-      })
+    const init = async () => {
+      setLoading(true)
+      await loadData()
+      setLoading(false)
+    }
+    init()
   }, [])
 
-  // Role Scope Effect Toggles
-  const handleRoleModeChange = (mode: 'admin' | 'ward' | 'dept') => {
-    setRoleMode(mode)
-    setKpiFilter(null)
-    if (mode === 'ward') {
-      setWardFilter('Malleshwaram')
-      setDeptFilter('All Departments')
-    } else if (mode === 'dept') {
-      setWardFilter('All Wards')
-      setDeptFilter('Solid Waste')
+
+  const handleRefresh = async () => {
+    setRefreshing(true)
+    await loadData()
+    setRefreshing(false)
+  }
+
+  // Pre-processed aggregated district objects
+  const processedDistricts = useMemo(() => {
+    if (!districts.length) return []
+    return computeStressRanks(districts, aqiData, trafficData, weatherData, crimeData, complaints)
+  }, [districts, aqiData, trafficData, weatherData, crimeData, complaints])
+
+  const districtHistoryPushed = useRef(false)
+
+  const handleSelectDistrictByName = useCallback((name: string) => {
+    const found = processedDistricts.find(d => normalizeDistrictName(d.name) === normalizeDistrictName(name))
+    if (found) {
+      window.history.pushState({ districtSelected: found.name }, '')
+      districtHistoryPushed.current = true
+      setSelectedDistrictName(found.name)
     } else {
-      setWardFilter('All Wards')
-      setDeptFilter('All Departments')
+      districtHistoryPushed.current = false
+      setSelectedDistrictName(null)
     }
-  }
+  }, [processedDistricts])
 
-  // Wards coordinates and details for interactive SVG map
-  const WARD_POLYGONS = [
-    { name: 'Malleshwaram', points: '10,10 50,10 40,45 10,40', color: 'rgba(109, 153, 152, 0.15)', stroke: '#6D9998' },
-    { name: 'Rajajinagar', points: '10,40 40,45 35,65 10,65', color: 'rgba(230, 0, 35, 0.05)', stroke: '#e60023' },
-    { name: 'Jayanagar', points: '35,65 55,60 50,95 30,90', color: 'rgba(123, 143, 101, 0.15)', stroke: '#7B8F65' },
-    { name: 'Koramangala', points: '55,60 90,65 85,90 50,95', color: 'rgba(226, 185, 59, 0.15)', stroke: '#E2B93B' },
-    { name: 'Indiranagar', points: '50,10 90,15 90,65 55,60 40,45', color: 'rgba(54, 55, 93, 0.15)', stroke: '#36375D' }
-  ]
-
-  // Count helper functions
-  const kpis = useMemo(() => {
-    // Basic counts filtered by current role scope
-    let scoped = grievances
-    if (roleMode === 'ward') {
-      scoped = grievances.filter(g => g.ward === 'Malleshwaram')
-    } else if (roleMode === 'dept') {
-      scoped = grievances.filter(g => g.assignedDept === 'Solid Waste')
-    }
-
-    const total = scoped.length
-    const open = scoped.filter(g => g.status !== 'Resolved').length
-    
-    // SLA Breach count (defined as status !== Resolved and urgency is Urgent or High, or older than 1 day)
-    const breached = scoped.filter(g => g.status !== 'Resolved' && (g.urgency === 'Urgent' || g.id === '#COMP-2104')).length
-    const atRisk = scoped.filter(g => g.status !== 'Resolved' && g.urgency === 'High' && g.id !== '#COMP-2104').length
-    const resolved = scoped.filter(g => g.status === 'Resolved').length
-
-    return { total, open, breached, atRisk, resolved }
-  }, [grievances, roleMode])
-
-  // Filter grievance queue
-  const filteredGrievances = useMemo(() => {
-    return grievances.filter((g) => {
-      // Role scoping
-      if (roleMode === 'ward' && g.ward !== 'Malleshwaram') return false
-      if (roleMode === 'dept' && g.assignedDept !== 'Solid Waste') return false
-
-      // General dropdown/search filters
-      const matchesSearch = 
-        g.category.toLowerCase().includes(searchTerm.toLowerCase()) || 
-        g.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        g.citizen.toLowerCase().includes(searchTerm.toLowerCase())
-      
-      const matchesWard = wardFilter === 'All Wards' || g.ward === wardFilter
-      const matchesDept = deptFilter === 'All Departments' || g.assignedDept === deptFilter
-      const matchesUrgency = urgencyFilter === 'All Urgency' || g.urgency === urgencyFilter
-      const matchesStatus = statusFilter === 'All Status' || g.status === statusFilter
-
-      // KPI filter constraints
-      let matchesKpi = true
-      if (kpiFilter === 'open') {
-        matchesKpi = g.status !== 'Resolved'
-      } else if (kpiFilter === 'breached') {
-        matchesKpi = g.status !== 'Resolved' && (g.urgency === 'Urgent' || g.id === '#COMP-2104')
-      } else if (kpiFilter === 'resolved') {
-        matchesKpi = g.status === 'Resolved'
-      }
-
-      return matchesSearch && matchesWard && matchesDept && matchesUrgency && matchesStatus && matchesKpi
-    })
-  }, [grievances, roleMode, searchTerm, wardFilter, deptFilter, urgencyFilter, statusFilter, kpiFilter])
-
-  // Dispatch Actions
-  const handleAssignAgent = () => {
-    if (!selectedGrievance) return
-    const updated = grievances.map((g) => {
-      if (g.id === selectedGrievance.id) {
-        const comment: Comment = {
-          sender: 'Dispatcher (Official)',
-          text: `Assigned agent ${assignedAgent}. Note: ${actionNote || 'No notes added.'}`,
-          time: new Date().toISOString().slice(0, 16).replace('T', ' ')
-        }
-        return {
-          ...g,
-          assignedAgent,
-          status: 'In Progress' as const,
-          comments: [...g.comments, comment]
-        }
-      }
-      return g
-    })
-    setGrievances(updated)
-    const refreshed = updated.find(g => g.id === selectedGrievance.id)
-    if (refreshed) setSelectedGrievance(refreshed)
-    setActionNote('')
-  }
-
-  const handleResolveGrievance = () => {
-    if (!selectedGrievance) return
-    const updated = grievances.map((g) => {
-      if (g.id === selectedGrievance.id) {
-        const comment: Comment = {
-          sender: 'System / Inspector',
-          text: `Grievance verified and resolved. Action details: ${actionNote || 'Resolved via standard operations.'}`,
-          time: new Date().toISOString().slice(0, 16).replace('T', ' ')
-        }
-        return {
-          ...g,
-          status: 'Resolved' as const,
-          comments: [...g.comments, comment]
-        }
-      }
-      return g
-    })
-    setGrievances(updated)
-    const refreshed = updated.find(g => g.id === selectedGrievance.id)
-    if (refreshed) setSelectedGrievance(refreshed)
-    setActionNote('')
-  }
-
-  const handleAddComment = (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!selectedGrievance || !newCommentText.trim()) return
-    const updated = grievances.map((g) => {
-      if (g.id === selectedGrievance.id) {
-        const comment: Comment = {
-          sender: 'Official Internal',
-          text: newCommentText,
-          time: new Date().toISOString().slice(0, 16).replace('T', ' ')
-        }
-        return {
-          ...g,
-          comments: [...g.comments, comment]
-        }
-      }
-      return g
-    })
-    setGrievances(updated)
-    const refreshed = updated.find(g => g.id === selectedGrievance.id)
-    if (refreshed) setSelectedGrievance(refreshed)
-    setNewCommentText('')
-  }
-
-  // Handle station click to simulate interactive AQI reading changes
-  const handleStationClick = (station: string, aqiVal: number, pm25Val: number, pm10Val: number, statusVal: string) => {
-    setSelectedStationAqi({
-      ward: station,
-      aqi: aqiVal,
-      pm25: pm25Val,
-      pm10: pm10Val,
-      status: statusVal
-    })
-  }
-
-  const toggleLayer = (layer: string) => {
-    if (mapLayers.includes(layer)) {
-      setMapLayers(mapLayers.filter(l => l !== layer))
+  const clearSelectedDistrict = useCallback(() => {
+    if (districtHistoryPushed.current) {
+      districtHistoryPushed.current = false
+      window.history.back()
     } else {
-      setMapLayers([...mapLayers, layer])
+      setSelectedDistrictName(null)
     }
-  }
+  }, [])
 
-  const togglePinWidget = (id: string) => {
-    if (pinnedWidgets.includes(id)) {
-      setPinnedWidgets(pinnedWidgets.filter(w => w !== id))
+  useEffect(() => {
+    const onPopState = () => {
+      if (districtHistoryPushed.current) {
+        districtHistoryPushed.current = false
+        setSelectedDistrictName(null)
+      }
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [])
+
+  // Pinned district helper
+  const selectedDistrict = useMemo(() => {
+    if (!selectedDistrictName || !processedDistricts.length) return null
+    return processedDistricts.find(d => normalizeDistrictName(d.name) === normalizeDistrictName(selectedDistrictName)) || null
+  }, [selectedDistrictName, processedDistricts])
+
+  // Filtered leaderboard
+  const filtered = useMemo(() => {
+    let rows = processedDistricts.filter(d =>
+      d.name.toLowerCase().includes(search.toLowerCase())
+    )
+
+    // Sort key translator
+    const getSortValue = (d: ProcessedDistrict, key: HeatmapMetric): number => {
+      switch (key) {
+        case 'civic': return d.civicComplaints
+        case 'crime': return d.crimesCount
+        case 'aqi': return d.aqi
+        case 'traffic': return d.congestion
+        case 'temp': return d.temp
+        case 'rain': return d.rain
+        default: return d.overallScore
+      }
+    }
+
+    rows = [...rows].sort((a, b) => {
+      const va = getSortValue(a, sortBy)
+      const vb = getSortValue(b, sortBy)
+      // Rank 1 is highest value, so sorting is descending by default
+      if (va < vb) return sortDir === 'asc' ? 1 : -1
+      if (va > vb) return sortDir === 'asc' ? -1 : 1
+      return 0
+    })
+
+    return rows
+  }, [processedDistricts, search, sortBy, sortDir])
+
+  const toggleSort = (col: HeatmapMetric) => {
+    if (sortBy === col) {
+      setSortDir(d => d === 'asc' ? 'desc' : 'asc')
     } else {
-      setPinnedWidgets([...pinnedWidgets, id])
+      setSortBy(col)
+      setSortDir('asc') // Default: rank descending (higher score is worst)
     }
   }
 
-  // Export report alert mock
-  const handleExportReport = (reportType: string) => {
-    alert(`Report of type "${reportType}" successfully compiled and exported. Download queued in Background.`)
+  // State-wide summaries
+  const summaries = useMemo(() => {
+    if (!processedDistricts.length) return null
+    const aqis = processedDistricts.map(d => d.aqi)
+    const congestions = processedDistricts.map(d => d.congestion)
+    const complaintsSum = processedDistricts.reduce((sum, d) => sum + d.civicComplaints, 0)
+    const crimesSum = processedDistricts.reduce((sum, d) => sum + d.crimesCount, 0)
+    const temps = processedDistricts.map(d => d.temp)
+    const rains = processedDistricts.map(d => d.rain)
+
+    return {
+      avgAqi: Math.round(aqis.reduce((a, b) => a + b, 0) / aqis.length),
+      avgCongestion: Math.round(congestions.reduce((a, b) => a + b, 0) / congestions.length),
+      totalComplaints: complaintsSum,
+      totalCrimes: crimesSum,
+      avgTemp: (temps.reduce((a, b) => a + b, 0) / temps.length).toFixed(1),
+      avgRain: (rains.reduce((a, b) => a + b, 0) / rains.length).toFixed(1)
+    }
+  }, [processedDistricts])
+
+
+
+  if (loading) {
+    return (
+      <div style={{ padding: '40px 24px', background: '#f6f6f3', minHeight: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', flexDirection: 'column', gap: '12px', fontFamily: 'Manrope, sans-serif' }}>
+        <RefreshCw size={32} className="spin" style={{ color: '#36375D' }} />
+        <div style={{ fontWeight: 600, fontSize: '15px', color: '#64748b' }}>Generating district analytics ranking...</div>
+      </div>
+    )
   }
 
   return (
-    <div style={{
-      minHeight: '100vh',
-      background: '#f6f6f3',
-      color: '#000000',
-      fontFamily: 'Manrope, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
-      paddingBottom: '60px'
-    }}>
-      {/* Persistent Dashboard Banner */}
-      <div style={{
-        background: '#ffffff',
-        borderBottom: '1px solid #dadad3',
-        padding: '16px 24px',
-        display: 'flex',
-        flexWrap: 'wrap',
-        justifyContent: 'space-between',
-        alignItems: 'center',
-        gap: '16px',
-        position: 'sticky',
-        top: '60px',
-        zIndex: 900
-      }}>
+    <div style={{ padding: '24px 30px', minHeight: '100vh', background: '#f6f6f3', fontFamily: 'Manrope, sans-serif' }}>
+      <style dangerouslySetInnerHTML={{ __html: `
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .spin { animation: spin 1s linear infinite; }
+        .metric-pill {
+          background: #fff;
+          border: 1.5px solid #dadad3;
+          border-radius: 12px;
+          padding: 8px 14px;
+          font-size: 11px;
+          font-weight: 700;
+          color: #262622;
+          cursor: pointer;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          transition: all 150ms ease;
+          outline: none;
+          white-space: nowrap;
+        }
+        .metric-pill.active {
+          border-color: #36375D;
+          background: #36375D;
+          color: #fff;
+          box-shadow: 0 4px 12px rgba(54,55,93,0.15);
+        }
+        .rank-row {
+          display: grid;
+          grid-template-columns: 0.4fr 1fr 1fr 1fr 1fr 1fr 1.2fr;
+          align-items: center;
+          padding: 10px 14px;
+          border-radius: 12px;
+          cursor: pointer;
+          font-size: 12px;
+          transition: all 100ms;
+          border-bottom: 1px solid #f1f5f9;
+        }
+        .rank-row:hover {
+          background: #f1f5f9;
+        }
+        .rank-row.selected {
+          background: #e2e8f0;
+          outline: 1.5px solid #36375D;
+        }
+        .rank-header {
+          display: grid;
+          grid-template-columns: 0.4fr 1fr 1fr 1fr 1fr 1fr 1.2fr;
+          align-items: center;
+          padding: 10px 14px;
+          font-size: 10px;
+          font-weight: 800;
+          color: #64748b;
+          text-transform: uppercase;
+          border-bottom: 2px solid #e2e8f0;
+          letter-spacing: 0.5px;
+        }
+        .sort-trigger {
+          display: inline-flex;
+          align-items: center;
+          gap: 4px;
+          cursor: pointer;
+          user-select: none;
+        }
+        .sort-trigger.active {
+          color: #36375D;
+        }
+        .micro-card {
+          background: #fff;
+          border: 1px solid #dadad3;
+          border-radius: 14px;
+          padding: 14px 16px;
+          display: flex;
+          gap: 12px;
+          align-items: center;
+          box-shadow: 0 2px 6px rgba(0,0,0,0.02);
+        }
+        .detail-badge {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          padding: 12px;
+          background: #f8fafc;
+          border-radius: 12px;
+          border: 1px solid #e2e8f0;
+        }
+      `}} />
+
+      {/* Header */}
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '24px', flexWrap: 'wrap', gap: '16px' }}>
         <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            <span style={{
-              background: '#e60023',
-              color: '#ffffff',
-              fontSize: '11px',
-              fontWeight: 800,
-              padding: '2px 6px',
-              borderRadius: '4px',
-              textTransform: 'uppercase',
-              letterSpacing: '0.5px'
-            }}>ICCC Command</span>
-            <h1 style={{ fontSize: '20px', fontWeight: 800, margin: 0, fontFamily: 'Bricolage Grotesque, sans-serif' }}>
-              Nagaragupta Civic Operations Control
+          <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
+            <span style={{ background: '#36375D', color: '#fff', padding: '6px', borderRadius: '8px', display: 'flex' }}>
+              <Compass size={20} />
+            </span>
+            <h1 style={{ fontSize: '22px', fontWeight: 800, color: '#262622', margin: 0, letterSpacing: '-0.3px', fontFamily: '"Bricolage Grotesque", sans-serif' }}>
+              Karnataka Operations Command Center
             </h1>
           </div>
-          <p style={{ margin: '2px 0 0 0', fontSize: '12px', color: '#555550' }}>
-            Smart City SLA Monitoring Portal & Joint Agency Coordination Screen
+          <p style={{ fontSize: '12px', color: '#64748b', margin: '4px 0 0', fontWeight: 500 }}>
+            Unified geospatial stress indexing and district-level comparative ranking engine
           </p>
         </div>
 
-        {/* Role View Switcher */}
-        <div style={{ display: 'flex', alignItems: 'center', background: '#f6f6f3', padding: '4px', borderRadius: '12px', border: '1px solid #dadad3' }}>
-          <span style={{ fontSize: '11px', fontWeight: 700, color: '#555550', padding: '0 8px', textTransform: 'uppercase' }}>Scope View:</span>
-          {(['admin', 'ward', 'dept'] as const).map((mode) => {
-            const isAct = roleMode === mode
-            return (
-              <button
-                key={mode}
-                onClick={() => handleRoleModeChange(mode)}
-                style={{
-                  padding: '6px 12px',
-                  borderRadius: '8px',
-                  border: 'none',
-                  background: isAct ? '#e60023' : 'transparent',
-                  color: isAct ? '#ffffff' : '#000000',
-                  fontSize: '11px',
-                  fontWeight: 700,
-                  cursor: 'pointer',
-                  textTransform: 'capitalize',
-                  transition: 'all 150ms ease'
-                }}
-              >
-                {mode === 'ward' ? 'Ward Officer (Ward 14)' : mode === 'dept' ? 'Solid Waste User' : 'Admin (City Wide)'}
-              </button>
-            )
-          })}
-        </div>
-      </div>
-
-      <div style={{ maxWidth: '1440px', margin: '0 auto', padding: '24px', display: 'flex', flexDirection: 'column', gap: '24px' }}>
-        
-        {/* BAND A - High-Level KPIs */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
-          gap: '16px'
-        }}>
-          {/* KPI 1 */}
-          <div 
-            onClick={() => setKpiFilter(kpiFilter === 'open' ? null : 'open')}
-            style={{
-              background: '#ffffff',
-              border: kpiFilter === 'open' ? '2px solid #e60023' : '1px solid #dadad3',
-              borderRadius: '16px',
-              padding: '16px',
-              cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(4, 4, 6, 0.02)',
-              position: 'relative',
-              transition: 'transform 150ms ease'
-            }}
-            className="kpi-card"
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#555550', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' }}>
-              <span>Open Complaints</span>
-              <AlertCircle size={14} color="#e60023" />
-            </div>
-            <div style={{ fontSize: '28px', fontWeight: 800, margin: '8px 0 4px 0', fontFamily: 'Bricolage Grotesque' }}>
-              {kpis.open} <span style={{ fontSize: '14px', color: '#555550', fontWeight: 500 }}>/ {kpis.total} total</span>
-            </div>
-            <div style={{ fontSize: '11px', color: '#e60023', fontWeight: 700 }}>
-              ⚠️ Needs Action immediately
-            </div>
-          </div>
-
-          {/* KPI 2 */}
-          <div 
-            onClick={() => setKpiFilter(kpiFilter === 'breached' ? null : 'breached')}
-            style={{
-              background: '#ffffff',
-              border: kpiFilter === 'breached' ? '2px solid #e60023' : '1px solid #dadad3',
-              borderRadius: '16px',
-              padding: '16px',
-              cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(4, 4, 6, 0.02)',
-              transition: 'transform 150ms ease'
-            }}
-            className="kpi-card"
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#555550', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' }}>
-              <span>SLA Breach Risk</span>
-              <ShieldAlert size={14} color="#e60023" />
-            </div>
-            <div style={{ fontSize: '28px', fontWeight: 800, margin: '8px 0 4px 0', fontFamily: 'Bricolage Grotesque', color: '#e60023' }}>
-              {kpis.breached} <span style={{ fontSize: '12px', color: '#555550', fontWeight: 500 }}>breached</span>
-            </div>
-            <div style={{ fontSize: '11px', color: '#E2B93B', fontWeight: 700, display: 'flex', alignItems: 'center', gap: '4px' }}>
-              <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: '#E2B93B', display: 'inline-block', animation: 'pulse 1s infinite' }} />
-              {kpis.atRisk} approaching threshold (24h)
-            </div>
-          </div>
-
-          {/* KPI 3 */}
-          <div 
-            onClick={() => setKpiFilter(kpiFilter === 'resolved' ? null : 'resolved')}
-            style={{
-              background: '#ffffff',
-              border: kpiFilter === 'resolved' ? '2px solid #7B8F65' : '1px solid #dadad3',
-              borderRadius: '16px',
-              padding: '16px',
-              cursor: 'pointer',
-              boxShadow: '0 2px 8px rgba(4, 4, 6, 0.02)',
-              transition: 'transform 150ms ease'
-            }}
-            className="kpi-card"
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#555550', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' }}>
-              <span>Resolved Last 24h</span>
-              <CheckCircle2 size={14} color="#7B8F65" />
-            </div>
-            <div style={{ fontSize: '28px', fontWeight: 800, margin: '8px 0 4px 0', fontFamily: 'Bricolage Grotesque', color: '#7B8F65' }}>
-              {kpis.resolved} <span style={{ fontSize: '14px', color: '#555550', fontWeight: 500 }}>done</span>
-            </div>
-            <div style={{ fontSize: '11px', color: '#7B8F65', fontWeight: 700 }}>
-              📈 +14% performance index
-            </div>
-          </div>
-
-          {/* KPI 4 */}
-          <div 
-            style={{
-              background: '#ffffff',
-              border: '1px solid #dadad3',
-              borderRadius: '16px',
-              padding: '16px',
-              boxShadow: '0 2px 8px rgba(4, 4, 6, 0.02)',
-              transition: 'transform 150ms ease'
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#555550', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' }}>
-              <span>Live environment feed</span>
-              <Wind size={14} color="#6D9998" />
-            </div>
-            <div style={{ fontSize: '24px', fontWeight: 800, margin: '8px 0 4px 0', fontFamily: 'Bricolage Grotesque', color: selectedStationAqi.aqi > 100 ? '#e60023' : '#7B8F65' }}>
-              {selectedStationAqi.aqi} AQI
-            </div>
-            <div style={{ fontSize: '11px', color: '#555550' }}>
-              Station: <strong style={{ color: '#000' }}>{selectedStationAqi.ward}</strong> ({selectedStationAqi.status})
-            </div>
-          </div>
-
-          {/* KPI 5 */}
-          <div 
-            style={{
-              background: '#ffffff',
-              border: '1px solid #dadad3',
-              borderRadius: '16px',
-              padding: '16px',
-              boxShadow: '0 2px 8px rgba(4, 4, 6, 0.02)',
-              transition: 'transform 150ms ease'
-            }}
-          >
-            <div style={{ display: 'flex', justifyContent: 'space-between', color: '#555550', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase' }}>
-              <span>Rain / Flood Watch</span>
-              <Thermometer size={14} color="#E2B93B" />
-            </div>
-            <div style={{ fontSize: '24px', fontWeight: 800, margin: '8px 0 4px 0', fontFamily: 'Bricolage Grotesque' }}>
-              24.2 °C
-            </div>
-            <div style={{ fontSize: '11px', color: '#e60023', fontWeight: 700 }}>
-              🌧️ Orange Alert: heavy rain forecast
-            </div>
-          </div>
-        </div>
-
-        {/* BAND B - Map + Complaint Queue */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1.2fr 0.8fr',
-          gap: '24px',
-          alignItems: 'stretch'
-        }} className="band-b-grid">
-          
-          {/* Left Block - Interactive Map & Queue */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            
-            {/* Map Component */}
-            <div style={{
-              background: '#ffffff',
-              borderRadius: '16px',
-              border: '1px solid #dadad3',
-              padding: '20px',
-              boxShadow: '0 2px 8px rgba(4, 4, 6, 0.02)',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: '12px'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                <div>
-                  <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0, fontFamily: 'Bricolage Grotesque' }}>
-                    Interactive City Ward Map
-                  </h3>
-                  <span style={{ fontSize: '11px', color: '#555550' }}>Select Wards or pins to scope grievances</span>
-                </div>
-
-                {/* Map Layers Toolbox */}
-                <div style={{ display: 'flex', gap: '6px' }}>
-                  <button
-                    onClick={() => toggleLayer('boundaries')}
-                    style={{
-                      padding: '4px 8px',
-                      borderRadius: '6px',
-                      border: '1px solid #dadad3',
-                      background: mapLayers.includes('boundaries') ? '#36375D' : '#ffffff',
-                      color: mapLayers.includes('boundaries') ? '#ffffff' : '#555550',
-                      fontSize: '10px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}
-                  >
-                    <Layers size={10} /> Boundaries
-                  </button>
-                  <button
-                    onClick={() => toggleLayer('heatmap')}
-                    style={{
-                      padding: '4px 8px',
-                      borderRadius: '6px',
-                      border: '1px solid #dadad3',
-                      background: mapLayers.includes('heatmap') ? '#e60023' : '#ffffff',
-                      color: mapLayers.includes('heatmap') ? '#ffffff' : '#555550',
-                      fontSize: '10px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}
-                  >
-                    <Compass size={10} /> Heatmap
-                  </button>
-                  <button
-                    onClick={() => toggleLayer('aqi')}
-                    style={{
-                      padding: '4px 8px',
-                      borderRadius: '6px',
-                      border: '1px solid #dadad3',
-                      background: mapLayers.includes('aqi') ? '#7B8F65' : '#ffffff',
-                      color: mapLayers.includes('aqi') ? '#ffffff' : '#555550',
-                      fontSize: '10px',
-                      fontWeight: 700,
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '4px'
-                    }}
-                  >
-                    <Wind size={10} /> AQI Feeds
-                  </button>
-                </div>
-              </div>
-
-              {/* Map SVG container */}
-              <div style={{
-                position: 'relative',
-                height: '350px',
-                background: '#ECEDF2',
-                borderRadius: '12px',
-                border: '1px solid #dadad3',
-                overflow: 'hidden'
-              }}>
-                <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ width: '100%', height: '100%' }}>
-                  {/* Map Wards polygons */}
-                  {WARD_POLYGONS.map((polygon) => {
-                    const isSelected = wardFilter === polygon.name
-                    const isHoveredLocal = hoveredWard === polygon.name
-                    return (
-                      <polygon
-                        key={polygon.name}
-                        points={polygon.points}
-                        fill={isSelected ? 'rgba(230, 0, 35, 0.25)' : isHoveredLocal ? 'rgba(54, 55, 93, 0.25)' : polygon.color}
-                        stroke={polygon.stroke}
-                        strokeWidth={isSelected || isHoveredLocal ? 1.5 : 0.5}
-                        style={{ cursor: 'pointer', transition: 'all 200ms ease' }}
-                        onMouseEnter={() => setHoveredWard(polygon.name)}
-                        onMouseLeave={() => setHoveredWard(null)}
-                        onClick={() => {
-                          setWardFilter(wardFilter === polygon.name ? 'All Wards' : polygon.name)
-                          setKpiFilter(null)
-                        }}
-                      />
-                    )
-                  })}
-
-                  {/* Boundaries outline */}
-                  {mapLayers.includes('boundaries') && (
-                    <path d="M50,10 L40,45 L10,40 M40,45 L55,60 L90,65 M55,60 L50,95 M10,40 M35,65 L55,60" fill="none" stroke="#ffffff" strokeWidth="0.8" strokeDasharray="1.5" />
-                  )}
-
-                  {/* Simulated Heatmap overlays */}
-                  {mapLayers.includes('heatmap') && (
-                    <>
-                      <circle cx="32" cy="35" r="8" fill="rgba(230, 0, 35, 0.3)" filter="blur(8px)" style={{ filter: 'blur(5px)' }} />
-                      <circle cx="48" cy="78" r="10" fill="rgba(230, 0, 35, 0.4)" filter="blur(10px)" style={{ filter: 'blur(6px)' }} />
-                      <circle cx="72" cy="45" r="7" fill="rgba(230, 0, 35, 0.25)" filter="blur(7px)" style={{ filter: 'blur(4px)' }} />
-                    </>
-                  )}
-
-                  {/* Environmental Sensors Layer */}
-                  {mapLayers.includes('aqi') && (
-                    <>
-                      {aqiData.length > 0 ? (
-                        aqiData.map((item) => {
-                          const pos = ({
-                            'AQI-BLR': { cx: 35, cy: 20 },
-                            'AQI-MYS': { cx: 45, cy: 85 },
-                            'AQI-MLR': { cx: 80, cy: 30 },
-                            'AQI-BEL': { cx: 20, cy: 50 },
-                            'AQI-KLB': { cx: 60, cy: 15 },
-                            'AQI-BGK': { cx: 25, cy: 30 },
-                            'AQI-RAM': { cx: 40, cy: 35 },
-                            'AQI-BLY': { cx: 55, cy: 40 },
-                            'AQI-BDR': { cx: 70, cy: 45 },
-                            'AQI-VJP': { cx: 85, cy: 50 },
-                            'AQI-CHM': { cx: 15, cy: 60 },
-                            'AQI-CKM': { cx: 30, cy: 65 },
-                            'AQI-CTA': { cx: 50, cy: 70 },
-                            'AQI-DVG': { cx: 65, cy: 75 },
-                            'AQI-DWD': { cx: 75, cy: 80 },
-                            'AQI-GDG': { cx: 90, cy: 85 },
-                            'AQI-HSN': { cx: 10, cy: 15 },
-                            'AQI-HVR': { cx: 22, cy: 25 },
-                            'AQI-KDG': { cx: 48, cy: 55 },
-                            'AQI-CBP': { cx: 58, cy: 60 },
-                            'AQI-KPL': { cx: 68, cy: 65 },
-                            'AQI-MDY': { cx: 78, cy: 70 },
-                            'AQI-RCR': { cx: 88, cy: 75 },
-                            'AQI-SMG': { cx: 12, cy: 80 },
-                            'AQI-TMK': { cx: 33, cy: 90 },
-                            'AQI-UDP': { cx: 53, cy: 10 },
-                            'AQI-UKN': { cx: 63, cy: 22 },
-                            'AQI-BLR-R': { cx: 73, cy: 35 },
-                            'AQI-KLR': { cx: 83, cy: 40 },
-                            'AQI-YDG': { cx: 93, cy: 45 }
-                          } as Record<string, { cx: number, cy: number }>)[item.stationId as string] || { cx: 50, cy: 50 }
-
-                          const status = getAqiStatus(item.aqi)
-                          const color = item.aqi > 100 ? '#e60023' : '#7B8F65'
-                          return (
-                            <g 
-                              key={item.stationId} 
-                              onClick={() => handleStationClick(item.name, item.aqi, item.pm25, item.pm10, status)} 
-                              style={{ cursor: 'pointer' }}
-                            >
-                              <circle cx={pos.cx} cy={pos.cy} r="2.5" fill={color} stroke="#fff" strokeWidth="0.5" />
-                              <text x={pos.cx + 4} y={pos.cy + 1} fontSize="3" fontWeight="bold" fill="#000">
-                                {item.name} ({item.aqi})
-                              </text>
-                            </g>
-                          )
-                        })
-                      ) : (
-                        <>
-                          {/* AQI Malleshwaram */}
-                          <g onClick={() => handleStationClick('Malleshwaram', 142, 42, 84, 'Moderate')} style={{ cursor: 'pointer' }}>
-                            <circle cx="35" cy="20" r="2.5" fill="#e60023" stroke="#fff" strokeWidth="0.5" />
-                            <text x="39" y="21" fontSize="3" fontWeight="bold" fill="#000">AQI-01 (142)</text>
-                          </g>
-                          {/* AQI Jayanagar */}
-                          <g onClick={() => handleStationClick('Jayanagar', 45, 12, 22, 'Good')} style={{ cursor: 'pointer' }}>
-                            <circle cx="45" cy="85" r="2.5" fill="#7B8F65" stroke="#fff" strokeWidth="0.5" />
-                            <text x="49" y="86" fontSize="3" fontWeight="bold" fill="#000">AQI-03 (45)</text>
-                          </g>
-                          {/* AQI Indiranagar */}
-                          <g onClick={() => handleStationClick('Indiranagar', 58, 18, 35, 'Satisfactory')} style={{ cursor: 'pointer' }}>
-                            <circle cx="80" cy="30" r="2.5" fill="#E2B93B" stroke="#fff" strokeWidth="0.5" />
-                            <text x="74" y="27" fontSize="3" fontWeight="bold" fill="#000">AQI-02 (58)</text>
-                          </g>
-                        </>
-                      )}
-                    </>
-                  )}
-
-                  {/* Complaint Pins */}
-                  {mapLayers.includes('pins') && filteredGrievances.map((g) => {
-                    const isSelected = selectedGrievance?.id === g.id
-                    return (
-                      <g 
-                        key={g.id} 
-                        style={{ cursor: 'pointer' }}
-                        onClick={() => setSelectedGrievance(g)}
-                      >
-                        <circle 
-                          cx={g.x} 
-                          cy={g.y} 
-                          r={isSelected ? 3.5 : 2} 
-                          fill={g.status === 'Resolved' ? '#7B8F65' : g.urgency === 'Urgent' ? '#e60023' : '#E2B93B'} 
-                          stroke="#ffffff" 
-                          strokeWidth={isSelected ? 1 : 0.5} 
-                        />
-                        {isSelected && (
-                          <circle 
-                            cx={g.x} 
-                            cy={g.y} 
-                            r="6" 
-                            fill="none" 
-                            stroke={g.urgency === 'Urgent' ? '#e60023' : '#E2B93B'} 
-                            strokeWidth="0.5" 
-                            style={{ animation: 'pulse 1.5s infinite' }}
-                          />
-                        )}
-                      </g>
-                    )
-                  })}
-                </svg>
-
-                {/* Map Legend Overlay */}
-                <div style={{
-                  position: 'absolute',
-                  bottom: '12px',
-                  left: '12px',
-                  background: 'rgba(255,255,255,0.9)',
-                  backdropFilter: 'blur(4px)',
-                  padding: '8px 12px',
-                  borderRadius: '8px',
-                  border: '1px solid #dadad3',
-                  fontSize: '9px',
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: '4px'
-                }}>
-                  <div style={{ fontWeight: 700, textTransform: 'uppercase' }}>Grievance Pins</div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#e60023' }} /> Urgent/Critical SLA
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#E2B93B' }} /> Active standard
-                  </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-                    <span style={{ width: '8px', height: '8px', borderRadius: '50%', background: '#7B8F65' }} /> Resolved Issues
-                  </div>
-                </div>
-
-                {/* Current Scope Banner inside Map */}
-                <div style={{
-                  position: 'absolute',
-                  top: '12px',
-                  left: '12px',
-                  background: '#36375D',
-                  color: '#ffffff',
-                  padding: '4px 8px',
-                  borderRadius: '6px',
-                  fontSize: '10px',
-                  fontWeight: 700
-                }}>
-                  🌍 Ward: {wardFilter} | Dept: {deptFilter}
-                </div>
-              </div>
-            </div>
-
-            {/* Complaint Queue Table */}
-            <div style={{
-              background: '#ffffff',
-              borderRadius: '16px',
-              border: '1px solid #dadad3',
-              padding: '20px',
-              boxShadow: '0 2px 8px rgba(4, 4, 6, 0.02)'
-            }}>
-              {/* Filter controls */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '16px' }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-                  <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0, fontFamily: 'Bricolage Grotesque' }}>
-                    Priority Grievance Desk ({filteredGrievances.length})
-                  </h3>
-                  
-                  {/* Reset Filters button */}
-                  {(searchTerm || wardFilter !== 'All Wards' || deptFilter !== 'All Departments' || urgencyFilter !== 'All Urgency' || statusFilter !== 'All Status' || kpiFilter) && (
-                    <button
-                      onClick={() => {
-                        setSearchTerm('')
-                        setWardFilter(roleMode === 'ward' ? 'Malleshwaram' : 'All Wards')
-                        setDeptFilter(roleMode === 'dept' ? 'Solid Waste' : 'All Departments')
-                        setUrgencyFilter('All Urgency')
-                        setStatusFilter('All Status')
-                        setKpiFilter(null)
-                      }}
-                      style={{
-                        background: 'none',
-                        border: 'none',
-                        color: '#e60023',
-                        fontSize: '11px',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        textDecoration: 'underline',
-                        padding: 0
-                      }}
-                    >
-                      Clear All Filters
-                    </button>
-                  )}
-                </div>
-
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(130px, 1fr))', gap: '8px' }}>
-                  {/* Search Input */}
-                  <div style={{ position: 'relative' }}>
-                    <Search size={14} style={{ position: 'absolute', left: '10px', top: '10px', color: '#888' }} />
-                    <input
-                      type="text"
-                      placeholder="Search ID, keyword..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      style={{
-                        width: '100%',
-                        height: '34px',
-                        paddingLeft: '32px',
-                        paddingRight: '12px',
-                        borderRadius: '8px',
-                        border: '1px solid #dadad3',
-                        fontSize: '12px',
-                        outline: 'none'
-                      }}
-                    />
-                  </div>
-
-                  {/* Ward Dropdown */}
-                  <select
-                    value={wardFilter}
-                    disabled={roleMode === 'ward'}
-                    onChange={(e) => { setWardFilter(e.target.value); setKpiFilter(null); }}
-                    style={{ height: '34px', borderRadius: '8px', border: '1px solid #dadad3', padding: '0 8px', fontSize: '12px', outline: 'none' }}
-                  >
-                    <option value="All Wards">All Wards</option>
-                    <option value="Malleshwaram">Malleshwaram</option>
-                    <option value="Indiranagar">Indiranagar</option>
-                    <option value="Jayanagar">Jayanagar</option>
-                    <option value="Rajajinagar">Rajajinagar</option>
-                    <option value="Koramangala">Koramangala</option>
-                  </select>
-
-                  {/* Dept Dropdown */}
-                  <select
-                    value={deptFilter}
-                    disabled={roleMode === 'dept'}
-                    onChange={(e) => { setDeptFilter(e.target.value); setKpiFilter(null); }}
-                    style={{ height: '34px', borderRadius: '8px', border: '1px solid #dadad3', padding: '0 8px', fontSize: '12px', outline: 'none' }}
-                  >
-                    <option value="All Departments">All Depts</option>
-                    <option value="Water & Sewerage">Water & Sewerage</option>
-                    <option value="Solid Waste">Solid Waste</option>
-                    <option value="Roads & Lights">Roads & Lights</option>
-                  </select>
-
-                  {/* Urgency */}
-                  <select
-                    value={urgencyFilter}
-                    onChange={(e) => setUrgencyFilter(e.target.value)}
-                    style={{ height: '34px', borderRadius: '8px', border: '1px solid #dadad3', padding: '0 8px', fontSize: '12px', outline: 'none' }}
-                  >
-                    <option value="All Urgency">All Urgency</option>
-                    <option value="Urgent">Urgent</option>
-                    <option value="High">High</option>
-                    <option value="Medium">Medium</option>
-                    <option value="Low">Low</option>
-                  </select>
-
-                  {/* Status */}
-                  <select
-                    value={statusFilter}
-                    onChange={(e) => setStatusFilter(e.target.value)}
-                    style={{ height: '34px', borderRadius: '8px', border: '1px solid #dadad3', padding: '0 8px', fontSize: '12px', outline: 'none' }}
-                  >
-                    <option value="All Status">All Status</option>
-                    <option value="Pending">Pending</option>
-                    <option value="In Progress">In Progress</option>
-                    <option value="Resolved">Resolved</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Table Container */}
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '12px' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '1px solid #dadad3', color: '#555550', fontWeight: 700 }}>
-                      <th style={{ padding: '8px' }}>ID</th>
-                      <th style={{ padding: '8px' }}>Category</th>
-                      <th style={{ padding: '8px' }}>Ward</th>
-                      <th style={{ padding: '8px' }}>Urgency</th>
-                      <th style={{ padding: '8px' }}>SLA Status</th>
-                      <th style={{ padding: '8px' }}>Status</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredGrievances.length === 0 ? (
-                      <tr>
-                        <td colSpan={6} style={{ padding: '24px 8px', textAlign: 'center', color: '#888' }}>
-                          No matching grievances under current filters.
-                        </td>
-                      </tr>
-                    ) : (
-                      filteredGrievances.map((g) => {
-                        const isSelected = selectedGrievance?.id === g.id
-                        // Calculate mock SLA status representation
-                        const isSlaBreached = g.status !== 'Resolved' && (g.urgency === 'Urgent' || g.id === '#COMP-2104')
-                        const isSlaAtRisk = g.status !== 'Resolved' && g.urgency === 'High' && g.id !== '#COMP-2104'
-                        
-                        return (
-                          <tr
-                            key={g.id}
-                            onClick={() => setSelectedGrievance(g)}
-                            style={{
-                              borderBottom: '1px solid #f6f6f3',
-                              cursor: 'pointer',
-                              background: isSelected ? 'rgba(230, 0, 35, 0.04)' : 'transparent',
-                              fontWeight: isSelected ? 600 : 400
-                            }}
-                            className="table-row-hover"
-                          >
-                            <td style={{ padding: '10px 8px', fontWeight: 700, color: '#e60023' }}>{g.id}</td>
-                            <td style={{ padding: '10px 8px' }}>{g.category}</td>
-                            <td style={{ padding: '10px 8px' }}>{g.ward}</td>
-                            <td style={{ padding: '10px 8px' }}>
-                              <span style={{
-                                color: g.urgency === 'Urgent' ? '#e60023' : g.urgency === 'High' ? '#E2B93B' : '#555',
-                                fontWeight: g.urgency === 'Urgent' || g.urgency === 'High' ? 700 : 500
-                              }}>{g.urgency}</span>
-                            </td>
-                            <td style={{ padding: '10px 8px' }}>
-                              <span style={{
-                                fontSize: '10px',
-                                padding: '2px 6px',
-                                borderRadius: '4px',
-                                background: isSlaBreached ? 'rgba(230,0,35,0.08)' : isSlaAtRisk ? 'rgba(226,185,59,0.08)' : 'rgba(123,143,101,0.08)',
-                                color: isSlaBreached ? '#e60023' : isSlaAtRisk ? '#E2B93B' : '#7B8F65',
-                                fontWeight: 700
-                              }}>
-                                {isSlaBreached ? 'Breached' : isSlaAtRisk ? 'At Risk' : 'On Track'}
-                              </span>
-                            </td>
-                            <td style={{ padding: '10px 8px' }}>
-                              <span style={{
-                                color: g.status === 'Resolved' ? '#7B8F65' : g.status === 'In Progress' ? '#6D9998' : '#e60023',
-                                fontWeight: 700
-                              }}>{g.status}</span>
-                            </td>
-                          </tr>
-                        )
-                      })
-                    )}
-                  </tbody>
-                </table>
-              </div>
-            </div>
-          </div>
-
-          {/* Right Block - Dispatch Detail Workspace */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            
-            {/* Active Details */}
-            {selectedGrievance ? (
-              <div style={{
-                background: '#ffffff',
-                borderRadius: '16px',
-                border: '2px solid #e60023',
-                padding: '20px',
-                boxShadow: '0 4px 16px rgba(230, 0, 35, 0.05)',
-                display: 'flex',
-                flexDirection: 'column',
-                gap: '16px'
-              }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-                    <span style={{ fontSize: '12px', fontWeight: 800, color: '#e60023', fontFamily: 'monospace' }}>
-                      {selectedGrievance.id}
-                    </span>
-                    <span style={{ fontSize: '10px', color: '#555550' }}>{selectedGrievance.date}</span>
-                  </div>
-                  <button 
-                    onClick={() => setSelectedGrievance(null)}
-                    style={{ background: 'none', border: 'none', cursor: 'pointer', color: '#555' }}
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-
-                <div>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#555550', textTransform: 'uppercase' }}>
-                    {selectedGrievance.category}
-                  </div>
-                  <h4 style={{ fontSize: '16px', fontWeight: 800, margin: '4px 0', fontFamily: 'Bricolage Grotesque' }}>
-                    {selectedGrievance.ward} Ward
-                  </h4>
-                  <p style={{ fontSize: '12px', color: '#262622', margin: '8px 0 0 0', lineHeight: 1.4, background: '#f6f6f3', padding: '10px', borderRadius: '8px' }}>
-                    "{selectedGrievance.description}"
-                  </p>
-                </div>
-
-                <div style={{ fontSize: '12px', borderTop: '1px solid #f6f6f3', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                  <div>Citizen Resident: <strong>{selectedGrievance.citizen}</strong></div>
-                  <div>Assigned Department: <strong style={{ color: '#36375D' }}>{selectedGrievance.assignedDept}</strong></div>
-                  <div>Assigned Agent: <strong>{selectedGrievance.assignedAgent}</strong></div>
-                  <div>Urgency Priority: <strong style={{ color: selectedGrievance.urgency === 'Urgent' ? '#e60023' : '#000' }}>{selectedGrievance.urgency}</strong></div>
-                </div>
-
-                {/* Dispatch Controls */}
-                {selectedGrievance.status !== 'Resolved' ? (
-                  <div style={{ borderTop: '1px solid #f6f6f3', paddingTop: '12px', display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <div style={{ fontSize: '11px', fontWeight: 700, color: '#555550', textTransform: 'uppercase' }}>
-                      Integrated Dispatch Actions
-                    </div>
-
-                    <div>
-                      <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#000', marginBottom: '4px' }}>
-                        Dispatch Field Team Agent
-                      </label>
-                      <div style={{ display: 'flex', gap: '6px' }}>
-                        <select
-                          value={assignedAgent}
-                          onChange={(e) => setAssignedAgent(e.target.value)}
-                          style={{ flex: 1, height: '34px', borderRadius: '6px', border: '1px solid #dadad3', fontSize: '12px', outline: 'none' }}
-                        >
-                          <option value="Ramesh K.">Ramesh K. (SWM Team Lead)</option>
-                          <option value="Suresh Kumar">Suresh Kumar (Electrician II)</option>
-                          <option value="Manoj S.">Manoj S. (BBMP Field Inspector)</option>
-                          <option value="Deepak M.">Deepak M. (Water Hydrology Specialist)</option>
-                        </select>
-                        <button
-                          onClick={handleAssignAgent}
-                          style={{
-                            padding: '0 12px',
-                            background: '#36375D',
-                            color: '#ffffff',
-                            border: 'none',
-                            borderRadius: '6px',
-                            fontSize: '11px',
-                            fontWeight: 700,
-                            cursor: 'pointer'
-                          }}
-                        >
-                          Dispatch
-                        </button>
-                      </div>
-                    </div>
-
-                    <div>
-                      <label style={{ display: 'block', fontSize: '11px', fontWeight: 600, color: '#000', marginBottom: '4px' }}>
-                        Operation Notes (Mandatory for closure)
-                      </label>
-                      <textarea
-                        value={actionNote}
-                        onChange={(e) => setActionNote(e.target.value)}
-                        placeholder="Verify site action, materials used, contractor feedback..."
-                        style={{
-                          width: '100%',
-                          height: '50px',
-                          borderRadius: '6px',
-                          border: '1px solid #dadad3',
-                          padding: '6px 8px',
-                          fontSize: '12px',
-                          fontFamily: 'inherit',
-                          outline: 'none',
-                          resize: 'none'
-                        }}
-                      />
-                    </div>
-
-                    <button
-                      onClick={handleResolveGrievance}
-                      style={{
-                        width: '100%',
-                        height: '36px',
-                        background: '#7B8F65',
-                        color: '#ffffff',
-                        border: 'none',
-                        borderRadius: '6px',
-                        fontSize: '12px',
-                        fontWeight: 700,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        gap: '6px'
-                      }}
-                    >
-                      <CheckCircle2 size={14} /> Close & Mark Resolved
-                    </button>
-                  </div>
-                ) : (
-                  <div style={{ background: 'rgba(123,143,101,0.08)', border: '1px solid #7B8F65', borderRadius: '8px', padding: '12px', textAlign: 'center' }}>
-                    <div style={{ color: '#7B8F65', fontWeight: 700, fontSize: '12px', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '4px' }}>
-                      <Check size={14} /> Grievance Resolved
-                    </div>
-                    <span style={{ fontSize: '10px', color: '#555' }}>SLA verified & logged. Closed securely.</span>
-                  </div>
-                )}
-
-                {/* Internal comments timeline */}
-                <div style={{ borderTop: '1px solid #f6f6f3', paddingTop: '12px' }}>
-                  <div style={{ fontSize: '11px', fontWeight: 700, color: '#555550', textTransform: 'uppercase', marginBottom: '8px' }}>
-                    Official Internal Log Timeline
-                  </div>
-                  
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', maxHeight: '110px', overflowY: 'auto', marginBottom: '10px' }}>
-                    {selectedGrievance.comments.map((c, i) => (
-                      <div key={i} style={{ background: '#f6f6f3', padding: '6px 8px', borderRadius: '6px', fontSize: '10px' }}>
-                        <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 700, color: '#36375D', marginBottom: '2px' }}>
-                          <span>{c.sender}</span>
-                          <span style={{ color: '#777', fontWeight: 400 }}>{c.time}</span>
-                        </div>
-                        <span style={{ color: '#262622' }}>{c.text}</span>
-                      </div>
-                    ))}
-                  </div>
-
-                  <form onSubmit={handleAddComment} style={{ display: 'flex', gap: '6px' }}>
-                    <input
-                      type="text"
-                      placeholder="Add system update or comment..."
-                      value={newCommentText}
-                      onChange={(e) => setNewCommentText(e.target.value)}
-                      style={{
-                        flex: 1,
-                        height: '28px',
-                        border: '1px solid #dadad3',
-                        borderRadius: '4px',
-                        padding: '0 8px',
-                        fontSize: '11px',
-                        outline: 'none'
-                      }}
-                    />
-                    <button
-                      type="submit"
-                      style={{
-                        width: '28px',
-                        height: '28px',
-                        background: '#36375D',
-                        color: '#fff',
-                        border: 'none',
-                        borderRadius: '4px',
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                        cursor: 'pointer'
-                      }}
-                    >
-                      <Send size={11} />
-                    </button>
-                  </form>
-                </div>
-              </div>
-            ) : (
-              <div style={{
-                background: '#ffffff',
-                borderRadius: '16px',
-                border: '1px solid #dadad3',
-                padding: '30px 20px',
-                textAlign: 'center',
-                color: '#555550',
-                boxShadow: '0 2px 8px rgba(4, 4, 6, 0.02)',
-                display: 'flex',
-                flexDirection: 'column',
-                alignItems: 'center',
-                gap: '12px'
-              }}>
-                <MapPin size={32} color="#e60023" style={{ animation: 'bounce 2s infinite' }} />
-                <div>
-                  <h4 style={{ margin: '0 0 4px 0', fontWeight: 800, fontSize: '13px', color: '#000' }}>
-                    Integrated Dispatch Workspace
-                  </h4>
-                  <span style={{ fontSize: '11px', lineHeight: 1.4 }}>
-                    Select any complaint row in the Priority Queue or tap a pin on the Interactive Map to assign field teams, add action notes, and verify SLA resolution.
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {/* Quick Actions Panel */}
-            <div style={{
-              background: '#ffffff',
-              borderRadius: '16px',
-              border: '1px solid #dadad3',
-              padding: '16px 20px',
-              boxShadow: '0 2px 8px rgba(4, 4, 6, 0.02)'
-            }}>
-              <h4 style={{ fontSize: '13px', fontWeight: 800, margin: '0 0 12px 0', fontFamily: 'Bricolage Grotesque' }}>
-                Operational Report Generator
-              </h4>
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '8px' }}>
-                <button
-                  onClick={() => handleExportReport('24 Hour SLA Status')}
-                  style={{
-                    height: '32px',
-                    borderRadius: '8px',
-                    border: '1px solid #dadad3',
-                    background: '#f6f6f3',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    color: '#000',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '4px'
-                  }}
-                >
-                  <FileSpreadsheet size={12} /> 24h SLA Report
-                </button>
-                <button
-                  onClick={() => handleExportReport('Ward Complaint Hotspots')}
-                  style={{
-                    height: '32px',
-                    borderRadius: '8px',
-                    border: '1px solid #dadad3',
-                    background: '#f6f6f3',
-                    fontSize: '11px',
-                    fontWeight: 700,
-                    color: '#000',
-                    cursor: 'pointer',
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    gap: '4px'
-                  }}
-                >
-                  <Map size={12} /> Ward Hotspots
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* BAND C - Analytics, Trends & Dataset Explorer */}
-        <div style={{
-          display: 'grid',
-          gridTemplateColumns: '1.2fr 0.8fr',
-          gap: '24px'
-        }} className="band-c-grid">
-          
-          {/* Bottom Left - Analytics & Environmental feeds */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            
-            {/* Visual Analytics */}
-            <div style={{
-              background: '#ffffff',
-              borderRadius: '16px',
-              border: '1px solid #dadad3',
-              padding: '20px',
-              boxShadow: '0 2px 8px rgba(4, 4, 6, 0.02)'
-            }}>
-              <h3 style={{ fontSize: '15px', fontWeight: 800, margin: '0 0 16px 0', fontFamily: 'Bricolage Grotesque' }}>
-                Operational Trends & Analytics
-              </h3>
-
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.2fr', gap: '24px' }} className="analytics-split">
-                {/* Horizontal Category Bars */}
-                <div>
-                  <h4 style={{ fontSize: '11px', color: '#555550', fontWeight: 700, textTransform: 'uppercase', marginBottom: '12px' }}>
-                    Complaint Category Load
-                  </h4>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                    <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
-                        <span>Water & Sewerage</span>
-                        <strong>40%</strong>
-                      </div>
-                      <div style={{ height: '6px', background: '#f6f6f3', borderRadius: '3px', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', background: '#36375D', width: '40%' }} />
-                      </div>
-                    </div>
-
-                    <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
-                        <span>Roads & Lights</span>
-                        <strong>40%</strong>
-                      </div>
-                      <div style={{ height: '6px', background: '#f6f6f3', borderRadius: '3px', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', background: '#e60023', width: '40%' }} />
-                      </div>
-                    </div>
-
-                    <div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '11px', marginBottom: '4px' }}>
-                        <span>Solid Waste</span>
-                        <strong>20%</strong>
-                      </div>
-                      <div style={{ height: '6px', background: '#f6f6f3', borderRadius: '3px', overflow: 'hidden' }}>
-                        <div style={{ height: '100%', background: '#E2B93B', width: '20%' }} />
-                      </div>
-                    </div>
-                  </div>
-                </div>
-
-                {/* SVG Area Chart of SLA Speed */}
-                <div>
-                  <h4 style={{ fontSize: '11px', color: '#555550', fontWeight: 700, textTransform: 'uppercase', marginBottom: '4px', display: 'flex', justifyContent: 'space-between' }}>
-                    <span>SLA Compliance History</span>
-                    <span style={{ color: '#7B8F65' }}>94% Target</span>
-                  </h4>
-                  
-                  <div style={{ width: '100%', height: '100px', display: 'flex', alignItems: 'flex-end', position: 'relative' }}>
-                    <svg viewBox="0 0 500 100" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
-                      <defs>
-                        <linearGradient id="grad-area" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="0%" stopColor="#6D9998" stopOpacity="0.4" />
-                          <stop offset="100%" stopColor="#6D9998" stopOpacity="0.0" />
-                        </linearGradient>
-                      </defs>
-                      
-                      {/* Area */}
-                      <path 
-                        d="M 0 100 L 0 50 L 80 65 L 160 55 L 240 30 L 320 15 L 400 60 L 500 20 L 500 100 Z" 
-                        fill="url(#grad-area)" 
-                      />
-                      
-                      {/* Line */}
-                      <path 
-                        d="M 0 50 L 80 65 L 160 55 L 240 30 L 320 15 L 400 60 L 500 20" 
-                        fill="none" 
-                        stroke="#6D9998" 
-                        strokeWidth="2.5" 
-                      />
-                      
-                      {/* Nodes */}
-                      <circle cx="0" cy="50" r="3.5" fill="#6D9998" stroke="#fff" strokeWidth="1" />
-                      <circle cx="80" cy="65" r="3.5" fill="#6D9998" stroke="#fff" strokeWidth="1" />
-                      <circle cx="160" cy="55" r="3.5" fill="#6D9998" stroke="#fff" strokeWidth="1" />
-                      <circle cx="240" cy="30" r="3.5" fill="#6D9998" stroke="#fff" strokeWidth="1" />
-                      <circle cx="320" cy="15" r="3.5" fill="#6D9998" stroke="#fff" strokeWidth="1" />
-                      <circle cx="400" cy="60" r="3.5" fill="#6D9998" stroke="#fff" strokeWidth="1" />
-                      <circle cx="500" cy="20" r="3.5" fill="#6D9998" stroke="#fff" strokeWidth="1" />
-                    </svg>
-                  </div>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: '#888', marginTop: '6px' }}>
-                    <span>Mon</span>
-                    <span>Tue</span>
-                    <span>Wed</span>
-                    <span>Thu</span>
-                    <span>Fri</span>
-                    <span>Sat</span>
-                    <span>Sun (Today)</span>
-                  </div>
-                </div>
-              </div>
-            </div>
-
-            {/* Environmental AQI trends feed */}
-            <div style={{
-              background: '#ffffff',
-              borderRadius: '16px',
-              border: '1px solid #dadad3',
-              padding: '20px',
-              boxShadow: '0 2px 8px rgba(4, 4, 6, 0.02)'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '12px' }}>
-                <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0, fontFamily: 'Bricolage Grotesque' }}>
-                  AQI Sensor Hourly Grid
-                </h3>
-                <span style={{ fontSize: '11px', color: '#7B8F65', fontWeight: 700 }}>Updated 2 mins ago</span>
-              </div>
-
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: '12px' }}>
-                {(aqiData.length > 0
-                  ? aqiData.map(d => ({ id: d.stationId, ward: d.name, aqi: d.aqi, status: getAqiStatus(d.aqi) }))
-                  : DATASETS[0].rows
-                ).map((row) => (
-                  <div 
-                    key={row.id} 
-                    style={{
-                      background: '#f6f6f3',
-                      border: '1px solid #dadad3',
-                      borderRadius: '12px',
-                      padding: '12px',
-                      textAlign: 'center'
-                    }}
-                  >
-                    <div style={{ fontSize: '11px', fontWeight: 700, color: '#555550' }}>{row.ward}</div>
-                    <div style={{ fontSize: '20px', fontWeight: 800, margin: '4px 0', color: row.aqi > 120 ? '#e60023' : '#7B8F65' }}>
-                      {row.aqi} AQI
-                    </div>
-                    <div style={{ fontSize: '9px', textTransform: 'uppercase', fontWeight: 700, color: '#777' }}>
-                      {row.status}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-          </div>
-
-          {/* Bottom Right - Dataset Explorer */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
-            
-            {/* Open Datasets Explorer */}
-            <div style={{
-              background: '#ffffff',
-              borderRadius: '16px',
-              border: '1px solid #dadad3',
-              padding: '20px',
-              boxShadow: '0 2px 8px rgba(4, 4, 6, 0.02)'
-            }}>
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
-                <div>
-                  <h3 style={{ fontSize: '15px', fontWeight: 800, margin: 0, fontFamily: 'Bricolage Grotesque' }}>
-                    Open Datasets Explorer
-                  </h3>
-                  <span style={{ fontSize: '11px', color: '#555550' }}>GIS, police accident data, and telemetry</span>
-                </div>
-                <Compass size={18} color="#e60023" />
-              </div>
-
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-                {DATASETS.map((ds) => {
-                  const isPinned = pinnedWidgets.includes(ds.id)
-                  return (
-                    <div
-                      key={ds.id}
-                      style={{
-                        padding: '12px',
-                        border: '1px solid #dadad3',
-                        borderRadius: '12px',
-                        background: '#ffffff'
-                      }}
-                    >
-                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-                        <div>
-                          <strong style={{ fontSize: '12px', color: '#000' }}>{ds.name}</strong>
-                          <div style={{ fontSize: '10px', color: '#555550', marginTop: '2px' }}>
-                            Source: {ds.source} | Refreshes: {ds.refresh}
-                          </div>
-                        </div>
-
-                        {/* Interactive Widget Actions */}
-                        <div style={{ display: 'flex', gap: '6px' }}>
-                          <button
-                            onClick={() => setActivePreviewDataset(ds)}
-                            style={{
-                              width: '26px',
-                              height: '26px',
-                              borderRadius: '6px',
-                              border: '1px solid #dadad3',
-                              background: '#f6f6f3',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              cursor: 'pointer'
-                            }}
-                            title="Preview Rows"
-                          >
-                            <Eye size={12} color="#000" />
-                          </button>
-                          
-                          <button
-                            onClick={() => togglePinWidget(ds.id)}
-                            style={{
-                              width: '26px',
-                              height: '26px',
-                              borderRadius: '6px',
-                              border: '1px solid #dadad3',
-                              background: isPinned ? 'rgba(230,0,35,0.08)' : '#f6f6f3',
-                              display: 'flex',
-                              alignItems: 'center',
-                              justifyContent: 'center',
-                              cursor: 'pointer'
-                            }}
-                            title={isPinned ? 'Unpin widget' : 'Pin widget to control deck'}
-                          >
-                            <Plus size={12} color={isPinned ? '#e60023' : '#000'} />
-                          </button>
-                        </div>
-                      </div>
-
-                      <p style={{ fontSize: '11px', color: '#555', margin: '6px 0 0 0', lineHeight: 1.3 }}>
-                        {ds.desc}
-                      </p>
-                    </div>
-                  )
-                })}
-              </div>
-            </div>
-
-            {/* Pinned Widgets Summary Panel */}
-            {pinnedWidgets.length > 0 && (
-              <div style={{
-                background: '#ffffff',
-                borderRadius: '16px',
-                border: '1px solid #dadad3',
-                padding: '20px',
-                boxShadow: '0 2px 8px rgba(4, 4, 6, 0.02)'
-              }}>
-                <h4 style={{ fontSize: '13px', fontWeight: 800, margin: '0 0 12px 0', fontFamily: 'Bricolage Grotesque', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                  <FileSpreadsheet size={14} color="#e60023" /> Pinned Dataset Summaries
-                </h4>
-
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                  {pinnedWidgets.includes('ds-aqi') && (
-                    <div style={{ fontSize: '11px', background: '#f6f6f3', padding: '10px', borderRadius: '8px' }}>
-                      <div style={{ fontWeight: 700, color: '#36375D', display: 'flex', justifyContent: 'space-between' }}>
-                        <span>AQI sensor stats</span>
-                        <span>Satisfactory Avg</span>
-                      </div>
-                      <div style={{ marginTop: '4px' }}>Avg reading is 84 AQI. Lowest in Jayanagar (45). Highest in Rajajinagar (155).</div>
-                    </div>
-                  )}
-
-                  {pinnedWidgets.includes('ds-accidents') && (
-                    <div style={{ fontSize: '11px', background: '#f6f6f3', padding: '10px', borderRadius: '8px' }}>
-                      <div style={{ fontWeight: 700, color: '#36375D', display: 'flex', justifyContent: 'space-between' }}>
-                        <span>Traffic Incident feeds</span>
-                        <span>4 Logged Today</span>
-                      </div>
-                      <div style={{ marginTop: '4px' }}>SLA response time avg is 14.2 mins. Silk Board breakdown remains critical.</div>
-                    </div>
-                  )}
-
-                  {pinnedWidgets.includes('ds-crime') && (
-                    <div style={{ fontSize: '11px', background: '#f6f6f3', padding: '10px', borderRadius: '8px' }}>
-                      <div style={{ fontWeight: 700, color: '#36375D', display: 'flex', justifyContent: 'space-between' }}>
-                        <span>Public crime intelligence</span>
-                        <span>1 active audit</span>
-                      </div>
-                      <div style={{ marginTop: '4px' }}>1 active investigation in Indiranagar. Public Disturbance logs are closed.</div>
-                    </div>
-                  )}
-
-                  {pinnedWidgets.includes('ds-boundaries') && (
-                    <div style={{ fontSize: '11px', background: '#f6f6f3', padding: '10px', borderRadius: '8px' }}>
-                      <div style={{ fontWeight: 700, color: '#36375D', display: 'flex', justifyContent: 'space-between' }}>
-                        <span>BBMP GIS boundaries</span>
-                        <span>5 areas mapped</span>
-                      </div>
-                      <div style={{ marginTop: '4px' }}>Total mapped population is 475,000 residents across active control deck.</div>
-                    </div>
-                  )}
-                </div>
-              </div>
-            )}
-
-          </div>
-
-        </div>
-
-      </div>
-
-      {/* Dataset Preview Modal Overlay */}
-      {activePreviewDataset && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0,0,0,0.6)',
-          backdropFilter: 'blur(4px)',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 2000,
-          padding: '20px'
-        }}>
-          <div style={{
-            background: '#ffffff',
-            borderRadius: '16px',
-            border: '1px solid #dadad3',
-            width: '100%',
-            maxWidth: '650px',
-            boxShadow: '0 8px 32px rgba(0,0,0,0.2)',
+        <button
+          onClick={handleRefresh}
+          disabled={refreshing}
+          style={{
+            background: refreshing ? '#64748b' : '#36375D',
+            color: '#fff',
+            border: 'none',
+            borderRadius: '10px',
+            padding: '10px 18px',
+            fontSize: '12px',
+            fontWeight: 700,
+            cursor: refreshing ? 'not-allowed' : 'pointer',
             display: 'flex',
-            flexDirection: 'column',
-            maxHeight: '85vh',
-            overflow: 'hidden'
-          }}>
-            <div style={{
-              padding: '16px 20px',
-              borderBottom: '1px solid #dadad3',
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              background: '#f6f6f3'
-            }}>
-              <div>
-                <h3 style={{ fontSize: '16px', fontWeight: 800, margin: 0 }}>
-                  Dataset Raw Row Preview: {activePreviewDataset.name}
-                </h3>
-                <span style={{ fontSize: '11px', color: '#555550' }}>Source: {activePreviewDataset.source}</span>
-              </div>
-              <button
-                onClick={() => setActivePreviewDataset(null)}
-                style={{
-                  background: 'none',
-                  border: 'none',
-                  cursor: 'pointer',
-                  color: '#000',
-                  padding: '4px'
-                }}
-              >
-                <X size={18} />
-              </button>
-            </div>
+            alignItems: 'center',
+            gap: '8px',
+            boxShadow: '0 2px 8px rgba(54,55,93,0.15)',
+          }}
+        >
+          <RefreshCw size={13} className={refreshing ? 'spin' : ''} />
+          <span>{refreshing ? 'Refreshing systems data...' : 'Refresh Telemetry'}</span>
+        </button>
+      </div>
 
-            <div style={{ padding: '20px', overflowY: 'auto', flex: 1 }}>
-              <div style={{ overflowX: 'auto' }}>
-                <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '11px' }}>
-                  <thead>
-                    <tr style={{ borderBottom: '2px solid #dadad3', color: '#000', fontWeight: 700 }}>
-                      {activePreviewDataset.fields.map((field) => (
-                        <th key={field} style={{ padding: '8px' }}>{field}</th>
-                      ))}
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {activePreviewDataset.rows.map((row, idx) => (
-                      <tr key={idx} style={{ borderBottom: '1px solid #f6f6f3' }}>
-                        {Object.values(row).map((val, colIdx) => (
-                          <td key={colIdx} style={{ padding: '8px', color: '#262622' }}>{val.toString()}</td>
-                        ))}
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
+      {/* State-wide summaries banner */}
+      {summaries && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '14px', marginBottom: '24px' }}>
+          <div className="micro-card">
+            <div style={{ background: '#fef2f2', color: '#ef4444', padding: '8px', borderRadius: '10px', display: 'flex' }}><AlertCircle size={18} /></div>
+            <div>
+              <div style={{ fontSize: '10px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Civic Complaints</div>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: '#262622', marginTop: '2px' }}>{summaries.totalComplaints} tickets</div>
             </div>
-
-            <div style={{
-              padding: '12px 20px',
-              borderTop: '1px solid #dadad3',
-              display: 'flex',
-              justifyContent: 'flex-end',
-              background: '#f6f6f3'
-            }}>
-              <button
-                onClick={() => setActivePreviewDataset(null)}
-                style={{
-                  height: '32px',
-                  padding: '0 16px',
-                  borderRadius: '6px',
-                  border: '1px solid #dadad3',
-                  background: '#ffffff',
-                  fontSize: '12px',
-                  fontWeight: 700,
-                  cursor: 'pointer'
-                }}
-              >
-                Close Preview
-              </button>
+          </div>
+          <div className="micro-card">
+            <div style={{ background: '#f5f3ff', color: '#8b5cf6', padding: '8px', borderRadius: '10px', display: 'flex' }}><ShieldAlert size={18} /></div>
+            <div>
+              <div style={{ fontSize: '10px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Crimes Logged</div>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: '#262622', marginTop: '2px' }}>{summaries.totalCrimes} cases</div>
+            </div>
+          </div>
+          <div className="micro-card">
+            <div style={{ background: '#f0f9ff', color: '#0ea5e9', padding: '8px', borderRadius: '10px', display: 'flex' }}><Wind size={18} /></div>
+            <div>
+              <div style={{ fontSize: '10px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>State Avg AQI</div>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: '#262622', marginTop: '2px' }}>{summaries.avgAqi} AQI</div>
+            </div>
+          </div>
+          <div className="micro-card">
+            <div style={{ background: '#fff7ed', color: '#f97316', padding: '8px', borderRadius: '10px', display: 'flex' }}><Car size={18} /></div>
+            <div>
+              <div style={{ fontSize: '10px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Avg Traffic Congestion</div>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: '#262622', marginTop: '2px' }}>{summaries.avgCongestion}% score</div>
+            </div>
+          </div>
+          <div className="micro-card">
+            <div style={{ background: '#eff6ff', color: '#3b82f6', padding: '8px', borderRadius: '10px', display: 'flex' }}><Thermometer size={18} /></div>
+            <div>
+              <div style={{ fontSize: '10px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>State Avg Temp</div>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: '#262622', marginTop: '2px' }}>{summaries.avgTemp}°C</div>
+            </div>
+          </div>
+          <div className="micro-card">
+            <div style={{ background: '#ecfeff', color: '#06b6d4', padding: '8px', borderRadius: '10px', display: 'flex' }}><CloudRain size={18} /></div>
+            <div>
+              <div style={{ fontSize: '10px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>State Avg Rain</div>
+              <div style={{ fontSize: '15px', fontWeight: 800, color: '#262622', marginTop: '2px' }}>{summaries.avgRain} mm</div>
             </div>
           </div>
         </div>
       )}
 
-      {/* Styled Animations */}
-      <style>{`
-        .kpi-card:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 4px 12px rgba(4, 4, 6, 0.04) !important;
-        }
-        .table-row-hover:hover {
-          background-color: rgba(230, 0, 35, 0.02) !important;
-        }
-        @keyframes pulse {
-          0% { transform: scale(1); opacity: 1; }
-          50% { transform: scale(1.1); opacity: 0.4; }
-          100% { transform: scale(1); opacity: 1; }
-        }
-        @media (max-width: 900px) {
-          .band-b-grid, .band-c-grid {
-            grid-template-columns: 1fr !important;
-          }
-          .analytics-split {
-            grid-template-columns: 1fr !important;
-            gap: 16px !important;
-          }
-        }
-      `}</style>
+      {/* Heatmap metric overlay buttons */}
+      <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', overflowX: 'auto', paddingBottom: '4px' }}>
+        {[
+          { id: 'overall', label: 'Overall Stress Index', icon: <Activity size={14} /> },
+          { id: 'civic', label: 'Civic Complaints', icon: <AlertCircle size={14} /> },
+          { id: 'crime', label: 'Crime Hotspots', icon: <ShieldAlert size={14} /> },
+          { id: 'aqi', label: 'Air Quality (AQI)', icon: <Wind size={14} /> },
+          { id: 'traffic', label: 'Traffic Congestion', icon: <Car size={14} /> },
+          { id: 'temp', label: 'Temperature Map', icon: <Thermometer size={14} /> },
+          { id: 'rain', label: 'Rainfall Map', icon: <CloudRain size={14} /> }
+        ].map(tab => (
+          <button
+            key={tab.id}
+            onClick={() => setHeatmapType(tab.id as HeatmapMetric)}
+            className={`metric-pill ${heatmapType === tab.id ? 'active' : ''}`}
+          >
+            {tab.icon}
+            <span>{tab.label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Main split-screen panel */}
+      <div className="flex flex-wrap gap-6 mb-4 w-full" style={{ display: 'flex', flexWrap: 'wrap', gap: '24px' }}>
+        
+        {/* Left Side: Leaflet Heatmap container */}
+        <div style={{ flex: '1.2 1 450px', minWidth: '320px', background: '#fff', borderRadius: '16px', border: '1px solid #dadad3', padding: '24px', display: 'flex', flexDirection: 'column', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '16px' }}>
+            <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', display: 'flex', alignItems: 'center', gap: '6px' }}>
+              <Layers size={13} />
+              Heatmap layer: <strong style={{ color: '#36375D', textTransform: 'capitalize' }}>{heatmapType} Analysis</strong>
+            </span>
+            <span style={{ fontSize: '11px', color: '#94a3b8', fontWeight: 500 }}>
+              Hover polygons to read · Click to pin district details
+            </span>
+          </div>
+
+          <div style={{ height: '1150px', background: '#f6f6f3', borderRadius: '16px', overflow: 'hidden', border: '1px solid #dadad3', position: 'relative' }}>
+            <OverviewLeafletMap
+              districtsData={processedDistricts}
+              selectedDistrict={selectedDistrict}
+              onSelectDistrict={handleSelectDistrictByName}
+              heatmapType={heatmapType}
+            />
+          </div>
+        </div>
+
+        {/* Right Side: Rankings and Details Card */}
+        <div style={{ flex: '1 1 320px', minWidth: '300px', display: 'flex', flexDirection: 'column', gap: '20px' }}>
+          
+          {/* Selected District Details */}
+          {selectedDistrict ? (
+            <div style={{ background: '#fff', borderRadius: '16px', border: '2px solid #36375D', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', boxShadow: '0 4px 16px rgba(54,55,93,0.08)' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                <div>
+                  <span style={{ fontSize: '9px', fontWeight: 800, color: '#36375D', textTransform: 'uppercase', background: '#e2e8f0', padding: '2px 8px', borderRadius: '6px', letterSpacing: '0.5px' }}>
+                    PINNED DISTRICT DETAILS
+                  </span>
+                  <h2 style={{ fontSize: '18px', fontWeight: 800, color: '#262622', margin: '6px 0 0', fontFamily: '"Bricolage Grotesque", sans-serif' }}>
+                    {selectedDistrict.name}
+                  </h2>
+                </div>
+                <button
+                  onClick={() => clearSelectedDistrict()}
+                  style={{ background: '#f1f5f9', border: 'none', width: '24px', height: '24px', borderRadius: '50%', color: '#64748b', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '14px', fontWeight: 700 }}
+                >
+                  &times;
+                </button>
+              </div>
+
+              {/* Stress Index score badge */}
+              <div style={{ background: 'linear-gradient(135deg, #36375D 0%, #1e293b 100%)', borderRadius: '16px', padding: '20px', textAlign: 'center', display: 'flex', flexDirection: 'column', gap: '4px', color: '#fff' }}>
+                <span style={{ fontSize: '11px', fontWeight: 700, color: '#94a3b8', textTransform: 'uppercase' }}>Overall Stress Index</span>
+                <span style={{ fontSize: '38px', fontWeight: 800, color: '#fff', lineHeight: 1, margin: '6px 0 2px' }}>
+                  {selectedDistrict.overallScore.toFixed(1)} / 100
+                </span>
+                <span style={{ fontSize: '12px', fontWeight: 700, color: '#e2e8f0' }}>
+                  Statewide Rank: <strong>#{selectedDistrict.overallRank}</strong> of 30
+                </span>
+              </div>
+
+              {/* Comparison grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '10px' }}>
+                <div className="detail-badge">
+                  <span style={{ fontSize: '9px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Complaints</span>
+                  <strong style={{ fontSize: '13px', color: '#1e293b' }}>{selectedDistrict.civicComplaints} tickets</strong>
+                  <span style={{ fontSize: '10px', color: '#ef4444', fontWeight: 600 }}>Rank #{selectedDistrict.civicRank}</span>
+                </div>
+                <div className="detail-badge">
+                  <span style={{ fontSize: '9px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Crimes Logged</span>
+                  <strong style={{ fontSize: '13px', color: '#1e293b' }}>{selectedDistrict.crimesCount} cases</strong>
+                  <span style={{ fontSize: '10px', color: '#8b5cf6', fontWeight: 600 }}>Rank #{selectedDistrict.crimeRank}</span>
+                </div>
+                <div className="detail-badge">
+                  <span style={{ fontSize: '9px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Air Quality</span>
+                  <strong style={{ fontSize: '13px', color: '#1e293b' }}>{selectedDistrict.aqi} AQI</strong>
+                  <span style={{ fontSize: '10px', color: '#10b981', fontWeight: 600 }}>Rank #{selectedDistrict.aqiRank}</span>
+                </div>
+                <div className="detail-badge">
+                  <span style={{ fontSize: '9px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Traffic</span>
+                  <strong style={{ fontSize: '13px', color: '#1e293b' }}>{selectedDistrict.congestion}% delay</strong>
+                  <span style={{ fontSize: '10px', color: '#f97316', fontWeight: 600 }}>Rank #{selectedDistrict.trafficRank}</span>
+                </div>
+                <div className="detail-badge" style={{ gridColumn: 'span 2' }}>
+                  <span style={{ fontSize: '9px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Weather Outlook</span>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', color: '#1e293b', fontWeight: 700, marginTop: '2px' }}>
+                    <span>Temperature: {selectedDistrict.temp.toFixed(1)}°C (Rank #{selectedDistrict.tempRank})</span>
+                    <span>Precipitation: {selectedDistrict.rain.toFixed(1)}mm (Rank #{selectedDistrict.rainRank})</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <div style={{ background: '#fff', borderRadius: '16px', border: '1px solid #dadad3', padding: '20px', textAlign: 'center', color: '#64748b', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '8px', boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+              <MapPin size={28} style={{ color: '#36375D', opacity: 0.8 }} />
+              <div style={{ fontSize: '12px', fontWeight: 700, color: '#262622' }}>Integrated Details Deck</div>
+              <span style={{ fontSize: '11px', lineHeight: 1.4 }}>
+                Click a district polygon on the interactive map or select a row in the rankings leaderboard below to access pinned analytics comparison cards.
+              </span>
+            </div>
+          )}
+
+          {/* Rankings Leaderboard Card */}
+          <div style={{ background: '#fff', borderRadius: '16px', border: '1px solid #dadad3', padding: '20px', display: 'flex', flexDirection: 'column', gap: '16px', flex: 1, boxShadow: '0 2px 8px rgba(0,0,0,0.02)' }}>
+            <div>
+              <h3 style={{ fontSize: '14px', fontWeight: 800, color: '#262622', margin: 0, fontFamily: '"Bricolage Grotesque", sans-serif' }}>
+                Statewide District Leaderboard
+              </h3>
+              <span style={{ fontSize: '11px', color: '#64748b', fontWeight: 500 }}>
+                Ranks sorted by active stress metrics (Rank 1 represents highest load)
+              </span>
+            </div>
+
+            {/* Leaderboard Search */}
+            <div style={{ position: 'relative' }}>
+              <input
+                type="text"
+                placeholder="Search district..."
+                value={search}
+                onChange={e => setSearch(e.target.value)}
+                style={{
+                  width: '100%',
+                  border: '1px solid #dadad3',
+                  borderRadius: '12px',
+                  padding: '8px 12px 8px 32px',
+                  fontSize: '12px',
+                  background: '#f8fafc',
+                  outline: 'none',
+                  color: '#262622',
+                  fontWeight: 500,
+                  boxSizing: 'border-box'
+                }}
+              />
+              <Search size={13} style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#94a3b8' }} />
+            </div>
+
+            {/* Leaderboard Table */}
+            <div style={{ flex: 1, overflowY: 'auto', maxHeight: '620px', minHeight: '300px' }}>
+              <div className="rank-header">
+                <span className={`sort-trigger ${sortBy === 'overall' ? 'active' : ''}`} onClick={() => toggleSort('overall')}>
+                  Rk <ArrowUpDown size={10} />
+                </span>
+                <span>District</span>
+                <span className={`sort-trigger ${sortBy === 'civic' ? 'active' : ''}`} onClick={() => toggleSort('civic')}>
+                  Civic <ArrowUpDown size={10} />
+                </span>
+                <span className={`sort-trigger ${sortBy === 'crime' ? 'active' : ''}`} onClick={() => toggleSort('crime')}>
+                  Crim <ArrowUpDown size={10} />
+                </span>
+                <span className={`sort-trigger ${sortBy === 'aqi' ? 'active' : ''}`} onClick={() => toggleSort('aqi')}>
+                  AQI <ArrowUpDown size={10} />
+                </span>
+                <span className={`sort-trigger ${sortBy === 'traffic' ? 'active' : ''}`} onClick={() => toggleSort('traffic')}>
+                  Traf <ArrowUpDown size={10} />
+                </span>
+                <span className={`sort-trigger ${sortBy === 'overall' ? 'active' : ''}`} onClick={() => toggleSort('overall')}>
+                  Index
+                </span>
+              </div>
+
+              <div style={{ display: 'flex', flexDirection: 'column', marginTop: '4px' }}>
+                {filtered.map((d, index) => {
+                  const isSelected = selectedDistrictName === d.name
+                  
+                  // Highlight cells depending on active sorting
+                  const isCivicActive = sortBy === 'civic'
+                  const isCrimeActive = sortBy === 'crime'
+                  const isAqiActive = sortBy === 'aqi'
+                  const isTrafficActive = sortBy === 'traffic'
+                  const isOverallActive = sortBy === 'overall'
+
+                  return (
+                    <div
+                      key={d.name}
+                      onClick={() => handleSelectDistrictByName(d.name)}
+                      className={`rank-row ${isSelected ? 'selected' : ''}`}
+                    >
+                      <span style={{ fontWeight: 800, color: d.overallRank <= 3 ? '#ef4444' : '#64748b' }}>
+                        #{d.overallRank}
+                      </span>
+                      <span style={{ fontWeight: 700, color: '#1e293b' }}>
+                        {d.name}
+                      </span>
+                      <span style={{ color: isCivicActive ? '#ef4444' : '#475569', fontWeight: isCivicActive ? 800 : 500 }}>
+                        {d.civicComplaints} <span style={{ fontSize: '9px', color: '#94a3b8' }}>(#{d.civicRank})</span>
+                      </span>
+                      <span style={{ color: isCrimeActive ? '#8b5cf6' : '#475569', fontWeight: isCrimeActive ? 800 : 500 }}>
+                        {d.crimesCount} <span style={{ fontSize: '9px', color: '#94a3b8' }}>(#{d.crimeRank})</span>
+                      </span>
+                      <span style={{ color: isAqiActive ? '#10b981' : '#475569', fontWeight: isAqiActive ? 800 : 500 }}>
+                        {d.aqi} <span style={{ fontSize: '9px', color: '#94a3b8' }}>(#{d.aqiRank})</span>
+                      </span>
+                      <span style={{ color: isTrafficActive ? '#f97316' : '#475569', fontWeight: isTrafficActive ? 800 : 500 }}>
+                        {d.congestion}% <span style={{ fontSize: '9px', color: '#94a3b8' }}>(#{d.trafficRank})</span>
+                      </span>
+                      <span style={{ color: '#36375D', fontWeight: 800 }}>
+                        {d.overallScore.toFixed(1)}
+                      </span>
+                    </div>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+      </div>
+
     </div>
   )
 }

@@ -4,10 +4,8 @@ import { Users, Shield, UserX, UserMinus, ShieldAlert } from 'lucide-react'
 
 type UserSummaryCardsProps = {
   citizensCount: number
-  officersCount: number
   adminsCount: number
   suspendedCount: number
-  unassignedOfficersCount: number
 }
 
 const FONT_SANS = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
@@ -15,17 +13,13 @@ const FONT_DISPLAY = "var(--font-display)"
 
 export default function UserSummaryCards({
   citizensCount,
-  officersCount,
   adminsCount,
-  suspendedCount,
-  unassignedOfficersCount
+  suspendedCount
 }: UserSummaryCardsProps) {
   const cards = [
     { label: 'Total Citizens', value: citizensCount, icon: Users, color: '#059669', bg: '#ecfdf5', border: '#a7f3d0' },
-    { label: 'Total Officers', value: officersCount, icon: Shield, color: '#0ea5e9', bg: '#f0f9ff', border: '#bae6fd' },
     { label: 'Total Admins', value: adminsCount, icon: ShieldAlert, color: '#0f172a', bg: '#f1f5f9', border: '#e2e8f0' },
-    { label: 'Suspended', value: suspendedCount, icon: UserX, color: '#ef4444', bg: '#fef2f2', border: '#fee2e2' },
-    { label: 'Unassigned Officers', value: unassignedOfficersCount, icon: UserMinus, color: '#d97706', bg: '#fffbeb', border: '#fef3c7' }
+    { label: 'Suspended', value: suspendedCount, icon: UserX, color: '#ef4444', bg: '#fef2f2', border: '#fee2e2' }
   ]
 
   return (

@@ -101,7 +101,7 @@ function HeroSection() {
 
             <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap' }}>
               <Link href="/login" style={S.btnPrimary}>
-                👮 Enter CIAP Portal <ArrowRight size={14} style={{ marginLeft: '4px' }} />
+                👮 Enter Portal <ArrowRight size={14} style={{ marginLeft: '4px' }} />
               </Link>
               <Link href="/login" style={S.btnOutline}>
                 Learn More

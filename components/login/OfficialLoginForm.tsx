@@ -33,7 +33,7 @@ export default function OfficialLoginForm({ onSubmit, loading }: OfficialLoginFo
       <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
         <div>
           <label style={{ display: 'block', fontSize: '13px', fontWeight: 600, color: '#000000', marginBottom: '6px' }}>
-            Official Email / Username
+            Government Official Email / Username
           </label>
           <input
             type="email"
@@ -142,7 +142,7 @@ export default function OfficialLoginForm({ onSubmit, loading }: OfficialLoginFo
         >
           <span style={{ fontSize: '14px' }}>🛡️</span>
           <div style={{ flex: 1 }}>
-            <strong>Admin / Super Admin</strong>
+            <strong>Government Official</strong>
             <div style={{ color: '#262622', fontSize: '10px' }}>admin@nagaragupta.dev</div>
           </div>
         </button>

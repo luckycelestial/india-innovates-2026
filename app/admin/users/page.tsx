@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { createClient } from '@/lib/db/client'
 import UserManagementHeader from '@/components/admin/user-management-header'
 import UserSummaryCards from '@/components/admin/user-summary-cards'
 import UserTable from '@/components/admin/user-table'
@@ -12,7 +12,7 @@ type User = {
   name: string
   email: string
   phone: string
-  role: 'citizen' | 'officer' | 'admin'
+  role: 'citizen' | 'admin'
   ward: string | null
   department: string | null
   status: 'active' | 'suspended'
@@ -23,7 +23,7 @@ type User = {
 const FONT_SANS = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
 
 export default function UserRoleManagementPage() {
-  const supabase = createClient()
+  const db = createClient()
   const [users, setUsers] = useState<User[]>([])
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
@@ -38,7 +38,7 @@ export default function UserRoleManagementPage() {
     let channel: any = null
 
     const fetchUsers = async () => {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('profiles')
         .select('*')
         .order('created_at', { ascending: false })
@@ -53,7 +53,7 @@ export default function UserRoleManagementPage() {
       if (active) setLoading(false)
 
       const channelName = `admin_users_changes_${Math.random().toString(36).substring(2, 9)}`
-      channel = supabase
+      channel = db
         .channel(channelName)
         .on(
           'postgres_changes',
@@ -70,7 +70,7 @@ export default function UserRoleManagementPage() {
     return () => {
       active = false
       if (channel) {
-        supabase.removeChannel(channel)
+        db.removeChannel(channel)
       }
     }
   }, [])
@@ -80,7 +80,7 @@ export default function UserRoleManagementPage() {
     if (isAddingNew) {
       // Exclude created_at from insert, let DB use default now()
       const { id, created_at, ...insertData } = updatedUser
-      const { error } = await supabase
+      const { error } = await db
         .from('profiles')
         .insert([insertData])
 
@@ -90,7 +90,7 @@ export default function UserRoleManagementPage() {
       }
     } else {
       const { created_at, ...updateData } = updatedUser
-      const { error } = await supabase
+      const { error } = await db
         .from('profiles')
         .update(updateData)
         .eq('id', updatedUser.id)
@@ -115,10 +115,8 @@ export default function UserRoleManagementPage() {
 
   // KPI calculations
   const citizensCount = users.filter(u => u.role === 'citizen').length
-  const officersCount = users.filter(u => u.role === 'officer').length
   const adminsCount = users.filter(u => u.role === 'admin').length
   const suspendedCount = users.filter(u => u.status === 'suspended').length
-  const unassignedOfficersCount = users.filter(u => u.role === 'officer' && (!u.ward || u.ward.toLowerCase() === 'unassigned')).length
 
   // Filter lists
   const filteredUsers = users.filter(u => {
@@ -171,10 +169,8 @@ export default function UserRoleManagementPage() {
         {/* Operational Counters */}
         <UserSummaryCards
           citizensCount={citizensCount}
-          officersCount={officersCount}
           adminsCount={adminsCount}
           suspendedCount={suspendedCount}
-          unassignedOfficersCount={unassignedOfficersCount}
         />
 
         {/* Main User Grid Table */}

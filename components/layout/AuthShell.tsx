@@ -29,20 +29,11 @@ export default function AuthShell({ children }: AuthShellProps) {
         {/* Left Side: Branding */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '24px' }}>
           <Link href="/" style={{ textDecoration: 'none', display: 'flex', alignItems: 'center', gap: '10px' }}>
-            <div style={{
-              width: '44px',
-              height: '44px',
-              background: '#e60023',
-              borderRadius: '16px',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              color: '#ffffff',
-              fontWeight: 800,
-              fontSize: '22px'
-            }}>
-              N
-            </div>
+            <img 
+              src="/Logos/SL_Transparent.png" 
+              alt="Logo" 
+              style={{ width: '44px', height: '44px', objectFit: 'contain' }} 
+            />
             <span style={{
               fontWeight: 800,
               fontSize: '24px',

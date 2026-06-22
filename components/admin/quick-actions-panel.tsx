@@ -10,8 +10,7 @@ export default function QuickActionsPanel() {
   const router = useRouter()
 
   const actions = [
-    { label: 'Grievance Queue', desc: 'Browse and assign complaints', href: '/officer/dashboard', icon: Scale, color: '#3b82f6', bg: '#eff6ff' },
-    { label: 'Pipeline Tracker', desc: 'Track resolution workflow', href: '/officer/pipeline', icon: Kanban, color: '#10b981', bg: '#f0fdf4' },
+    { label: 'Pipeline Tracker', desc: 'Track resolution workflow', href: '/officer/dashboard', icon: Kanban, color: '#10b981', bg: '#f0fdf4' },
     { label: 'Admin Settings', desc: 'Manage access controls', href: '#', icon: Lock, color: '#4b5563', bg: '#f3f4f6' },
   ]
 

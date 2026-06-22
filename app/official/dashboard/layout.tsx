@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-// Removed Supabase client
+// Removed DB client
 
 export default function OfficialDashboardLayout({ children }: { children: React.ReactNode }) {
   const [userName, setUserName] = useState('Admin User')

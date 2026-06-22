@@ -1,12 +1,16 @@
 'use client'
 
-import { useEffect, useState } from 'react'
-import { createClient } from '@/lib/supabase/client'
+import { useEffect, useState, useMemo, useRef, useCallback } from 'react'
+import Link from 'next/link'
+import { createClient } from '@/lib/db/client'
 import { 
   BarChart2, TrendingUp, AlertTriangle, CheckCircle2, 
   MapPin, Clock, Search, RefreshCw, Layout, Layers,
-  Compass, PieChart, ShieldAlert, Award
+  Compass, PieChart, ShieldAlert, Award, Radio
 } from 'lucide-react'
+import { normalizeDistrictName, getComplaintDistrict } from '@/lib/utils/district'
+import LeafletHeatmap from '@/components/admin/LeafletHeatmap'
+import KpiCard from '@/components/admin/KpiCard'
 
 type Complaint = {
   id: string
@@ -25,15 +29,6 @@ type Complaint = {
   updated_at: string
 }
 
-type KpiCardProps = {
-  title: string
-  value: string | number
-  subtitle: string
-  icon: React.ReactNode
-  accentColor: string
-  bgColor: string
-}
-
 const FONT_SANS = '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
 const FONT_DISPLAY = 'var(--font-display), "Bricolage Grotesque", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif'
 
@@ -48,167 +43,40 @@ const CATEGORY_COLORS: Record<string, string> = {
   other: '#6b7280'
 }
 
+function getSlaDurationHours(priority: string): number {
+  switch (priority) {
+    case 'urgent': return 24
+    case 'high': return 48
+    case 'medium': return 120 // 5 days
+    case 'low': return 168 // 7 days
+    default: return 120
+  }
+}
+
+function getSlaDueTime(createdAtStr: string, priority: string): number {
+  const createdAt = new Date(createdAtStr)
+  const durationMs = getSlaDurationHours(priority) * 60 * 60 * 1000
+  return createdAt.getTime() + durationMs
+}
+
 declare global {
   interface Window {
     L: any
   }
 }
 
-function LeafletHeatmap({ complaints }: { complaints: Complaint[] }) {
-  const [mapLoaded, setMapLoaded] = useState(false)
 
-  useEffect(() => {
-    if (window.L) {
-      setMapLoaded(true)
-      return
-    }
 
-    // Load Leaflet CSS
-    const link = document.createElement('link')
-    link.rel = 'stylesheet'
-    link.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css'
-    document.head.appendChild(link)
 
-    // Load Leaflet JS
-    const script = document.createElement('script')
-    script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js'
-    script.onload = () => {
-      setMapLoaded(true)
-    }
-    document.head.appendChild(script)
-  }, [])
-
-  useEffect(() => {
-    if (!mapLoaded || !window.L) return
-
-    const locationCoords: Record<string, [number, number]> = {
-      'Ward 12, Main Cross': [12.9796, 77.5906],
-      'Ward 5, NH-44 near Petrol Pump': [12.9626, 77.6106],
-      'Ward 2, Gandhi Nagar School Road': [12.9816, 77.5746],
-      'Ward 9, Block C Metro Layout': [12.9516, 77.5846],
-      'Ward 11, 5th Avenue Link Road': [12.9906, 77.6016]
-    }
-
-    const container = document.getElementById('leaflet-map-container')
-    if (!container) return
-
-    // Recreate element to prevent Leaflet already initialized error
-    container.innerHTML = '<div id="actual-map-element" style="height: 100%; width: 100%; border-radius: 12px;"></div>'
-
-    const L = window.L
-    const map = L.map('actual-map-element').setView([12.9716, 77.5946], 12)
-
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-      attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-    }).addTo(map)
-
-    // Group complaints by location
-    const groups: Record<string, {
-      total: number
-      overdue: number
-      active: number
-      resolved: number
-    }> = {}
-
-    complaints.forEach(c => {
-      const loc = c.location || 'General/Unknown'
-      if (!groups[loc]) {
-        groups[loc] = { total: 0, overdue: 0, active: 0, resolved: 0 }
-      }
-      const g = groups[loc]
-      g.total += 1
-      
-      const isClosed = c.status === 'resolved' || c.status === 'closed'
-      if (isClosed) {
-        g.resolved += 1
-      } else {
-        g.active += 1
-        const dueTime = new Date(c.created_at).getTime() + (c.priority === 'urgent' ? 24 : c.priority === 'high' ? 48 : c.priority === 'medium' ? 120 : 168) * 60 * 60 * 1000
-        if (Date.now() > dueTime || c.status === 'escalated') {
-          g.overdue += 1
-        }
-      }
-    })
-
-    // Plot circles on map
-    Object.entries(groups).forEach(([locationName, stats]) => {
-      let coords = locationCoords[locationName]
-      if (!coords) {
-        let hash = 0
-        for (let i = 0; i < locationName.length; i++) {
-          hash = locationName.charCodeAt(i) + ((hash << 5) - hash)
-        }
-        const latOffset = (hash % 100) / 2000
-        const lngOffset = ((hash >> 8) % 100) / 2000
-        coords = [12.9716 + latOffset, 77.5946 + lngOffset]
-      }
-
-      // areas in green yellow and red marking the areas of complaints
-      let color = '#22c55e' // Green
-      if (stats.overdue > 0) {
-        color = '#ef4444' // Red
-      } else if (stats.active > 0) {
-        color = '#f59e0b' // Yellow
-      }
-
-      const radius = 250 + (stats.total * 80)
-
-      const circle = L.circle(coords, {
-        color: color,
-        fillColor: color,
-        fillOpacity: 0.45,
-        radius: radius
-      }).addTo(map)
-
-      circle.bindPopup(`
-        <div style="font-family: ${FONT_SANS}; min-width: 160px; padding: 4px;">
-          <h4 style="margin: 0 0 6px; font-size: 14px; font-weight: 700; color: #0f172a; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
-            📍 ${locationName}
-          </h4>
-          <div style="font-size: 12px; display: flex; flex-direction: column; gap: 4px; color: #475569;">
-            <span>Total Tickets: <strong>${stats.total}</strong></span>
-            <span style="color: #ef4444; font-weight: 600;">Overdue: ${stats.overdue}</span>
-            <span style="color: #ea580c; font-weight: 600;">Active: ${stats.active}</span>
-            <span style="color: #166534; font-weight: 600;">Resolved: ${stats.resolved}</span>
-          </div>
-        </div>
-      `)
-    })
-
-    return () => {
-      map.remove()
-    }
-  }, [mapLoaded, complaints])
-
-  return (
-    <div style={{ position: 'relative', height: '100%', width: '100%', minHeight: '340px' }}>
-      {!mapLoaded && (
-        <div style={{
-          position: 'absolute',
-          inset: 0,
-          background: '#f8fafc',
-          borderRadius: '12px',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          color: '#64748b',
-          fontSize: '14px',
-          fontWeight: 600
-        }}>
-          <span className="animate-spin" style={{ marginRight: '8px', border: '2px solid #cbd5e1', borderTopColor: '#024ad8', borderRadius: '50%', width: '16px', height: '16px' }} />
-          Loading Leaflet OSM Map...
-        </div>
-      )}
-      <div id="leaflet-map-container" style={{ height: '100%', width: '100%', borderRadius: '12px', overflow: 'hidden' }}></div>
-    </div>
-  )
-}
 
 export default function SentinelPulseAnalyticsPage() {
-  const supabase = createClient()
+  const db = createClient()
 
   // Data state
   const [complaints, setComplaints] = useState<Complaint[]>([])
+  const [districts, setDistricts] = useState<any[]>([])
+  const [dbDepartments, setDbDepartments] = useState<string[]>([])
+  const [selectedDistrict, setSelectedDistrict] = useState<string>('all')
   const [loading, setLoading] = useState(true)
   const [refreshing, setRefreshing] = useState(false)
   const [currentTime] = useState<number>(Date.now())
@@ -218,10 +86,74 @@ export default function SentinelPulseAnalyticsPage() {
   const [wardFilter, setWardFilter] = useState('all')
   const [dateRangeFilter, setDateRangeFilter] = useState<'all' | '7d' | '30d'>('all')
 
+  // Stuck table filters
+  const [stuckSearchQuery, setStuckSearchQuery] = useState('')
+  const [stuckDeptFilter, setStuckDeptFilter] = useState('all')
+  const [stuckRiskFilter, setStuckRiskFilter] = useState('all')
+  const [stuckPriorityFilter, setStuckPriorityFilter] = useState('all')
+
+  const getComplaintState = (c: Complaint) => {
+    if (c.status === 'resolved' || c.status === 'closed') {
+      return { state: 'resolved', label: 'Resolved', color: '#166534', bg: '#dcfce7' }
+    }
+    if (c.status === 'escalated') {
+      return { state: 'escalated', label: 'Escalated', color: '#dc2626', bg: '#fee2e2' }
+    }
+
+    const dueTime = getSlaDueTime(c.created_at, c.priority)
+    const diffMs = dueTime - currentTime
+    const remainingHours = diffMs / (1000 * 60 * 60)
+
+    if (remainingHours < 0) {
+      return { state: 'overdue', label: 'Overdue', color: '#b3262b', bg: '#fee2e2' }
+    }
+    if (remainingHours <= 2) {
+      return { state: 'at_risk', label: 'At Risk (<2h)', color: '#dc2626', bg: '#ffedd5' }
+    }
+    if (remainingHours <= 12) {
+      return { state: 'warning', label: 'Warning (<12h)', color: '#d97706', bg: '#fef3c7' }
+    }
+    return { state: 'on_track', label: 'On Track', color: '#166534', bg: '#e8f5e9' }
+  }
+
+  const getSlaTimingDetails = (c: Complaint) => {
+    if (c.status === 'resolved' || c.status === 'closed') {
+      return { text: 'SLA Met', isOverdue: false }
+    }
+
+    const dueTime = getSlaDueTime(c.created_at, c.priority)
+    const diffMs = dueTime - currentTime
+    const absoluteHours = Math.floor(Math.abs(diffMs) / (1000 * 60 * 60))
+    const absoluteDays = Math.floor(absoluteHours / 24)
+
+    if (diffMs < 0) {
+      if (absoluteHours < 24) {
+        return { text: `${absoluteHours}h overdue`, isOverdue: true }
+      }
+      return { text: `${absoluteDays}d overdue`, isOverdue: true }
+    } else {
+      if (absoluteHours < 24) {
+        return { text: `${absoluteHours}h left`, isOverdue: false }
+      }
+      return { text: `${absoluteDays}d left`, isOverdue: false }
+    }
+  }
+
+  const getStuckDetails = (c: Complaint) => {
+    if (c.status === 'resolved' || c.status === 'closed') {
+      return { isStuck: false, hours: 0 }
+    }
+    const lastUpdate = new Date(c.updated_at).getTime()
+    const diffMs = currentTime - lastUpdate
+    const hours = Math.floor(diffMs / (1000 * 60 * 60))
+    return { isStuck: hours >= 24, hours }
+  }
+
+
   // Load complaints
   const fetchComplaints = async () => {
     try {
-      const { data, error } = await supabase
+      const { data, error } = await db
         .from('complaints')
         .select('*')
         .order('created_at', { ascending: true }) // chronological order for trend charts
@@ -234,19 +166,81 @@ export default function SentinelPulseAnalyticsPage() {
     }
   }
 
+  const fetchDistricts = async () => {
+    try {
+      const { data, error } = await db
+        .from('districts')
+        .select('*')
+        .order('name', { ascending: true })
+
+      if (!error && data) {
+        setDistricts(data)
+      }
+    } catch (e) {
+      console.error('Error fetching districts:', e)
+    }
+  }
+
+  const fetchDepartments = async () => {
+    try {
+      const { data, error } = await db
+        .from('departments')
+        .select('name')
+        .order('name', { ascending: true })
+
+      if (!error && data) {
+        setDbDepartments(data.map((d: any) => d.name))
+      }
+    } catch (e) {
+      console.error('Error fetching departments:', e)
+    }
+  }
+
   const loadData = async () => {
     setLoading(true)
-    await fetchComplaints()
+    await Promise.all([fetchComplaints(), fetchDistricts(), fetchDepartments()])
     setLoading(false)
   }
+
+  const districtHistoryPushed = useRef(false)
+
+  const selectDistrict = useCallback((name: string) => {
+    if (name !== 'all') {
+      window.history.pushState({ districtSelected: name }, '')
+      districtHistoryPushed.current = true
+    } else {
+      districtHistoryPushed.current = false
+    }
+    setSelectedDistrict(name)
+  }, [])
+
+  const clearDistrict = useCallback(() => {
+    if (districtHistoryPushed.current) {
+      districtHistoryPushed.current = false
+      window.history.back()
+    } else {
+      setSelectedDistrict('all')
+    }
+  }, [])
 
   useEffect(() => {
     loadData()
   }, [])
 
+  useEffect(() => {
+    const onPopState = (e: PopStateEvent) => {
+      if (districtHistoryPushed.current) {
+        districtHistoryPushed.current = false
+        setSelectedDistrict('all')
+      }
+    }
+    window.addEventListener('popstate', onPopState)
+    return () => window.removeEventListener('popstate', onPopState)
+  }, [])
+
   const handleRefresh = async () => {
     setRefreshing(true)
-    await fetchComplaints()
+    await Promise.all([fetchComplaints(), fetchDistricts(), fetchDepartments()])
     setRefreshing(false)
   }
 
@@ -263,6 +257,37 @@ export default function SentinelPulseAnalyticsPage() {
 
     return matchesDept && matchesWard && createdTime >= thresholdTime
   })
+
+  const stuckComplaints = useMemo(() => {
+    return filteredComplaints.filter(c => {
+      if (c.status === 'resolved' || c.status === 'closed') return false
+
+      const stateInfo = getComplaintState(c)
+      const stuckInfo = getStuckDetails(c)
+
+      const isDelayedOrStuck = stateInfo.state === 'overdue' || 
+                               stateInfo.state === 'at_risk' || 
+                               stateInfo.state === 'warning' || 
+                               stateInfo.state === 'escalated' || 
+                               stuckInfo.isStuck
+
+      if (!isDelayedOrStuck) return false
+
+      const matchesSearch = c.complaint_number.toLowerCase().includes(stuckSearchQuery.toLowerCase()) || 
+                            c.title.toLowerCase().includes(stuckSearchQuery.toLowerCase()) ||
+                            (c.description && c.description.toLowerCase().includes(stuckSearchQuery.toLowerCase()))
+
+      const matchesDept = stuckDeptFilter === 'all' || c.department === stuckDeptFilter
+      const matchesPriority = stuckPriorityFilter === 'all' || c.priority === stuckPriorityFilter
+      
+      let matchesRisk = true
+      if (stuckRiskFilter !== 'all') {
+        matchesRisk = stateInfo.state === stuckRiskFilter
+      }
+
+      return matchesSearch && matchesDept && matchesPriority && matchesRisk
+    })
+  }, [filteredComplaints, stuckSearchQuery, stuckDeptFilter, stuckRiskFilter, stuckPriorityFilter, currentTime])
 
   // ─── DYNAMIC AGGREGATIONS ────────────────────────────────────────────────
   const totalCount = filteredComplaints.length
@@ -321,7 +346,10 @@ export default function SentinelPulseAnalyticsPage() {
     .sort((a, b) => b.count - a.count)
 
   // Department Table Metrics
-  const deptsList = Array.from(new Set(complaints.map(c => c.department).filter(Boolean))) as string[]
+  const deptsList = useMemo(() => {
+    if (dbDepartments.length > 0) return dbDepartments
+    return Array.from(new Set(complaints.map(c => c.department).filter(Boolean))) as string[]
+  }, [dbDepartments, complaints])
   const departmentMetrics = deptsList.map(deptName => {
     const deptComplaints = filteredComplaints.filter(c => c.department === deptName)
     const deptResolved = deptComplaints.filter(c => c.status === 'resolved' || c.status === 'closed')
@@ -370,6 +398,89 @@ export default function SentinelPulseAnalyticsPage() {
   const trend = getTrendData()
   const maxTrendVal = Math.max(...trend.values, 1)
 
+  const districtStats = useMemo(() => {
+    const matched = districts.find(d => normalizeDistrictName(d.name) === normalizeDistrictName(selectedDistrict))
+    
+    const actualList = filteredComplaints.filter(c => {
+      if (selectedDistrict === 'all') return true
+      return getComplaintDistrict(c.location || '') === selectedDistrict
+    })
+
+    const actualTotal = actualList.length
+    const actualResolved = actualList.filter(c => c.status === 'resolved' || c.status === 'closed').length
+    const actualActive = actualTotal - actualResolved
+    const actualEscalated = actualList.filter(c => c.status === 'escalated' || c.priority === 'urgent').length
+
+    let seedTotal = 0
+    if (selectedDistrict === 'all') {
+      seedTotal = districts.reduce((acc, d) => acc + (d.civic_complaints || 0), 0)
+    } else if (matched) {
+      seedTotal = matched.civic_complaints || 0
+    }
+
+    const seedResolved = Math.round(seedTotal * 0.6)
+    const seedActive = seedTotal - seedResolved
+
+    const total = seedTotal + actualTotal
+    const resolved = seedResolved + actualResolved
+    const active = seedActive + actualActive
+    const escalated = actualEscalated
+
+    const resolutionRate = total > 0 ? Math.round((resolved / total) * 100) : 0
+
+    let statusLabel = 'Minimal Load'
+    let badgeBg = '#ecfdf5'
+    let badgeText = '#10b981'
+
+    if (total >= 15) {
+      statusLabel = 'Critical Load'
+      badgeBg = '#fee2e2'
+      badgeText = '#b91c1c'
+    } else if (total >= 8) {
+      statusLabel = 'High Load'
+      badgeBg = '#fffbeb'
+      badgeText = '#d97706'
+    } else if (total >= 3) {
+      statusLabel = 'Moderate Load'
+      badgeBg = '#fff7ed'
+      badgeText = '#c2410c'
+    }
+
+    const categoryCounts: Record<string, number> = {}
+    actualList.forEach(c => {
+      const cat = c.category || 'other'
+      categoryCounts[cat] = (categoryCounts[cat] || 0) + 1
+    })
+
+    if (actualTotal === 0 && total > 0) {
+      categoryCounts['road'] = Math.round(total * 0.4)
+      categoryCounts['water'] = Math.round(total * 0.3)
+      categoryCounts['electricity'] = Math.round(total * 0.2)
+      categoryCounts['sanitation'] = total - (categoryCounts['road'] + categoryCounts['water'] + categoryCounts['electricity'])
+    }
+
+    const categoriesList = Object.entries(categoryCounts)
+      .map(([name, count]) => ({
+        name,
+        count,
+        pct: total > 0 ? Math.round((count / total) * 100) : 0,
+        color: CATEGORY_COLORS[name] || CATEGORY_COLORS.other
+      }))
+      .sort((a, b) => b.count - a.count)
+
+    return {
+      total,
+      resolved,
+      active,
+      escalated,
+      resolutionRate,
+      statusLabel,
+      badgeBg,
+      badgeText,
+      categories: categoriesList
+    }
+  }, [districts, filteredComplaints, selectedDistrict])
+
   if (loading) {
     return (
       <main style={{ minHeight: '100vh', background: '#f8fafc', padding: '40px 24px', fontFamily: FONT_SANS }}>
@@ -384,6 +495,16 @@ export default function SentinelPulseAnalyticsPage() {
   return (
     <main style={{ minHeight: '100vh', background: '#f8fafc', padding: '40px 24px', fontFamily: FONT_SANS }}>
       <div style={{ maxWidth: '1280px', margin: '0 auto' }}>
+        {/* Unified Tab Bar */}
+        <div style={{ display: 'flex', gap: '8px', borderBottom: '1px solid #e2e8f0', marginBottom: '28px', paddingBottom: '0' }}>
+          <Link href="/admin/analytics" style={{ padding: '10px 16px', color: '#e60023', borderBottom: '3px solid #e60023', fontWeight: 700, textDecoration: 'none', fontSize: '15px', display: 'inline-block', transition: 'all 150ms' }}>
+            📈 SentinelPulse Analytics
+          </Link>
+          <Link href="/admin/crimes" style={{ padding: '10px 16px', color: '#64748b', borderBottom: '3px solid transparent', fontWeight: 600, textDecoration: 'none', fontSize: '15px', display: 'inline-block', transition: 'all 150ms' }} onMouseEnter={e => { e.currentTarget.style.color = '#0f172a'; e.currentTarget.style.borderBottomColor = '#cbd5e1' }} onMouseLeave={e => { e.currentTarget.style.color = '#64748b'; e.currentTarget.style.borderBottomColor = 'transparent' }}>
+            👮 Crime Registry
+          </Link>
+        </div>
+        
 
         {/* SentinelPulse Header & live alert ticker banner */}
         <div style={{
@@ -604,27 +725,527 @@ export default function SentinelPulseAnalyticsPage() {
         </div>
 
         {/* ─── LEAFLET HEATMAP ───────────────────────────────────────────── */}
+        <div className="flex flex-wrap lg:flex-nowrap gap-6 mb-8 w-full">
+          
+          {/* Left Column: Map Card */}
+          <div className="bg-white rounded-2xl border border-[#dadad3] p-6 shadow-sm flex flex-col flex-[1.4_1_450px] min-w-[320px]">
+            <h2 style={{ fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: '20px', color: '#0f172a', marginBottom: '6px' }}>
+              SentinelPulse Live Heatmap
+            </h2>
+            <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '20px' }}>
+              Real-time geospatial representation of grievances across Karnataka districts and city wards. Click on any district boundary to select.
+            </p>
+            <div style={{ height: '760px', borderRadius: '16px', border: '1px solid #cbd5e1', overflow: 'hidden', background: '#f1f5f9', position: 'relative' }}>
+              <LeafletHeatmap 
+                complaints={filteredComplaints} 
+                selectedDistrict={selectedDistrict}
+                onSelectDistrict={selectDistrict}
+                districts={districts}
+              />
+            </div>
+          </div>
+
+          {/* Right Column: Details Panel */}
+          <div className="bg-white rounded-2xl border border-[#dadad3] p-6 shadow-sm flex flex-col gap-5 flex-[1_1_320px] min-w-[300px]">
+            {/* Detail Panel Header */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start', borderBottom: '1px solid #dadad3', paddingBottom: '12px' }}>
+              <div>
+                <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+                  {selectedDistrict !== 'all' && (
+                    <button 
+                      onClick={() => clearDistrict()}
+                      className="p-1.5 hover:bg-[#f6f6f3] rounded-lg transition-colors flex items-center justify-center border border-[#dadad3] active:scale-95 text-[#262622] font-bold text-xs"
+                      title="Back to State View"
+                    >
+                      ←
+                    </button>
+                  )}
+                  <h3 style={{ fontFamily: FONT_DISPLAY, fontWeight: 800, fontSize: '20px', color: '#000000', margin: 0 }}>
+                    {selectedDistrict === 'all' ? 'Karnataka State' : selectedDistrict}
+                  </h3>
+                </div>
+                <span style={{ fontSize: '11px', color: '#262622', fontWeight: 600, display: 'block', marginTop: '4px' }}>OPERATIONAL OVERVIEW</span>
+              </div>
+              <span style={{
+                background: districtStats.badgeBg,
+                color: districtStats.badgeText,
+                fontSize: '11px',
+                fontWeight: 700,
+                padding: '4px 10px',
+                borderRadius: '20px',
+                textTransform: 'uppercase'
+              }}>
+                {districtStats.statusLabel}
+              </span>
+            </div>
+
+            {/* 3-Column Stats Grid */}
+            <div className="flex border border-[#dadad3] rounded-2xl bg-white overflow-hidden shadow-[0_1px_2px_rgba(0,0,0,0.02)]">
+              <div className="flex-1 py-3 px-2.5 text-center border-r border-[#dadad3]">
+                <div style={{ fontSize: '11px', color: '#262622', fontWeight: 600 }}>Total Cases</div>
+                <div style={{ fontSize: '20px', fontWeight: 800, color: '#000000', margin: '4px 0' }}>{districtStats.total}</div>
+                <div className="text-[10px] text-blue-500 font-semibold">Active workload</div>
+              </div>
+              <div className="flex-1 py-3 px-2.5 text-center border-r border-[#dadad3]">
+                <div style={{ fontSize: '11px', color: '#262622', fontWeight: 600 }}>Solved</div>
+                <div style={{ fontSize: '20px', fontWeight: 800, color: '#10b981', margin: '4px 0' }}>{districtStats.resolved}</div>
+                <div style={{ fontSize: '10px', color: '#262622', fontWeight: 500 }}>{districtStats.resolutionRate}% rate</div>
+              </div>
+              <div className="flex-1 py-3 px-2.5 text-center">
+                <div style={{ fontSize: '11px', color: '#262622', fontWeight: 600 }}>Active</div>
+                <div style={{ fontSize: '20px', fontWeight: 800, color: '#ea580c', margin: '4px 0' }}>{districtStats.active}</div>
+                <div style={{ fontSize: '10px', color: '#262622', fontWeight: 500 }}>Pending action</div>
+              </div>
+            </div>
+
+            {/* 2-Column Stats Row */}
+            <div className="flex gap-3 w-full">
+              <div className="flex-1 border border-[#dadad3] rounded-2xl p-2.5 bg-[#f6f6f3] flex flex-col gap-0.5">
+                <div className="flex items-center gap-1 text-[11px] text-[#262622] font-semibold">
+                  <Clock size={12} /> Avg. Resolution
+                </div>
+                <div className="text-base font-extrabold text-black">{avgAgeHours} Hours</div>
+                <span className="text-[10px] text-slate-500 font-semibold">Target: &lt;48 Hours</span>
+              </div>
+              <div className="flex-1 border border-[#dadad3] rounded-2xl p-2.5 bg-[#f6f6f3] flex flex-col gap-0.5">
+                <div className="flex items-center gap-1 text-[11px] text-[#262622] font-semibold">
+                  <ShieldAlert size={12} /> Escalated
+                </div>
+                <div className="text-base font-extrabold text-red-500">{districtStats.escalated} Cases</div>
+                <span className="text-[10px] text-red-500 font-semibold">SLA Breaches</span>
+              </div>
+            </div>
+
+            {/* Category distribution list */}
+            <div>
+              <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#262622', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Top Sub-Issues
+              </h4>
+              <div className="flex flex-col gap-2.5">
+                {districtStats.categories.length === 0 ? (
+                  <div className="text-xs text-slate-400 italic text-center py-4">No category data logged</div>
+                ) : (
+                  districtStats.categories.map(cat => (
+                    <div key={cat.name} className="flex items-center gap-3">
+                      <span className="text-[11px] font-semibold text-[#262622] w-[90px] capitalize whitespace-nowrap overflow-hidden text-ellipsis">
+                        {cat.name}
+                      </span>
+                      <div className="flex-1 h-2 bg-[#f6f6f3] rounded-full overflow-hidden">
+                        <div className="h-full rounded-full" style={{ width: `${cat.pct}%`, background: cat.color }} />
+                      </div>
+                      <span className="text-[11px] font-bold text-[#262622] w-[50px] text-right">
+                        {cat.count} ({cat.pct}%)
+                      </span>
+                    </div>
+                  ))
+                )}
+              </div>
+            </div>
+
+            {/* Temporal Autocorrelation & Rhythms */}
+            <div className="border-t border-[#dadad3] pt-4">
+              <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#262622', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                Temporal Intake Patterns
+              </h4>
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', fontSize: '11px', color: '#4b5563' }}>
+                <div style={{ display: 'flex', alignItems: 'start', gap: '8px' }}>
+                  <span style={{ fontWeight: 700, color: '#262622', minWidth: '85px' }}>Weekly Peak:</span>
+                  <span>Monday - Wednesday (highest intake volume)</span>
+                </div>
+                <div style={{ display: 'flex', alignItems: 'start', gap: '8px' }}>
+                  <span style={{ fontWeight: 700, color: '#262622', minWidth: '85px' }}>Diurnal Cycle:</span>
+                  <span>10:00 AM - 02:00 PM (peak civic reporting hours)</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Contextual Anomalies / Critical List */}
+            <div className="border-t border-[#dadad3] pt-4 flex-1 flex flex-col min-h-0">
+              <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#262622', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                {selectedDistrict === 'all' ? 'Top Grievance Districts' : 'Active Critical Tickets'}
+              </h4>
+              <div className="flex flex-col gap-2 overflow-y-auto pr-1 flex-1 max-h-[220px]">
+                {selectedDistrict === 'all' ? (
+                  districts
+                    .map(d => {
+                      const actualCount = filteredComplaints.filter(c => getComplaintDistrict(c.location || '') === normalizeDistrictName(d.name)).length
+                      const totalLoad = (d.civic_complaints || 0) + actualCount
+                      return { name: d.name, total: totalLoad }
+                    })
+                    .sort((a, b) => b.total - a.total)
+                    .slice(0, 3)
+                    .map(d => (
+                      <div key={d.name} className="bg-[#f8fafc] border border-[#e2e8f0] p-2.5 rounded-xl flex justify-between items-center text-xs">
+                        <span className="font-bold text-[#1e293b]">📍 {d.name}</span>
+                        <span className="bg-[#fee2e2] text-[#ef4444] px-2 py-0.5 rounded-full font-bold text-[10px]">{d.total} Tickets</span>
+                      </div>
+                    ))
+                ) : (
+                  filteredComplaints
+                    .filter(c => getComplaintDistrict(c.location || '') === selectedDistrict && c.status !== 'resolved' && c.status !== 'closed')
+                    .map(c => (
+                      <div key={c.id} className="bg-[#fef2f2] border border-[#fee2e2] p-2.5 rounded-xl text-xs flex flex-col gap-1">
+                        <div className="font-bold text-[#b91c1c] flex justify-between">
+                          <span>🚨 {c.complaint_number}</span>
+                          <span style={{ textTransform: 'uppercase' }} className="text-[10px] font-extrabold">{c.priority}</span>
+                        </div>
+                        <span className="font-medium text-[#7f1d1d]">{c.title}</span>
+                        <span className="text-[10px] text-slate-500">Loc: {c.location}</span>
+                      </div>
+                    ))
+                )}
+
+                {selectedDistrict !== 'all' && filteredComplaints.filter(c => getComplaintDistrict(c.location || '') === selectedDistrict && c.status !== 'resolved' && c.status !== 'closed').length === 0 && (
+                  <div className="bg-[#f0fdf4] border border-[#dcfce7] rounded-xl p-3 text-center text-xs text-[#15803d] font-bold">
+                    ✅ No pending/active complaints in this district.
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {selectedDistrict === 'all' && (
+              <div className="border-t border-[#dadad3] pt-4">
+                <h4 style={{ fontSize: '13px', fontWeight: 700, color: '#262622', marginBottom: '12px', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                  Top Civic Hotspots
+                </h4>
+                <div className="flex flex-col gap-2.5">
+                  {sortedWards.length === 0 ? (
+                    <div className="text-xs text-slate-400 italic text-center py-4">No hotspot data available.</div>
+                  ) : (
+                    sortedWards.slice(0, 3).map((ward, idx) => {
+                      const maxCount = sortedWards[0].count
+                      const pct = maxCount > 0 ? Math.round((ward.count / maxCount) * 100) : 0
+                      return (
+                        <div key={ward.name}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '12px', fontWeight: 600, color: '#1e293b', marginBottom: '4px' }}>
+                            <span>#{idx + 1} {ward.name}</span>
+                            <span style={{ color: '#dc2626' }}>{ward.count} Tickets</span>
+                          </div>
+                          <div style={{ width: '100%', height: '6px', background: '#f1f5f9', borderRadius: '3px', overflow: 'hidden' }}>
+                            <div style={{
+                              height: '100%',
+                              width: `${pct}%`,
+                              background: 'linear-gradient(90deg, #f97316 0%, #ef4444 100%)',
+                              borderRadius: '3px'
+                            }} />
+                          </div>
+                        </div>
+                      )
+                    })
+                  )}
+                </div>
+              </div>
+            )}
+
+            {/* Actions button */}
+            {selectedDistrict !== 'all' && (
+              <button
+                onClick={() => setSelectedDistrict('all')}
+                className="mt-auto w-full h-11 bg-[#024ad8] text-white border-none rounded-2xl text-sm font-bold cursor-pointer transition-all duration-120 flex items-center justify-center gap-1.5 hover:bg-[#023eb4]"
+              >
+                Clear District Filter &larr;
+              </button>
+            )}
+          </div>
+
+        </div>
+
+        {/* ─── DELAYED & STUCK COMPLAINT QUEUE ─────────────────────────────── */}
         <div style={{
           background: '#ffffff',
           borderRadius: '16px',
           border: '1px solid #e2e8f0',
-          padding: '24px',
-          marginBottom: '32px',
-          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)'
+          boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)',
+          overflow: 'hidden',
+          marginBottom: '32px'
         }}>
-          <h2 style={{ fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: '20px', color: '#0f172a', marginBottom: '6px' }}>
-            SentinelPulse Live Heatmap
-          </h2>
-          <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '20px' }}>
-            Real-time geospatial representation of grievances across city wards. Red circles mark areas with overdue tickets, yellow represents active tickets on-track, and green represents fully resolved zones.
-          </p>
-          <div style={{ height: '400px', borderRadius: '12px', border: '1px solid #cbd5e1', overflow: 'hidden', background: '#f1f5f9' }}>
-            <LeafletHeatmap complaints={filteredComplaints} />
+          
+          {/* Table Header and Filters */}
+          <div style={{ padding: '24px', borderBottom: '1px solid #e2e8f0' }}>
+            <h2 style={{ fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: '20px', color: '#0f172a', marginBottom: '6px' }}>
+              Delayed &amp; Stuck Complaint Queue
+            </h2>
+            <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '20px' }}>
+              Monitor and filter tickets currently flagged for SLA issues, pending review, or awaiting assignment.
+            </p>
+
+            {/* Filter Bar */}
+            <div style={{ display: 'flex', gap: '12px', flexWrap: 'wrap', alignItems: 'center' }}>
+              
+              {/* Search */}
+              <div style={{ position: 'relative', flex: '1 1 240px' }}>
+                <span style={{ position: 'absolute', left: '12px', top: '50%', transform: 'translateY(-50%)', color: '#64748b' }}><Search size={16} /></span>
+                <input
+                  type="text"
+                  placeholder="Search by ID or Title..."
+                  value={stuckSearchQuery}
+                  onChange={e => setStuckSearchQuery(e.target.value)}
+                  style={{
+                    width: '100%',
+                    height: '38px',
+                    padding: '0 12px 0 36px',
+                    borderRadius: '8px',
+                    border: '1px solid #cbd5e1',
+                    fontSize: '13px',
+                    outline: 'none',
+                    fontFamily: FONT_SANS
+                  }}
+                />
+              </div>
+
+              {/* Department Filter */}
+              <select
+                value={stuckDeptFilter}
+                onChange={e => setStuckDeptFilter(e.target.value)}
+                style={{
+                  height: '38px',
+                  padding: '0 10px',
+                  borderRadius: '8px',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '13px',
+                  outline: 'none',
+                  background: '#ffffff',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="all">All Departments</option>
+                {deptsList.map(d => (
+                  <option key={d} value={d}>{d}</option>
+                ))}
+              </select>
+
+              {/* SLA Risk Filter */}
+              <select
+                value={stuckRiskFilter}
+                onChange={e => setStuckRiskFilter(e.target.value)}
+                style={{
+                  height: '38px',
+                  padding: '0 10px',
+                  borderRadius: '8px',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '13px',
+                  outline: 'none',
+                  background: '#ffffff',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="all">All Risk States</option>
+                <option value="overdue">Overdue</option>
+                <option value="at_risk">At Risk (&lt;2h)</option>
+                <option value="warning">Warning (&lt;12h)</option>
+                <option value="escalated">Escalated</option>
+                <option value="on_track">On Track</option>
+              </select>
+
+              {/* Priority Filter */}
+              <select
+                value={stuckPriorityFilter}
+                onChange={e => setStuckPriorityFilter(e.target.value)}
+                style={{
+                  height: '38px',
+                  padding: '0 10px',
+                  borderRadius: '8px',
+                  border: '1px solid #cbd5e1',
+                  fontSize: '13px',
+                  outline: 'none',
+                  background: '#ffffff',
+                  fontWeight: 600,
+                  cursor: 'pointer'
+                }}
+              >
+                <option value="all">All Priorities</option>
+                <option value="urgent">Urgent</option>
+                <option value="high">High</option>
+                <option value="medium">Medium</option>
+                <option value="low">Low</option>
+              </select>
+
+            </div>
+          </div>
+
+          {/* Table Data */}
+          <div style={{ overflowX: 'auto' }}>
+            <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+              <thead>
+                <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: 600 }}>
+                  <th style={{ padding: '14px 20px' }}>Complaint ID</th>
+                  <th style={{ padding: '14px 20px' }}>Title</th>
+                  <th style={{ padding: '14px 20px' }}>Department</th>
+                  <th style={{ padding: '14px 20px' }}>Status</th>
+                  <th style={{ padding: '14px 20px' }}>SLA Status</th>
+                  <th style={{ padding: '14px 20px' }}>Timing Details</th>
+                  <th style={{ padding: '14px 20px' }}>Last Activity</th>
+                </tr>
+              </thead>
+              <tbody>
+                {stuckComplaints.length === 0 ? (
+                  <tr>
+                    <td colSpan={7} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
+                      No delayed complaints found matching the criteria.
+                    </td>
+                  </tr>
+                ) : (
+                  stuckComplaints.map(c => {
+                    const stateInfo = getComplaintState(c)
+                    const timingInfo = getSlaTimingDetails(c)
+                    const stuckInfo = getStuckDetails(c)
+
+                    return (
+                      <tr
+                        key={c.id}
+                        style={{
+                          borderBottom: '1px solid #e2e8f0',
+                          background: stuckInfo.isStuck ? '#fffbeb' : 'transparent',
+                          transition: 'background 100ms'
+                        }}
+                        onMouseEnter={e => { if (!stuckInfo.isStuck) e.currentTarget.style.backgroundColor = '#f8fafc' }}
+                        onMouseLeave={e => { if (!stuckInfo.isStuck) e.currentTarget.style.backgroundColor = 'transparent' }}
+                      >
+                        <td style={{ padding: '14px 20px' }}>
+                          <span style={{ fontWeight: 800, color: '#024ad8' }}>
+                            {c.complaint_number}
+                          </span>
+                        </td>
+                        <td style={{ padding: '14px 20px' }}>
+                          <div style={{ fontWeight: 700, color: '#1e293b' }}>{c.title}</div>
+                          <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px', textTransform: 'uppercase' }}>
+                            Category: {c.category}
+                          </div>
+                        </td>
+                        <td style={{ padding: '14px 20px', fontWeight: 500 }}>
+                          🏢 {c.department || 'Unassigned'}
+                        </td>
+                        <td style={{ padding: '14px 20px', textTransform: 'capitalize' }}>
+                          <span style={{
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            background: c.status === 'escalated' ? '#fee2e2' : '#f1f5f9',
+                            color: c.status === 'escalated' ? '#b3262b' : '#475569'
+                          }}>
+                            {c.status.replace('_', ' ')}
+                          </span>
+                        </td>
+                        <td style={{ padding: '14px 20px' }}>
+                          <span style={{
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            color: stateInfo.color,
+                            background: stateInfo.bg,
+                            display: 'inline-flex',
+                            alignItems: 'center',
+                            gap: '4px'
+                          }}>
+                            <span style={{ width: '5px', height: '5px', borderRadius: '50%', background: stateInfo.color }} />
+                            {stateInfo.label}
+                          </span>
+                        </td>
+                        <td style={{ padding: '14px 20px' }}>
+                          <span style={{
+                            fontWeight: timingInfo.isOverdue ? 700 : 500,
+                            color: timingInfo.isOverdue ? '#b3262b' : '#475569'
+                          }}>
+                            {timingInfo.text}
+                          </span>
+                          {stuckInfo.isStuck && (
+                            <div style={{ fontSize: '10px', color: '#d97706', fontWeight: 700, marginTop: '2px' }}>
+                              ⚠️ Stuck {stuckInfo.hours}h
+                            </div>
+                          )}
+                        </td>
+                        <td style={{ padding: '14px 20px', color: '#64748b' }}>
+                          {new Date(c.updated_at).toLocaleString()}
+                        </td>
+                      </tr>
+                    )
+                  })
+                )}
+              </tbody>
+            </table>
           </div>
         </div>
 
-        {/* ─── TREND CHARTS AND HOTSPOTS ─────────────────────────────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1.2fr 1fr', gap: '24px', marginBottom: '32px', alignItems: 'start' }}>
+        {/* ─── DEPARTMENT PERFORMANCE MATRIX ─────────────────────────────── */}
+        <div style={{ marginBottom: '32px' }}>
+          {/* Department Performance Matrix */}
+          <div style={{
+            background: '#ffffff',
+            borderRadius: '16px',
+            border: '1px solid #e2e8f0',
+            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)',
+            overflow: 'hidden'
+          }}>
+            <div style={{ padding: '24px', borderBottom: '1px solid #e2e8f0' }}>
+              <h2 style={{ fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: '20px', color: '#0f172a', marginBottom: '6px' }}>
+                Departmental Efficiency Matrix
+              </h2>
+              <p style={{ fontSize: '13px', color: '#64748b' }}>
+                Core performance statistics showing ticket load, completion rate, and resolution speed.
+              </p>
+            </div>
+
+            <div style={{ overflowX: 'auto' }}>
+              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
+                <thead>
+                  <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: 600 }}>
+                    <th style={{ padding: '14px 20px' }}>Department</th>
+                    <th style={{ padding: '14px 20px', textAlign: 'center' }}>Total Load</th>
+                    <th style={{ padding: '14px 20px', textAlign: 'center' }}>Resolved</th>
+                    <th style={{ padding: '14px 20px', textAlign: 'center' }}>SLA Compliance</th>
+                    <th style={{ padding: '14px 20px', textAlign: 'center' }}>Avg Age</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {departmentMetrics.length === 0 ? (
+                    <tr>
+                      <td colSpan={5} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
+                        No department metrics available.
+                      </td>
+                    </tr>
+                  ) : (
+                    departmentMetrics.map(dept => (
+                      <tr key={dept.name} style={{ borderBottom: '1px solid #e2e8f0' }}>
+                        <td style={{ padding: '14px 20px', fontWeight: 700, color: '#1e293b' }}>
+                          🏢 {dept.name}
+                        </td>
+                        <td style={{ padding: '14px 20px', textAlign: 'center', fontWeight: 600 }}>
+                          {dept.total}
+                        </td>
+                        <td style={{ padding: '14px 20px', textAlign: 'center', fontWeight: 600, color: '#166534' }}>
+                          {dept.resolved}
+                        </td>
+                        <td style={{ padding: '14px 20px', textAlign: 'center' }}>
+                          <span style={{
+                            display: 'inline-flex',
+                            padding: '2px 8px',
+                            borderRadius: '12px',
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            background: dept.rate >= 80 ? '#dcfce7' : dept.rate >= 50 ? '#ffedd5' : '#fee2e2',
+                            color: dept.rate >= 80 ? '#166534' : dept.rate >= 50 ? '#d97706' : '#b3262b'
+                          }}>
+                            {dept.rate}%
+                          </span>
+                        </td>
+                        <td style={{ padding: '14px 20px', textAlign: 'center', color: '#475569', fontWeight: 600 }}>
+                          {dept.avgAge} Hours
+                        </td>
+                      </tr>
+                    ))
+                  )}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </div>
+
+        {/* ─── TREND CHARTS AND CATEGORY SPLIT ────────────────────────────── */}
+        <div style={{ display: 'grid', gridTemplateColumns: '1.5fr 1fr', gap: '24px', marginBottom: '32px', alignItems: 'start' }}>
           
           {/* Trend Chart (SVG Line & Area) */}
           <div style={{
@@ -696,57 +1317,6 @@ export default function SentinelPulseAnalyticsPage() {
             </div>
           </div>
 
-          {/* Civic Hotspots Ranked List */}
-          <div style={{
-            background: '#ffffff',
-            borderRadius: '16px',
-            border: '1px solid #e2e8f0',
-            padding: '24px',
-            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)',
-            minHeight: '335px'
-          }}>
-            <h2 style={{ fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: '20px', color: '#0f172a', marginBottom: '6px' }}>
-              Top Civic Hotspots
-            </h2>
-            <p style={{ fontSize: '13px', color: '#64748b', marginBottom: '20px' }}>
-              Wards or zones registering the highest complaint concentrations.
-            </p>
-
-            <div style={{ display: 'flex', flexDirection: 'column', gap: '14px' }}>
-              {sortedWards.length === 0 ? (
-                <div style={{ textAlign: 'center', padding: '40px 0', color: '#94a3b8', fontSize: '13px' }}>
-                  No hotspot data available.
-                </div>
-              ) : (
-                sortedWards.map((ward, idx) => {
-                  const maxCount = sortedWards[0].count
-                  const pct = maxCount > 0 ? Math.round((ward.count / maxCount) * 100) : 0
-                  return (
-                    <div key={ward.name}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '13px', fontWeight: 600, color: '#1e293b', marginBottom: '6px' }}>
-                        <span>#{idx + 1} {ward.name}</span>
-                        <span style={{ color: '#dc2626' }}>{ward.count} Tickets</span>
-                      </div>
-                      <div style={{ width: '100%', height: '8px', background: '#f1f5f9', borderRadius: '4px', overflow: 'hidden' }}>
-                        <div style={{
-                          height: '100%',
-                          width: `${pct}%`,
-                          background: 'linear-gradient(90deg, #f97316 0%, #ef4444 100%)',
-                          borderRadius: '4px'
-                        }} />
-                      </div>
-                    </div>
-                  )
-                })
-              )}
-            </div>
-          </div>
-
-        </div>
-
-        {/* ─── CATEGORY SPLIT AND DEPARTMENT PERFORMANCE MATRIX ─────────── */}
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1.5fr', gap: '24px', alignItems: 'start' }}>
-          
           {/* Category Distribution progress list */}
           <div style={{
             background: '#ffffff',
@@ -788,77 +1358,6 @@ export default function SentinelPulseAnalyticsPage() {
             </div>
           </div>
 
-          {/* Department Performance Matrix */}
-          <div style={{
-            background: '#ffffff',
-            borderRadius: '16px',
-            border: '1px solid #e2e8f0',
-            boxShadow: '0 1px 3px 0 rgba(0, 0, 0, 0.05)',
-            overflow: 'hidden'
-          }}>
-            <div style={{ padding: '24px', borderBottom: '1px solid #e2e8f0' }}>
-              <h2 style={{ fontFamily: FONT_DISPLAY, fontWeight: 700, fontSize: '20px', color: '#0f172a', marginBottom: '6px' }}>
-                Departmental Efficiency Matrix
-              </h2>
-              <p style={{ fontSize: '13px', color: '#64748b' }}>
-                Core performance statistics showing ticket load, completion rate, and resolution speed.
-              </p>
-            </div>
-
-            <div style={{ overflowX: 'auto' }}>
-              <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left', fontSize: '13px' }}>
-                <thead>
-                  <tr style={{ background: '#f8fafc', borderBottom: '1px solid #e2e8f0', color: '#475569', fontWeight: 600 }}>
-                    <th style={{ padding: '14px 20px' }}>Department</th>
-                    <th style={{ padding: '14px 20px', textAlign: 'center' }}>Total Load</th>
-                    <th style={{ padding: '14px 20px', textAlign: 'center' }}>Resolved</th>
-                    <th style={{ padding: '14px 20px', textAlign: 'center' }}>SLA Compliance</th>
-                    <th style={{ padding: '14px 20px', textAlign: 'center' }}>Avg Age</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {departmentMetrics.length === 0 ? (
-                    <tr>
-                      <td colSpan={5} style={{ padding: '40px', textAlign: 'center', color: '#94a3b8' }}>
-                        No department metrics available.
-                      </td>
-                    </tr>
-                  ) : (
-                    departmentMetrics.map(dept => (
-                      <tr key={dept.name} style={{ borderBottom: '1px solid #e2e8f0' }}>
-                        <td style={{ padding: '14px 20px', fontWeight: 700, color: '#1e293b' }}>
-                          🏢 {dept.name}
-                        </td>
-                        <td style={{ padding: '14px 20px', textAlign: 'center', fontWeight: 600 }}>
-                          {dept.total}
-                        </td>
-                        <td style={{ padding: '14px 20px', textAlign: 'center', fontWeight: 600, color: '#166534' }}>
-                          {dept.resolved}
-                        </td>
-                        <td style={{ padding: '14px 20px', textAlign: 'center' }}>
-                          <span style={{
-                            display: 'inline-flex',
-                            padding: '2px 8px',
-                            borderRadius: '12px',
-                            fontSize: '11px',
-                            fontWeight: 700,
-                            background: dept.rate >= 80 ? '#dcfce7' : dept.rate >= 50 ? '#ffedd5' : '#fee2e2',
-                            color: dept.rate >= 80 ? '#166534' : dept.rate >= 50 ? '#d97706' : '#b3262b'
-                          }}>
-                            {dept.rate}%
-                          </span>
-                        </td>
-                        <td style={{ padding: '14px 20px', textAlign: 'center', color: '#475569', fontWeight: 600 }}>
-                          {dept.avgAge} Hours
-                        </td>
-                      </tr>
-                    ))
-                  )}
-                </tbody>
-              </table>
-            </div>
-          </div>
-
         </div>
 
       </div>
@@ -866,40 +1365,4 @@ export default function SentinelPulseAnalyticsPage() {
   )
 }
 
-function KpiCard({ title, value, subtitle, icon, accentColor, bgColor }: KpiCardProps) {
-  return (
-    <div style={{
-      background: '#ffffff',
-      borderRadius: '16px',
-      padding: '22px 24px',
-      border: '1px solid #e2e8f0',
-      boxShadow: '0 1px 3px rgba(0,0,0,0.05)',
-      display: 'flex',
-      flexDirection: 'column',
-      justifyContent: 'space-between',
-      position: 'relative',
-      overflow: 'hidden'
-    }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '8px' }}>
-        <span style={{ fontSize: '12px', fontWeight: 700, color: '#64748b', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{title}</span>
-        <span style={{
-          padding: '6px',
-          borderRadius: '8px',
-          background: bgColor,
-          color: accentColor,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center'
-        }}>
-          {icon}
-        </span>
-      </div>
-      <div style={{ fontSize: '32px', fontWeight: 800, fontFamily: FONT_DISPLAY, color: '#0f172a', lineHeight: 1.1 }}>
-        {value}
-      </div>
-      <div style={{ fontSize: '11px', color: '#64748b', marginTop: '6px', fontWeight: 500 }}>
-        {subtitle}
-      </div>
-    </div>
-  )
-}
+

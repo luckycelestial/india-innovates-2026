@@ -56,7 +56,7 @@ export default function OverdueComplaintsPanel({ complaints }: OverdueComplaints
             {complaints.map(c => (
               <div
                 key={c.id}
-                onClick={() => router.push(`/officer/complaints/${c.complaint_number}`)}
+                onClick={() => router.push(`/officer/dashboard?complaint=${c.complaint_number}`)}
                 style={{
                   padding: '14px',
                   borderRadius: '10px',

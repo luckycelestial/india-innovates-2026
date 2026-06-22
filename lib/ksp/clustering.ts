@@ -354,8 +354,8 @@ export function analyzeTemporalTrends(incidents: KspIncident[]): TemporalTrends 
 
   incidents.forEach(inc => {
     const d = new Date(inc.date_time)
-    const day = d.getUTCDay()
-    const hour = d.getUTCHours()
+    const day = d.getDay()
+    const hour = d.getHours()
 
     dayCounts[day]++
 
@@ -555,8 +555,8 @@ export function detectContextualAnomalies(
       id: inc.id,
       district: inc.district,
       category: inc.category,
-      dayOfWeek: d.getUTCDay(),
-      hour: d.getUTCHours()
+      dayOfWeek: d.getDay(),
+      hour: d.getHours()
     }
   })
 

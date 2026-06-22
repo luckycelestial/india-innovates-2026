@@ -1,0 +1,8 @@
+- [x] Implement Leaflet map dynamic loading in weather page
+- [x] Add GeoJSON loading and caching for district boundaries
+- [x] Implement metric selectors (Temperature, Humidity, Wind, Rain)
+- [x] Color code districts based on metric thresholds and render legend
+- [x] Implement responsive split layout (Map + Sidebar details)
+- [x] Verify functionality and test build
+- [x] Adjust map size and configuration to match AQI map config exactly
+- [x] Update GeoJSON filtering and fitBounds padding to match AQI map positioning behavior

@@ -2,7 +2,7 @@
 
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
-// Removed Supabase client
+// Removed DB client
 import AuthShell from '@/components/layout/AuthShell'
 import RoleToggle from '@/components/login/RoleToggle'
 import CitizenLoginForm from '@/components/login/CitizenLoginForm'
@@ -18,20 +18,23 @@ export default function LoginPage() {
   const [targetRoute, setTargetRoute] = useState('')
   const [successMessage, setSuccessMessage] = useState('')
 
-  const handleCitizenSubmit = async (mobile: string, otp: string) => {
+  const handleCitizenSubmit = async (aadhaar: string, otp: string) => {
     if (otp !== '0000') {
       alert('Incorrect OTP for demo. Use 0000.')
       return
     }
     setLoading(true)
 
-    // Local demo mode bypassed Supabase
+    // Local demo mode bypassed DB
 
     setTimeout(() => {
       setLoading(false)
       setSuccessMessage('Citizen identity verified.')
       setTargetRoute('/citizen/home')
       setStep('success')
+      if (typeof document !== 'undefined') {
+        document.cookie = "user_role=citizen; path=/; max-age=86400";
+      }
       setTimeout(() => {
         router.push('/citizen/home')
       }, 1200)
@@ -45,13 +48,16 @@ export default function LoginPage() {
     }
     setLoading(true)
 
-    // Local demo mode bypassed Supabase
+    // Local demo mode bypassed DB
 
     setTimeout(() => {
       setLoading(false)
-      setSuccessMessage('Welcome back, Admin.')
+      setSuccessMessage('Welcome back, Government Official.')
       setTargetRoute('/official/dashboard')
       setStep('success')
+      if (typeof document !== 'undefined') {
+        document.cookie = "user_role=official; path=/; max-age=86400";
+      }
       setTimeout(() => {
         router.push('/official/dashboard')
       }, 1200)

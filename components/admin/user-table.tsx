@@ -7,7 +7,7 @@ type User = {
   name: string
   email: string
   phone: string
-  role: 'citizen' | 'officer' | 'admin'
+  role: 'citizen' | 'admin'
   ward: string | null
   department: string | null
   status: 'active' | 'suspended'
@@ -67,10 +67,6 @@ export default function UserTable({ users, onSelectUser }: UserTableProps) {
                   roleColor = '#0f172a'
                   roleBg = '#e2e8f0'
                   RoleIcon = ShieldAlert
-                } else if (user.role === 'officer') {
-                  roleColor = '#024ad8'
-                  roleBg = '#e8f0fe'
-                  RoleIcon = Shield
                 }
 
                 // Status chip config
@@ -114,12 +110,11 @@ export default function UserTable({ users, onSelectUser }: UserTableProps) {
                     
                     {/* Allocation */}
                     <td style={{ padding: '16px 20px', color: '#475569' }}>
-                      {user.role === 'admin' && 'System Admin'}
                       {user.role === 'citizen' && (user.ward ? `Ward: ${user.ward}` : 'No Ward Mapped')}
-                      {user.role === 'officer' && (
+                      {user.role === 'admin' && (
                         <div>
                           <div style={{ fontWeight: 600, fontSize: '13px', color: '#1e293b' }}>
-                            {user.department || 'Unassigned Dept'}
+                            {user.department || 'System Admin'}
                           </div>
                           {user.ward && (
                             <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>

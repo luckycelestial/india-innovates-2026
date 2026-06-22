@@ -137,7 +137,6 @@ export default function UserManagementHeader({
           >
             <option value="all">All Roles</option>
             <option value="citizen">Citizen</option>
-            <option value="officer">Officer</option>
             <option value="admin">Admin</option>
           </select>
         </div>

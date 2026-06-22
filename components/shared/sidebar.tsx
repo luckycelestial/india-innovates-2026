@@ -4,10 +4,10 @@ import { useState } from 'react'
 import Link from 'next/link'
 import Image from 'next/image'
 import { useRouter, usePathname } from 'next/navigation'
-import { Home, ClipboardList, FilePlus, Search, Scale, Kanban, Lock, LogOut, Users, GitFork, AlertTriangle, BarChart2, Compass, ShieldAlert } from 'lucide-react'
+import { Home, ClipboardList, FilePlus, Search, Scale, Kanban, Lock, LogOut, Users, GitFork, AlertTriangle, BarChart2, Compass, ShieldAlert, Brain } from 'lucide-react'
 
 type SidebarProps = {
-  role: 'citizen' | 'officer' | 'admin'
+  role: 'citizen' | 'admin'
   userName: string
   userSub?: string
 }
@@ -18,19 +18,20 @@ type MenuItem = {
   icon: React.ComponentType<any>
 }
 
-const MENU_ITEMS: Record<'citizen' | 'officer' | 'admin', MenuItem[]> = {
+const MENU_ITEMS: Record<'citizen' | 'admin', MenuItem[]> = {
   citizen: [
-    { label: 'Citizen Home', href: '/citizen/home', icon: Home },
-  ],
-  officer: [
-    { label: 'Ward Dashboard', href: '/official/dashboard/ward', icon: Kanban },
-    { label: 'Dept Dashboard', href: '/official/dashboard/department', icon: ClipboardList },
+    { label: 'Citizen Portal', href: '/citizen/home', icon: Home },
+    { label: 'Heatmaps', href: '/admin/crime-intelligence', icon: Compass },
+    { label: 'OpenCity Civic Data', href: '/admin/civic-data', icon: ClipboardList },
   ],
   admin: [
-    { label: 'City Operations', href: '/official/dashboard', icon: Home },
-    { label: 'KSP Crime Hotspots', href: '/admin/crime-intelligence', icon: Compass },
-    { label: 'KSP Link Analysis', href: '/admin/link-analysis', icon: GitFork },
-    { label: 'KSP Predictive Risk', href: '/admin/predictive-insights', icon: ShieldAlert },
+    { label: 'City Overview', href: '/official/dashboard', icon: Home },
+    { label: 'ML Predictor', href: '/admin/ml-predictor', icon: Brain },
+    { label: 'Grievance Registry', href: '/admin/analytics', icon: BarChart2 },
+    { label: 'Grievance Board', href: '/officer/dashboard', icon: Kanban },
+    { label: 'Crime Analysis', href: '/admin/crime-analysis', icon: GitFork },
+    { label: 'Heatmaps', href: '/admin/crime-intelligence', icon: Compass },
+    { label: 'OpenCity Civic Data', href: '/admin/civic-data', icon: ClipboardList },
   ]
 }
 
@@ -42,6 +43,9 @@ export default function Sidebar({ role, userName, userSub }: SidebarProps) {
   const items = MENU_ITEMS[role] || []
 
   const handleLogout = () => {
+    if (typeof document !== 'undefined') {
+      document.cookie = "user_role=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC;";
+    }
     router.push('/login')
   }
 

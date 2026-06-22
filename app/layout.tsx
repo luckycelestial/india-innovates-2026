@@ -1,9 +1,10 @@
 import type { Metadata } from "next";
 import "./globals.css";
 import Navbar from "@/components/shared/Navbar";
+import { Suspense } from "react";
 
 export const metadata: Metadata = {
-  title: "PRAJA — Public Grievance Resolution Platform",
+  title: "NagaraGupta — Public Grievance Resolution Platform",
   description: "Transparent civic grievance management connecting citizens, officers, and administrators.",
 };
 
@@ -27,7 +28,9 @@ export default function RootLayout({
         />
       </head>
       <body className="min-h-full flex flex-col">
-        <Navbar />
+        <Suspense fallback={null}>
+          <Navbar />
+        </Suspense>
         {children}
       </body>
     </html>

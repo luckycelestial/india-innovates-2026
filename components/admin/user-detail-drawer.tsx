@@ -8,7 +8,7 @@ type User = {
   name: string
   email: string
   phone: string
-  role: 'citizen' | 'officer' | 'admin'
+  role: 'citizen' | 'admin'
   ward: string | null
   department: string | null
   status: 'active' | 'suspended'
@@ -47,7 +47,7 @@ export default function UserDetailDrawer({
   const [name, setName] = useState('')
   const [email, setEmail] = useState('')
   const [phone, setPhone] = useState('')
-  const [role, setRole] = useState<'citizen' | 'officer' | 'admin'>('citizen')
+  const [role, setRole] = useState<'citizen' | 'admin'>('citizen')
   const [status, setStatus] = useState<'active' | 'suspended'>('active')
   const [department, setDepartment] = useState('')
   const [ward, setWard] = useState('')
@@ -86,8 +86,8 @@ export default function UserDetailDrawer({
       phone,
       role,
       status,
-      department: role === 'officer' ? department || DEPARTMENTS[0] : null,
-      ward: role !== 'admin' ? ward || null : null,
+      department: role === 'admin' ? department || DEPARTMENTS[0] : null,
+      ward: ward || null,
       last_login: user?.last_login || 'Never',
       created_at: user?.created_at || new Date().toISOString().split('T')[0]
     }
@@ -229,10 +229,9 @@ export default function UserDetailDrawer({
             <div>
               <label style={{ display: 'block', fontWeight: 600, fontSize: '13px', color: '#334155', marginBottom: '6px' }}>Access Role</label>
               <div style={{ display: 'flex', gap: '8px', background: '#f1f5f9', padding: '4px', borderRadius: '8px' }}>
-                {(['citizen', 'officer', 'admin'] as const).map(r => {
+                {(['citizen', 'admin'] as const).map(r => {
                   const isActive = role === r
                   let IconComp = Users
-                  if (r === 'officer') IconComp = Shield
                   if (r === 'admin') IconComp = ShieldAlert
 
                   return (
@@ -287,7 +286,7 @@ export default function UserDetailDrawer({
             </div>
 
             {/* Role Conditional Fields */}
-            {role === 'officer' && (
+            {role === 'admin' && (
               <div>
                 <label style={{ display: 'block', fontWeight: 600, fontSize: '13px', color: '#334155', marginBottom: '6px' }}>Assigned Department</label>
                 <select
@@ -307,24 +306,22 @@ export default function UserDetailDrawer({
               </div>
             )}
 
-            {role !== 'admin' && (
-              <div>
-                <label style={{ display: 'block', fontWeight: 600, fontSize: '13px', color: '#334155', marginBottom: '6px' }}>
-                  {role === 'officer' ? 'Assigned Ward / Area' : 'Ward / Residential Area'}
-                </label>
-                <input
-                  type="text"
-                  value={ward}
-                  onChange={e => setWard(e.target.value)}
-                  placeholder="e.g. Ward 42, Kinnathukadavu"
-                  style={{
-                    width: '100%', height: '40px', padding: '0 12px',
-                    borderRadius: '8px', border: '1px solid #cbd5e1',
-                    fontSize: '14px', color: '#1e293b', outline: 'none'
-                  }}
-                />
-              </div>
-            )}
+            <div>
+              <label style={{ display: 'block', fontWeight: 600, fontSize: '13px', color: '#334155', marginBottom: '6px' }}>
+                {role === 'admin' ? 'Assigned Ward / Area' : 'Ward / Residential Area'}
+              </label>
+              <input
+                type="text"
+                value={ward}
+                onChange={e => setWard(e.target.value)}
+                placeholder="e.g. Ward 42, Kinnathukadavu"
+                style={{
+                  width: '100%', height: '40px', padding: '0 12px',
+                  borderRadius: '8px', border: '1px solid #cbd5e1',
+                  fontSize: '14px', color: '#1e293b', outline: 'none'
+                }}
+              />
+            </div>
 
           </div>
 

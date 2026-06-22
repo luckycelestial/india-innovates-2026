@@ -51,7 +51,7 @@ export default function RoleToggle({ activeRole, onChange }: RoleToggleProps) {
           transition: 'all 150ms ease-in-out',
         }}
       >
-        Official
+        Government Official
       </button>
     </div>
   )
